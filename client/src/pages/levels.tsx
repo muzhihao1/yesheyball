@@ -27,6 +27,7 @@ interface Exercise {
   exerciseNumber: number;
   title: string;
   description: string;
+  requirement: string;
   imageUrl: string;
   completed: boolean;
   stars: number;
@@ -183,6 +184,26 @@ export default function Levels() {
     }
   };
 
+  const getExerciseRequirement = (level: number, exerciseNumber: number): string => {
+    // 根据具体习题返回真实的过关要求
+    const requirements: { [key: number]: { [key: number]: string } } = {
+      1: { // 初窥门径
+        1: "连续完成5次不失误",
+        2: "连续完成45次不失误", 
+        3: "连续完成6次不失误",
+        4: "连续完成3次不失误",
+        5: "连续完成5次不失误",
+      },
+      2: { // 小有所成
+        1: "连续完成4次不失误",
+        2: "连续完成5次不失误",
+        3: "连续完成3次不失误",
+      }
+    };
+    
+    return requirements[level]?.[exerciseNumber] || "连续完成5次不失误";
+  };
+
   const generateExercisesForLevel = (level: number): Exercise[] => {
     const stage = levelStages.find(s => s.level === level);
     if (!stage) return [];
@@ -195,12 +216,15 @@ export default function Levels() {
     
     for (let i = 0; i < actualExerciseCount; i++) {
       const exerciseNumber = (i + 2).toString().padStart(2, '0'); // 从02开始
+      const exerciseNum = i + 1; // 题目编号从1开始
+      
       exercises.push({
         id: `${level}-${exerciseNumber}`,
         level,
-        exerciseNumber: i + 1, // 题目编号从1开始
-        title: `第${i + 1}题`,
+        exerciseNumber: exerciseNum,
+        title: `第${exerciseNum}题`,
         description: `如图示摆放球型，将白球击入指定袋内`,
+        requirement: getExerciseRequirement(level, exerciseNum),
         imageUrl: `/assessments/${level}、${levelName}/${level}、${levelName}_${exerciseNumber}.jpg`,
         completed: i < stage.completedExercises,
         stars: i < stage.completedExercises ? Math.floor(Math.random() * 3) + 1 : 0
@@ -447,9 +471,7 @@ export default function Levels() {
                     <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
                       <h3 className="font-bold text-orange-700 mb-2">过关要求：</h3>
                       <p className="text-gray-700">
-                        {selectedExercise.level <= 3 ? "连续完成5次不失误" : 
-                         selectedExercise.level <= 6 ? "连续完成4次不失误" : 
-                         "连续完成3次不失误"}
+                        {selectedExercise.requirement}
                       </p>
                     </div>
                     
