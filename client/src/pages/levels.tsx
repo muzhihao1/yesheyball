@@ -37,6 +37,8 @@ export default function Levels() {
   const [selectedLevel, setSelectedLevel] = useState<LevelStage | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
+  const [exerciseRequirements, setExerciseRequirements] = useState<{ [key: string]: string }>({});
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
@@ -185,39 +187,44 @@ export default function Levels() {
   };
 
   const getExerciseRequirement = (level: number, exerciseNumber: number): string => {
-    // 根据真实习题图片中的过关要求进行配置
-    const requirements: { [key: number]: { [key: number]: string } } = {
-      1: { // 初窥门径 - 根据实际图片内容配置
-        1: "连续完成45次不失误",
-        2: "全部一次成功不失误",
-        3: "连续完成3次不失误",
-        4: "连续完成5次不失误",
-        5: "连续完成10次不失误",
-        6: "全部一次成功不失误",
-        7: "连续完成4次不失误",
-        8: "连续完成6次不失误",
-        9: "连续完成8次不失误",
-        10: "全部一次成功不失误",
-        // 需要根据实际图片继续添加更多习题的要求
-      },
-      2: { // 小有所成 - 根据实际图片内容配置
-        1: "连续完成3次不失误",
-        2: "连续完成5次不失误",
-        3: "全部一次成功不失误",
-        4: "连续完成4次不失误",
-        5: "连续完成7次不失误",
-        // 需要根据实际图片继续添加
-      },
-      3: { // 渐入佳境
-        1: "连续完成4次不失误",
-        2: "连续完成6次不失误",
-        3: "全部一次成功不失误",
-        // 继续添加
-      }
-      // 其他等级需要根据实际图片内容添加
-    };
+    const key = `${level}-${exerciseNumber}`;
     
-    return requirements[level]?.[exerciseNumber] || "连续完成5次不失误";
+    // 如果已经缓存了要求，直接返回
+    if (exerciseRequirements[key]) {
+      return exerciseRequirements[key];
+    }
+
+    // 返回默认值，异步分析会在后台进行
+    return "连续完成5次不失误";
+  };
+
+  const analyzeExerciseRequirement = async (level: number, exerciseNumber: number, levelName: string) => {
+    const key = `${level}-${exerciseNumber}`;
+    
+    // 如果已经分析过，跳过
+    if (exerciseRequirements[key]) {
+      return;
+    }
+
+    try {
+      setIsAnalyzing(true);
+      const response = await apiRequest("/api/analyze-exercise", "POST", {
+        level,
+        levelName,
+        exerciseNumber: exerciseNumber + 1 // 图片编号从02开始
+      });
+
+      if (response && response.requirement) {
+        setExerciseRequirements(prev => ({
+          ...prev,
+          [key]: response.requirement
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to analyze exercise image:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const generateExercisesForLevel = (level: number): Exercise[] => {
