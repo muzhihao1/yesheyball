@@ -6,6 +6,7 @@ import { generateTrainingFeedback, generateDiaryInsights } from "./openai";
 import { upload } from "./upload";
 import { insertDiaryEntrySchema, insertUserTaskSchema } from "@shared/schema";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
+import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer";
 import { z } from "zod";
 import path from "path";
 
@@ -232,6 +233,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user stats" });
+    }
+  });
+
+  // Analyze single exercise image
+  app.post("/api/analyze-exercise", async (req, res) => {
+    try {
+      const { level, levelName, exerciseNumber } = req.body;
+      
+      if (!level || !levelName || !exerciseNumber) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const exerciseNumberPadded = exerciseNumber.toString().padStart(2, '0');
+      const imagePath = path.join(process.cwd(), 'assessments', `${level}、${levelName}`, `${level}、${levelName}_${exerciseNumberPadded}.jpg`);
+      
+      const analysis = await analyzeExerciseImage(imagePath);
+      if (!analysis) {
+        return res.status(404).json({ message: "Could not analyze image" });
+      }
+
+      res.json(analysis);
+    } catch (error) {
+      console.error("Image analysis error:", error);
+      res.status(500).json({ message: "Failed to analyze exercise image" });
+    }
+  });
+
+  // Batch analyze all exercises for a level
+  app.post("/api/analyze-level", async (req, res) => {
+    try {
+      const { level, levelName, totalExercises } = req.body;
+      
+      if (!level || !levelName || !totalExercises) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const results = await batchAnalyzeExercises(level, levelName, totalExercises);
+      res.json(results);
+    } catch (error) {
+      console.error("Batch analysis error:", error);
+      res.status(500).json({ message: "Failed to analyze level exercises" });
     }
   });
 
