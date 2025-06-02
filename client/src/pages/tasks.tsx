@@ -106,7 +106,7 @@ export default function Tasks() {
     ));
   };
 
-  if (isLoading) {
+  if (isLoading || courseLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
@@ -133,13 +133,43 @@ export default function Tasks() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-green-700 mb-2">今日训练任务</h2>
-        <p className="text-gray-600">完成以下3个任务来提升你的技艺</p>
+        <h2 className="text-3xl font-bold text-green-700 mb-2">每日训练</h2>
+        <p className="text-gray-600">王孟52集台球教学系统训练</p>
         <div className="inline-flex items-center bg-green-100 rounded-full px-4 py-2 mt-4">
           <span className="mr-2">📅</span>
           <span className="text-green-700 font-medium">{new Date().toLocaleDateString('zh-CN')}</span>
         </div>
       </div>
+
+      {/* Today's Course */}
+      {dailyCourse && (
+        <Card className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl text-green-700 flex items-center">
+                <span className="mr-2">📚</span>
+                今日课程：第{dailyCourse.day}天
+              </CardTitle>
+              <div className="flex items-center space-x-2">
+                <Badge className={DIFFICULTY_COLORS[dailyCourse.difficulty as keyof typeof DIFFICULTY_COLORS]}>
+                  {dailyCourse.difficulty}
+                </Badge>
+                <Badge variant="outline">第{dailyCourse.week}周</Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">{dailyCourse.title}</h3>
+            <p className="text-gray-700 mb-4">{dailyCourse.description}</p>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">课程类别: {dailyCourse.category}</span>
+              <Button variant="outline" size="sm">
+                观看教学视频
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Progress Summary */}
       <Card className="mb-8">
