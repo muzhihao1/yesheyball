@@ -74,55 +74,110 @@ export class MemStorage implements IStorage {
     };
     this.users.set(defaultUser.id, defaultUser);
 
-    // Create default tasks
+    // Create default tasks based on professional billiards training materials
     const defaultTasks: Omit<Task, 'id'>[] = [
+      // Level 1: 初窥门径 - Basic fundamentals
       {
-        title: "白球直线入袋",
-        description: "将白球与目标球摆成直线，练习直线击球入袋。重点关注握杆稳定性和瞄准精度。",
+        title: "白球直线击球练习",
+        description: "将白球与目标球摆成直线，练习最基本的直线击球。重点掌握正确的握杆姿势和身体站位，连续完成45次不失误。",
         level: 1,
         difficulty: "初级",
-        category: "直线击球",
+        category: "基础握杆",
         imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
       },
       {
-        title: "角度球练习",
-        description: "练习不同角度的击球，学习判断反弹角度和力度控制。",
-        level: 2,
-        difficulty: "中级",
-        category: "角度击球",
+        title: "目标球定点入袋",
+        description: "如图摆放15个不同位置的目标球，将每个目标球击入指定袋内，全部一次成功不失误。",
+        level: 1,
+        difficulty: "初级",
+        category: "瞄准精度",
         imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
       },
       {
-        title: "白球控制",
-        description: "练习击球后白球的停留位置控制，为下一球做好准备。",
+        title: "白球库边返回控制",
+        description: "将白球向对面库边击打，使其返回时从1、2号球中间穿过，连续完成5次。",
+        level: 1,
+        difficulty: "初级",
+        category: "力度控制",
+        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+      },
+
+      // Level 2: 小有所成 - Basic positioning
+      {
+        title: "白球定住练习",
+        description: "将目标球打进指定袋中，且白球定住，位移不可超过1颗球。连续完成10次不失误。",
         level: 2,
+        difficulty: "初级",
+        category: "定杆技巧",
+        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
+      },
+      {
+        title: "白球跟进控制",
+        description: "将目标球打进指定袋中，且白球越过黄线，但不可摔袋。连续完成10次不失误。",
+        level: 2,
+        difficulty: "中级",
+        category: "跟进球",
+        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+      },
+      {
+        title: "不同角度直线球",
+        description: "白球分别放在3个位置且与目标球呈直线，将目标球打进指定袋中，且白球定住。每个位置完成10次不失误。",
+        level: 2,
+        difficulty: "中级",
+        category: "角度控制",
+        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
+      },
+
+      // Level 3: 渐入佳境 - Advanced techniques
+      {
+        title: "库边反弹球练习",
+        description: "将白球往库边任意位置击打，判断其第二库吃库点并标记出来。完成100次练习。",
+        level: 3,
+        difficulty: "高级",
+        category: "库边技巧",
+        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+      },
+      {
+        title: "一库解黑八",
+        description: "如图摆放球型，通过一库反弹将黑八解进指定袋内。连续完成5次不失误。",
+        level: 3,
+        difficulty: "高级",
+        category: "解球技巧",
+        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
+      },
+      {
+        title: "传球练习",
+        description: "击打2号球将1号球传进指定袋内。掌握传球的力度和角度控制。连续完成3次不失误。",
+        level: 3,
+        difficulty: "高级",
+        category: "传球技巧",
+        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+      },
+
+      // Level 4: 炉火纯青 - Advanced positioning
+      {
+        title: "击球后撞击指定球",
+        description: "将1号打进后白球撞击到2号球。练习精确的白球走位控制。连续完成5次不失误。",
+        level: 4,
         difficulty: "高级",
         category: "走位控制",
         imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
       },
       {
-        title: "力度控制练习",
-        description: "练习不同力度的击球，控制球的滚动距离。",
-        level: 1,
-        difficulty: "初级",
-        category: "力度控制",
-        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
-      },
-      {
-        title: "库边反弹球",
-        description: "学习利用库边反弹来击球入袋的技巧。",
-        level: 3,
+        title: "连续K球练习",
+        description: "将1号打进后依次去K到其他球，不可越号K球。失误不超过2次按顺序K到全部球。",
+        level: 4,
         difficulty: "高级",
-        category: "库边球",
-        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+        category: "连续击球",
+        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
       },
       {
-        title: "组合球练习",
-        description: "练习通过碰撞其他球来击中目标球的技巧。",
-        level: 3,
-        difficulty: "中级",
-        category: "组合球",
-        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
+        title: "目标区域走位",
+        description: "将1号打进后白球停留在目标区域内。练习多种不同的走位路线。连续完成5次不失误。",
+        level: 4,
+        difficulty: "高级",
+        category: "精确走位",
+        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
       }
     ];
 
