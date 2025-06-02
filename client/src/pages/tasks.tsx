@@ -24,6 +24,15 @@ interface TaskCompletion {
   };
 }
 
+interface DailyCourse {
+  day: number;
+  title: string;
+  description: string;
+  week: number;
+  category: string;
+  difficulty: "初级" | "中级" | "高级";
+}
+
 export default function Tasks() {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [userRating, setUserRating] = useState<number>(0);
@@ -33,6 +42,10 @@ export default function Tasks() {
 
   const { data: todayTasks, isLoading } = useQuery<TaskWithData[]>({
     queryKey: ["/api/user/tasks/today"],
+  });
+
+  const { data: dailyCourse, isLoading: courseLoading } = useQuery<DailyCourse>({
+    queryKey: ["/api/daily-course/today"],
   });
 
   const completeTaskMutation = useMutation({
