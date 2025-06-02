@@ -190,12 +190,15 @@ export default function Levels() {
     const exercises: Exercise[] = [];
     const levelName = stage.name;
     
-    for (let i = 0; i < stage.totalExercises; i++) {
-      const exerciseNumber = i.toString().padStart(2, '0');
+    // 跳过前两张图片（00和01），从02开始作为第一题
+    const actualExerciseCount = stage.totalExercises - 2;
+    
+    for (let i = 0; i < actualExerciseCount; i++) {
+      const exerciseNumber = (i + 2).toString().padStart(2, '0'); // 从02开始
       exercises.push({
         id: `${level}-${exerciseNumber}`,
         level,
-        exerciseNumber: i,
+        exerciseNumber: i + 1, // 题目编号从1开始
         title: `第${i + 1}题`,
         description: `${levelName}阶段练习第${i + 1}题，按照图示要求完成练习。`,
         imageUrl: `/assessments/${level}、${levelName}/${level}、${levelName}_${exerciseNumber}.jpg`,
@@ -240,130 +243,130 @@ export default function Levels() {
         </div>
       </div>
 
-      {/* Level Grid */}
-      {!selectedLevel ? (
-        <div className="grid md:grid-cols-3 gap-6">
-          {levelStages.map((stage) => (
-            <Card 
-              key={stage.level} 
-              className={`cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden ${
-                !stage.unlocked ? 'opacity-60 cursor-not-allowed' : ''
-              } ${stage.level === user.level ? 'ring-2 ring-green-500' : ''}`}
-              onClick={() => handleLevelClick(stage)}
-            >
-              <CardHeader className={`bg-gradient-to-r ${getCategoryColor(stage.category)} text-white pb-2`}>
+      {/* 多邻国风格的垂直滚动关卡地图 */}
+      <div className="max-w-md mx-auto bg-gradient-to-b from-green-50 to-blue-50 rounded-xl p-6">
+        {/* 用户进度显示 */}
+        <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 shadow-sm">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+              {user.username.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div className="font-bold text-gray-800">{user.username}</div>
+              <div className="text-sm text-gray-600">等级 {user.level} - {levelStages.find(s => s.level === user.level)?.name}</div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-lg font-bold text-orange-500">{user.exp}</div>
+            <div className="text-xs text-gray-500">经验值</div>
+          </div>
+        </div>
+
+        {/* 垂直滚动的关卡路径 */}
+        <div className="space-y-8">
+          {levelStages.map((stage, stageIndex) => (
+            <div key={stage.level} className="relative">
+              {/* 等级标题卡片 */}
+              <div className={`bg-gradient-to-r ${getCategoryColor(stage.category)} rounded-lg p-4 mb-6 text-white shadow-lg`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="text-2xl">{getCategoryIcon(stage.category)}</span>
-                    <CardTitle className="text-lg">等级 {stage.level}</CardTitle>
-                  </div>
-                  <Badge variant="secondary" className="bg-white/20 text-white">
-                    {stage.category}
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-4">
-                <h3 className="font-bold text-gray-800 mb-2">{stage.name}</h3>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{stage.description}</p>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">进度</span>
-                    <span className="font-medium">{stage.completedExercises}/{stage.totalExercises}</span>
-                  </div>
-                  <Progress value={stage.progress} className="h-2" />
-                  
-                  {stage.completed && (
-                    <div className="flex items-center text-green-600 text-sm">
-                      <span className="mr-1">✅</span>
-                      <span>已完成</span>
+                    <div>
+                      <div className="font-bold">等级 {stage.level}: {stage.name}</div>
+                      <div className="text-xs opacity-90">{stage.category}阶段</div>
                     </div>
-                  )}
-                  
-                  {!stage.unlocked && (
-                    <div className="flex items-center text-gray-400 text-sm">
-                      <span className="mr-1">🔒</span>
-                      <span>未解锁</span>
-                    </div>
-                  )}
-                  
-                  {canTakeExam(stage) && (
-                    <Button size="sm" className="w-full bg-orange-500 hover:bg-orange-600">
-                      参加等级考核
-                    </Button>
-                  )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs opacity-90">进度</div>
+                    <div className="font-bold">{stage.completedExercises}/{stage.totalExercises - 2}</div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+                <Progress value={stage.progress} className="mt-2 h-1 bg-white/20" />
+              </div>
+
+              {/* 习题关卡点 - 垂直Z字形排列 */}
+              <div className="space-y-4 pl-4">
+                {generateExercisesForLevel(stage.level).map((exercise, exerciseIndex) => {
+                  const isLeft = exerciseIndex % 2 === 0;
+                  const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || generateExercisesForLevel(stage.level)[exerciseIndex - 1]?.completed);
+                  
+                  return (
+                    <div 
+                      key={exercise.id} 
+                      className={`flex ${isLeft ? 'justify-start' : 'justify-end'} relative`}
+                    >
+                      {/* 连接线 */}
+                      {exerciseIndex > 0 && (
+                        <div className={`absolute top-0 w-8 h-4 border-gray-300 ${
+                          isLeft ? 'right-12 border-r-2 border-b-2' : 'left-12 border-l-2 border-b-2'
+                        } transform -translate-y-4`} />
+                      )}
+                      
+                      {/* 关卡圆圈 */}
+                      <div 
+                        className={`relative w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
+                          !isUnlocked 
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                            : exercise.completed 
+                              ? 'bg-green-500 text-white shadow-lg transform scale-105' 
+                              : 'bg-white border-4 border-green-500 text-green-500 hover:scale-110 shadow-md'
+                        }`}
+                        onClick={() => isUnlocked && handleExerciseClick(exercise)}
+                      >
+                        {!isUnlocked ? (
+                          <span className="text-xl">🔒</span>
+                        ) : exercise.completed ? (
+                          <span className="text-xl">⭐</span>
+                        ) : (
+                          <span className="text-lg font-bold">{exercise.exerciseNumber}</span>
+                        )}
+                        
+                        {/* 星星评分 */}
+                        {exercise.completed && exercise.stars > 0 && (
+                          <div className="absolute -top-2 -right-2 text-xs">
+                            {'⭐'.repeat(Math.min(exercise.stars, 3))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* 题目标签 */}
+                      <div className={`absolute ${isLeft ? 'left-20' : 'right-20'} top-2 bg-white rounded-lg px-3 py-1 shadow-sm ${
+                        !isUnlocked ? 'opacity-50' : ''
+                      }`}>
+                        <div className="text-sm font-medium text-gray-800">{exercise.title}</div>
+                        {exercise.completed && (
+                          <div className="text-xs text-green-600">已完成</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 等级考核关卡 */}
+              {canTakeExam(stage) && (
+                <div className="flex justify-center mt-8">
+                  <div className="relative">
+                    <div className="w-20 h-20 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center cursor-pointer shadow-xl transform hover:scale-110 transition-all duration-300">
+                      <span className="text-2xl">🏆</span>
+                    </div>
+                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap">
+                      等级考核
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 连接下一等级的线 */}
+              {stageIndex < levelStages.length - 1 && (
+                <div className="flex justify-center mt-8">
+                  <div className="w-0.5 h-12 bg-gray-300"></div>
+                </div>
+              )}
+            </div>
           ))}
         </div>
-      ) : (
-        /* Exercise Grid */
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <Button 
-              variant="outline" 
-              onClick={() => setSelectedLevel(null)}
-              className="flex items-center space-x-2"
-            >
-              <span>←</span>
-              <span>返回关卡地图</span>
-            </Button>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-green-700">{selectedLevel.name}</h3>
-              <p className="text-gray-600">等级 {selectedLevel.level} - {selectedLevel.category}</p>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-600">进度</div>
-              <div className="font-bold">{selectedLevel.completedExercises}/{selectedLevel.totalExercises}</div>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-6 gap-4">
-            {generateExercisesForLevel(selectedLevel.level).map((exercise) => (
-              <Card 
-                key={exercise.id}
-                className={`cursor-pointer transition-all hover:scale-105 ${
-                  exercise.completed ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50'
-                }`}
-                onClick={() => handleExerciseClick(exercise)}
-              >
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl mb-2">
-                    {exercise.completed ? '✅' : '⭕'}
-                  </div>
-                  <div className="text-sm font-medium mb-1">{exercise.title}</div>
-                  {exercise.completed && (
-                    <div className="text-xs text-yellow-600">
-                      {'⭐'.repeat(exercise.stars)}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {canTakeExam(selectedLevel) && (
-            <Card className="mt-8 bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
-              <CardContent className="p-6 text-center">
-                <h4 className="text-xl font-bold text-orange-700 mb-2">🏆 等级考核解锁</h4>
-                <p className="text-gray-700 mb-4">
-                  恭喜完成所有习题！现在可以参加等级 {selectedLevel.level} 的考核。
-                </p>
-                <p className="text-sm text-gray-600 mb-4">
-                  考核规则：{selectedLevel.category === "启明星" ? "随机抽取6题，限时2小时" : 
-                           selectedLevel.category === "超新星" ? "随机抽取8题，限时2小时" : 
-                           "随机抽取10题，限时3小时"}
-                </p>
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  开始等级考核
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+      </div>
 
       {/* Exercise Dialog */}
       <Dialog open={showExerciseDialog} onOpenChange={setShowExerciseDialog}>
