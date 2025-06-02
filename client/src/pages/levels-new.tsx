@@ -195,7 +195,7 @@ export default function Levels() {
     const key = `${level}-${exerciseNumber}`;
     
     if (exerciseRequirements[key]) {
-      return;
+      return exerciseRequirements[key];
     }
 
     try {
@@ -213,10 +213,12 @@ export default function Levels() {
       if (response.ok) {
         const data = await response.json();
         if (data.requirement) {
+          const cleanRequirement = data.requirement.replace(/；$/, ''); // 移除末尾的分号
           setExerciseRequirements(prev => ({
             ...prev,
-            [key]: data.requirement
+            [key]: cleanRequirement
           }));
+          return cleanRequirement;
         }
       }
     } catch (error) {
@@ -224,6 +226,8 @@ export default function Levels() {
     } finally {
       setIsAnalyzing(false);
     }
+    
+    return "连续完成5次不失误";
   };
 
   const generateExercisesForLevel = (level: number): Exercise[] => {
@@ -267,13 +271,21 @@ export default function Levels() {
     setSelectedLevel(stage);
   };
 
-  const handleExerciseClick = (exercise: Exercise) => {
+  const handleExerciseClick = async (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setShowExerciseDialog(true);
     
-    // 异步分析习题要求
-    if (selectedLevel) {
-      analyzeExerciseRequirement(exercise.level, exercise.exerciseNumber, selectedLevel.name);
+    // 异步分析习题要求并更新选中的习题
+    const levelStage = levelStages.find(s => s.level === exercise.level);
+    if (levelStage) {
+      await analyzeExerciseRequirement(exercise.level, exercise.exerciseNumber, levelStage.name);
+      
+      // 更新选中习题的要求
+      const key = `${exercise.level}-${exercise.exerciseNumber}`;
+      if (exerciseRequirements[key]) {
+        exercise.requirement = exerciseRequirements[key];
+        setSelectedExercise({...exercise, requirement: exerciseRequirements[key]});
+      }
     }
   };
 
