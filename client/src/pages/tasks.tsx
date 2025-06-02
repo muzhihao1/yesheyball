@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { UserTask, Task } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { DIFFICULTY_COLORS } from "@/lib/tasks";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import FeedbackModal from "@/components/feedback-modal";
@@ -38,6 +41,14 @@ export default function Tasks() {
   const [userRating, setUserRating] = useState<number>(0);
   const [feedbackData, setFeedbackData] = useState<any>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  
+  // Timer state
+  const [isTraining, setIsTraining] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [trainingNotes, setTrainingNotes] = useState("");
+  const [showTrainingComplete, setShowTrainingComplete] = useState(false);
+  
   const { toast } = useToast();
 
   const { data: todayTasks, isLoading } = useQuery<TaskWithData[]>({
