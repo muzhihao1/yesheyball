@@ -74,110 +74,216 @@ export class MemStorage implements IStorage {
     };
     this.users.set(defaultUser.id, defaultUser);
 
-    // Create default tasks based on professional billiards training materials
+    // Create default tasks based on real assessment materials from Ye's Billiards Academy
     const defaultTasks: Omit<Task, 'id'>[] = [
-      // Level 1: 初窥门径 - Basic fundamentals
+      // Level 1: 初窥门径 - Basic fundamentals (37 exercises)
       {
-        title: "白球直线击球练习",
-        description: "将白球与目标球摆成直线，练习最基本的直线击球。重点掌握正确的握杆姿势和身体站位，连续完成45次不失误。",
+        title: "第1题 - 白球击入指定袋",
+        description: "如图示摆放球型，将白球击入指定袋内。过关要求：连续完成45次不失误。",
         level: 1,
         difficulty: "初级",
-        category: "基础握杆",
-        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+        category: "基础击球",
+        imageUrl: "/assessments/1、初窥门径/1、初窥门径_02.jpg"
       },
       {
-        title: "目标球定点入袋",
-        description: "如图摆放15个不同位置的目标球，将每个目标球击入指定袋内，全部一次成功不失误。",
+        title: "第2题 - 基础瞄准练习",
+        description: "按照图示球型进行基础瞄准练习，掌握正确的握杆姿势和瞄准方法。",
         level: 1,
         difficulty: "初级",
-        category: "瞄准精度",
-        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
+        category: "瞄准技巧",
+        imageUrl: "/assessments/1、初窥门径/1、初窥门径_03.jpg"
       },
       {
-        title: "白球库边返回控制",
-        description: "将白球向对面库边击打，使其返回时从1、2号球中间穿过，连续完成5次。",
+        title: "第3题 - 直线击球训练",
+        description: "练习最基本的直线击球技术，重点掌握稳定的出杆动作。",
+        level: 1,
+        difficulty: "初级",
+        category: "直线击球",
+        imageUrl: "/assessments/1、初窥门径/1、初窥门径_04.jpg"
+      },
+      {
+        title: "第4题 - 力度控制基础",
+        description: "学习控制击球力度，练习轻、中、重三种不同力度的击球。",
         level: 1,
         difficulty: "初级",
         category: "力度控制",
-        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+        imageUrl: "/assessments/1、初窥门径/1、初窥门径_05.jpg"
+      },
+      {
+        title: "第5题 - 白球定位练习",
+        description: "练习击球后白球的停留位置控制，为后续走位打下基础。",
+        level: 1,
+        difficulty: "初级",
+        category: "白球控制",
+        imageUrl: "/assessments/1、初窥门径/1、初窥门径_06.jpg"
       },
 
-      // Level 2: 小有所成 - Basic positioning
+      // Level 2: 小有所成 - Basic positioning (42 exercises)
       {
-        title: "白球定住练习",
+        title: "第6题 - 白球定住技巧",
         description: "将目标球打进指定袋中，且白球定住，位移不可超过1颗球。连续完成10次不失误。",
         level: 2,
         difficulty: "初级",
         category: "定杆技巧",
-        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
+        imageUrl: "/assessments/2、小有所成/2、小有所成_02.jpg"
       },
       {
-        title: "白球跟进控制",
-        description: "将目标球打进指定袋中，且白球越过黄线，但不可摔袋。连续完成10次不失误。",
+        title: "第7题 - 跟进球练习",
+        description: "将目标球打进指定袋中，且白球越过指定线，但不可落袋。连续完成10次不失误。",
         level: 2,
         difficulty: "中级",
         category: "跟进球",
-        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+        imageUrl: "/assessments/2、小有所成/2、小有所成_03.jpg"
       },
       {
-        title: "不同角度直线球",
-        description: "白球分别放在3个位置且与目标球呈直线，将目标球打进指定袋中，且白球定住。每个位置完成10次不失误。",
+        title: "第8题 - 拉杆技巧",
+        description: "练习拉杆技术，使白球在击中目标球后向后回拉。",
         level: 2,
         difficulty: "中级",
-        category: "角度控制",
-        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
+        category: "拉杆技巧",
+        imageUrl: "/assessments/2、小有所成/2、小有所成_04.jpg"
+      },
+      {
+        title: "第9题 - 角度球基础",
+        description: "练习不同角度的击球，学习判断反弹角度和击球点位。",
+        level: 2,
+        difficulty: "中级",
+        category: "角度击球",
+        imageUrl: "/assessments/2、小有所成/2、小有所成_05.jpg"
+      },
+      {
+        title: "第10题 - 简单走位",
+        description: "练习击球后白球走到指定位置，为下一球做准备。",
+        level: 2,
+        difficulty: "中级",
+        category: "基础走位",
+        imageUrl: "/assessments/2、小有所成/2、小有所成_06.jpg"
       },
 
-      // Level 3: 渐入佳境 - Advanced techniques
+      // Level 3: 渐入佳境 - Advanced techniques (52 exercises)
       {
-        title: "库边反弹球练习",
-        description: "将白球往库边任意位置击打，判断其第二库吃库点并标记出来。完成100次练习。",
+        title: "第11题 - 库边反弹球",
+        description: "将白球往库边任意位置击打，判断其第二库吃库点并标记出来。完成指定次数练习。",
         level: 3,
         difficulty: "高级",
         category: "库边技巧",
-        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+        imageUrl: "/assessments/3、渐入佳境/3、渐入佳境_02.jpg"
       },
       {
-        title: "一库解黑八",
-        description: "如图摆放球型，通过一库反弹将黑八解进指定袋内。连续完成5次不失误。",
+        title: "第12题 - 一库解球",
+        description: "如图摆放球型，通过一库反弹将目标球解进指定袋内。连续完成5次不失误。",
         level: 3,
         difficulty: "高级",
         category: "解球技巧",
-        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
+        imageUrl: "/assessments/3、渐入佳境/3、渐入佳境_03.jpg"
       },
       {
-        title: "传球练习",
-        description: "击打2号球将1号球传进指定袋内。掌握传球的力度和角度控制。连续完成3次不失误。",
+        title: "第13题 - 传球练习",
+        description: "击打指定球将另一球传进指定袋内。掌握传球的力度和角度控制。",
         level: 3,
         difficulty: "高级",
         category: "传球技巧",
-        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+        imageUrl: "/assessments/3、渐入佳境/3、渐入佳境_04.jpg"
       },
-
-      // Level 4: 炉火纯青 - Advanced positioning
       {
-        title: "击球后撞击指定球",
-        description: "将1号打进后白球撞击到2号球。练习精确的白球走位控制。连续完成5次不失误。",
-        level: 4,
+        title: "第14题 - 复杂角度球",
+        description: "练习更复杂的角度击球，提高对球路的判断能力。",
+        level: 3,
         difficulty: "高级",
-        category: "走位控制",
-        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+        category: "角度击球",
+        imageUrl: "/assessments/3、渐入佳境/3、渐入佳境_05.jpg"
       },
       {
-        title: "连续K球练习",
-        description: "将1号打进后依次去K到其他球，不可越号K球。失误不超过2次按顺序K到全部球。",
-        level: 4,
-        difficulty: "高级",
-        category: "连续击球",
-        imageUrl: "https://images.unsplash.com/photo-1571847140471-1d7766e825ea?w=400"
-      },
-      {
-        title: "目标区域走位",
-        description: "将1号打进后白球停留在目标区域内。练习多种不同的走位路线。连续完成5次不失误。",
-        level: 4,
+        title: "第15题 - 精确走位",
+        description: "练习更精确的白球走位控制，为复杂球局做准备。",
+        level: 3,
         difficulty: "高级",
         category: "精确走位",
-        imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"
+        imageUrl: "/assessments/3、渐入佳境/3、渐入佳境_06.jpg"
+      },
+
+      // Level 4: 炉火纯青 - Force and technique mastery (62 exercises)
+      {
+        title: "第16题 - 力度与杆法结合",
+        description: "练习不同力度配合不同杆法的击球技术，掌握力度与杆法的完美配合。",
+        level: 4,
+        difficulty: "高级",
+        category: "杆法技巧",
+        imageUrl: "/assessments/4、炉火纯青/4、炉火纯青_02.jpg"
+      },
+      {
+        title: "第17题 - 高杆技巧",
+        description: "练习高杆击球技术，使白球在碰撞后继续向前滚动。",
+        level: 4,
+        difficulty: "高级",
+        category: "高杆技巧",
+        imageUrl: "/assessments/4、炉火纯青/4、炉火纯青_03.jpg"
+      },
+      {
+        title: "第18题 - 低杆技巧",
+        description: "练习低杆击球技术，使白球在碰撞后向后回拉。",
+        level: 4,
+        difficulty: "高级",
+        category: "低杆技巧",
+        imageUrl: "/assessments/4、炉火纯青/4、炉火纯青_04.jpg"
+      },
+      {
+        title: "第19题 - 侧旋技巧",
+        description: "练习左右侧旋技术，掌握侧旋对球路的影响。",
+        level: 4,
+        difficulty: "高级",
+        category: "侧旋技巧",
+        imageUrl: "/assessments/4、炉火纯青/4、炉火纯青_05.jpg"
+      },
+      {
+        title: "第20题 - 组合杆法",
+        description: "练习多种杆法的组合运用，提高技术的综合运用能力。",
+        level: 4,
+        difficulty: "高级",
+        category: "组合杆法",
+        imageUrl: "/assessments/4、炉火纯青/4、炉火纯青_06.jpg"
+      },
+
+      // Level 5: 登堂入室 - Advanced control (62 exercises)
+      {
+        title: "第21题 - 高阶控球技术",
+        description: "练习更高级的控球技术，实现精确的球路控制。",
+        level: 5,
+        difficulty: "高级",
+        category: "高阶控球",
+        imageUrl: "/assessments/5、登堂入室/5、登堂入室_02.jpg"
+      },
+      {
+        title: "第22题 - 实战球型训练",
+        description: "模拟实战中的复杂球型，提高实战应用能力。",
+        level: 5,
+        difficulty: "高级",
+        category: "实战训练",
+        imageUrl: "/assessments/5、登堂入室/5、登堂入室_03.jpg"
+      },
+      {
+        title: "第23题 - 连续走位",
+        description: "练习连续多球的走位控制，保持良好的击球节奏。",
+        level: 5,
+        difficulty: "高级",
+        category: "连续走位",
+        imageUrl: "/assessments/5、登堂入室/5、登堂入室_04.jpg"
+      },
+      {
+        title: "第24题 - 防守技巧",
+        description: "学习防守性击球，包括做障碍球和安全球的技巧。",
+        level: 5,
+        difficulty: "高级",
+        category: "防守技巧",
+        imageUrl: "/assessments/5、登堂入室/5、登堂入室_05.jpg"
+      },
+      {
+        title: "第25题 - 进攻策略",
+        description: "练习进攻性击球策略，提高得分效率。",
+        level: 5,
+        difficulty: "高级",
+        category: "进攻策略",
+        imageUrl: "/assessments/5、登堂入室/5、登堂入室_06.jpg"
       }
     ];
 

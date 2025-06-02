@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateTrainingFeedback, generateDiaryInsights } from "./openai";
@@ -8,6 +9,10 @@ import { z } from "zod";
 import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Serve assessment images as static files
+  const assessmentsPath = path.join(process.cwd(), 'assessments');
+  app.use('/assessments', express.static(assessmentsPath));
   
   // Get current user (defaulting to user ID 1 for demo)
   app.get("/api/user", async (req, res) => {
