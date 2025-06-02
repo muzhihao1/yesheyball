@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { generateTrainingFeedback, generateDiaryInsights } from "./openai";
 import { upload } from "./upload";
 import { insertDiaryEntrySchema, insertUserTaskSchema } from "@shared/schema";
+import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
 import { z } from "zod";
 import path from "path";
 
@@ -44,6 +45,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(tasks);
     } catch (error) {
       res.status(500).json({ message: "Failed to get tasks" });
+    }
+  });
+
+  // Get today's daily course
+  app.get("/api/daily-course/today", async (req, res) => {
+    try {
+      const todaysCourse = getTodaysCourse();
+      res.json(todaysCourse);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get today's course" });
+    }
+  });
+
+  // Get course by day
+  app.get("/api/daily-course/:day", async (req, res) => {
+    try {
+      const day = parseInt(req.params.day);
+      if (isNaN(day) || day < 1 || day > 52) {
+        return res.status(400).json({ message: "Invalid day number" });
+      }
+      const course = getCourseByDay(day);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      res.json(course);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get course" });
+    }
+  });
+
+  // Get all daily courses
+  app.get("/api/daily-courses", async (req, res) => {
+    try {
+      res.json(DAILY_COURSES);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get daily courses" });
     }
   });
 
