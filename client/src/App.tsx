@@ -35,8 +35,8 @@ function App() {
           <nav className="bg-white border-b border-gray-200 sticky top-16 z-40">
             <div className="max-w-7xl mx-auto px-4">
               <div className="flex space-x-8">
-                <TabButton href="/" icon="🗺️" label="关卡地图" />
                 <TabButton href="/tasks" icon="📝" label="每日训练" />
+                <TabButton href="/" icon="🗺️" label="关卡地图" />
                 <TabButton href="/test" icon="🏆" label="等级考核" />
                 <TabButton href="/diary" icon="📖" label="练习日记" />
                 <TabButton href="/profile" icon="👤" label="个人资料" />
