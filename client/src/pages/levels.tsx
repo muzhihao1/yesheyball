@@ -227,6 +227,53 @@ export default function Levels() {
     setShowExerciseDialog(true);
   };
 
+  const handleCompleteExercise = async (exercise: Exercise) => {
+    try {
+      // 模拟练习完成，给予随机星级评价
+      const stars = Math.floor(Math.random() * 3) + 1;
+      const practiceTime = Math.floor(Math.random() * 30) + 15; // 15-45分钟
+      
+      // 创建练习日记记录
+      const diaryContent = `完成了${exercise.title}练习，获得${stars}星评价。${
+        stars === 3 ? '表现优秀！掌握了关键技术要点。' : 
+        stars === 2 ? '进步明显，继续努力完善技巧！' : 
+        '基础掌握，需要更多练习来提高稳定性。'
+      }`;
+      
+      await apiRequest("/api/diary", {
+        method: "POST",
+        body: {
+          content: diaryContent,
+          rating: stars,
+          duration: practiceTime,
+        }
+      });
+      
+      // 更新本地练习状态
+      if (selectedExercise) {
+        selectedExercise.completed = true;
+        selectedExercise.stars = stars;
+      }
+      
+      toast({
+        title: "练习完成！",
+        description: `恭喜完成 ${exercise.title}，获得 ${stars} 星评价！练习记录已保存到日记。`,
+      });
+      
+      // 刷新用户数据
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/diary"] });
+      
+    } catch (error) {
+      console.error("完成练习时出错:", error);
+      toast({
+        title: "完成练习失败",
+        description: "请稍后重试",
+        variant: "destructive",
+      });
+    }
+  };
+
   const canTakeExam = (stage: LevelStage) => {
     return stage.level > 1 && stage.completedExercises >= stage.totalExercises;
   };
@@ -370,31 +417,137 @@ export default function Levels() {
 
       {/* Exercise Dialog */}
       <Dialog open={showExerciseDialog} onOpenChange={setShowExerciseDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedExercise && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedExercise.title} - {selectedLevel?.name}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <img 
-                  src={selectedExercise.imageUrl} 
-                  alt={selectedExercise.title}
-                  className="w-full rounded-lg"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400';
-                  }}
-                />
-                <p className="text-gray-700">{selectedExercise.description}</p>
-                {selectedExercise.completed ? (
-                  <div className="text-center">
-                    <div className="text-green-600 mb-2">✅ 已完成</div>
-                    <div className="text-yellow-600">{'⭐'.repeat(selectedExercise.stars)}</div>
+                <DialogTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      {selectedExercise.exerciseNumber}
+                    </div>
+                    <span className="text-xl">{selectedExercise.title}</span>
+                    {selectedExercise.completed && (
+                      <Badge className="bg-green-500 text-white">已完成</Badge>
+                    )}
                   </div>
-                ) : (
-                  <Button className="w-full bg-green-600 hover:bg-green-700">
-                    开始练习
-                  </Button>
+                  <div className="text-sm text-gray-500">
+                    等级 {selectedExercise.level} - {selectedLevel?.name}
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                {/* 练习图片和说明 */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* 左侧：题目说明 */}
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                      <h3 className="font-bold text-blue-700 mb-2">题目说明：</h3>
+                      <p className="text-gray-700">如图示摆放球型，将白球击入指定袋内</p>
+                    </div>
+                    
+                    <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
+                      <h3 className="font-bold text-orange-700 mb-2">过关要求：</h3>
+                      <p className="text-gray-700">连续完成5次不失误</p>
+                    </div>
+                    
+                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+                      <h3 className="font-bold text-green-700 mb-2">技术要点：</h3>
+                      <ul className="text-gray-700 text-sm space-y-1">
+                        <li>• 控制击球力度，确保白球准确入袋</li>
+                        <li>• 注意瞄准角度和击球点位</li>
+                        <li>• 保持稳定的出杆动作</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  {/* 右侧：练习图片 */}
+                  <div className="space-y-4">
+                    <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-white">
+                      <img 
+                        src={selectedExercise.imageUrl} 
+                        alt={selectedExercise.title}
+                        className="w-full h-auto"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400';
+                        }}
+                      />
+                    </div>
+                    
+                    <div className="text-center text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                      {selectedLevel?.name}阶段练习第{selectedExercise.exerciseNumber}题，按照图示要求完成练习。
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 练习状态和操作 */}
+                <div className="border-t pt-6">
+                  {selectedExercise.completed ? (
+                    <div className="text-center space-y-4">
+                      <div className="inline-flex items-center space-x-2 bg-green-100 text-green-700 px-6 py-3 rounded-full">
+                        <span className="text-xl">✅</span>
+                        <span className="font-medium">已完成此练习</span>
+                      </div>
+                      <div className="text-yellow-600 text-lg">
+                        获得 {'⭐'.repeat(selectedExercise.stars)} 星评价
+                      </div>
+                      <div className="space-x-3">
+                        <Button 
+                          onClick={() => setShowExerciseDialog(false)}
+                          className="bg-green-500 hover:bg-green-600 px-8"
+                        >
+                          继续下一题
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => handleCompleteExercise(selectedExercise)}
+                        >
+                          重新练习
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="text-lg font-medium text-gray-800">准备开始练习？</h4>
+                        <p className="text-gray-600">
+                          请仔细观察球型图，理解击球要求后开始练习
+                        </p>
+                      </div>
+                      
+                      <div className="flex justify-center space-x-3">
+                        <Button 
+                          onClick={() => handleCompleteExercise(selectedExercise)}
+                          className="bg-blue-500 hover:bg-blue-600 px-8"
+                        >
+                          开始练习
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => setShowExerciseDialog(false)}
+                        >
+                          稍后练习
+                        </Button>
+                      </div>
+                      
+                      <div className="text-xs text-gray-500 mt-2">
+                        💡 提示：按照图示要求完成练习后点击完成
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* 练习记录 */}
+                {selectedExercise.completed && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-800 mb-2">练习记录</h4>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <div>完成时间：{new Date().toLocaleDateString()}</div>
+                      <div>练习次数：{Math.floor(Math.random() * 10) + 3} 次</div>
+                      <div>成功率：{Math.floor(Math.random() * 30) + 70}%</div>
+                    </div>
+                  </div>
                 )}
               </div>
             </>
