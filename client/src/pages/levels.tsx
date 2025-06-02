@@ -200,7 +200,7 @@ export default function Levels() {
         level,
         exerciseNumber: i + 1, // 题目编号从1开始
         title: `第${i + 1}题`,
-        description: `${levelName}阶段练习第${i + 1}题，按照图示要求完成练习。`,
+        description: `如图示摆放球型，将白球击入指定袋内`,
         imageUrl: `/assessments/${level}、${levelName}/${level}、${levelName}_${exerciseNumber}.jpg`,
         completed: i < stage.completedExercises,
         stars: i < stage.completedExercises ? Math.floor(Math.random() * 3) + 1 : 0
@@ -240,13 +240,10 @@ export default function Levels() {
         '基础掌握，需要更多练习来提高稳定性。'
       }`;
       
-      await apiRequest("/api/diary", {
-        method: "POST",
-        body: {
-          content: diaryContent,
-          rating: stars,
-          duration: practiceTime,
-        }
+      await apiRequest("/api/diary", "POST", {
+        content: diaryContent,
+        rating: stars,
+        duration: practiceTime,
       });
       
       // 更新本地练习状态
@@ -444,20 +441,40 @@ export default function Levels() {
                   <div className="space-y-4">
                     <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
                       <h3 className="font-bold text-blue-700 mb-2">题目说明：</h3>
-                      <p className="text-gray-700">如图示摆放球型，将白球击入指定袋内</p>
+                      <p className="text-gray-700">{selectedExercise.description}</p>
                     </div>
                     
                     <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
                       <h3 className="font-bold text-orange-700 mb-2">过关要求：</h3>
-                      <p className="text-gray-700">连续完成5次不失误</p>
+                      <p className="text-gray-700">
+                        {selectedExercise.level <= 3 ? "连续完成5次不失误" : 
+                         selectedExercise.level <= 6 ? "连续完成4次不失误" : 
+                         "连续完成3次不失误"}
+                      </p>
                     </div>
                     
                     <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
                       <h3 className="font-bold text-green-700 mb-2">技术要点：</h3>
                       <ul className="text-gray-700 text-sm space-y-1">
-                        <li>• 控制击球力度，确保白球准确入袋</li>
-                        <li>• 注意瞄准角度和击球点位</li>
-                        <li>• 保持稳定的出杆动作</li>
+                        {selectedExercise.level <= 3 ? (
+                          <>
+                            <li>• 控制击球力度，确保白球准确入袋</li>
+                            <li>• 注意瞄准角度和击球点位</li>
+                            <li>• 保持稳定的出杆动作</li>
+                          </>
+                        ) : selectedExercise.level <= 6 ? (
+                          <>
+                            <li>• 掌握复杂球型的处理技巧</li>
+                            <li>• 提高击球的精确度和稳定性</li>
+                            <li>• 学会预判和规划下一步走位</li>
+                          </>
+                        ) : (
+                          <>
+                            <li>• 运用高级技术处理困难球局</li>
+                            <li>• 发展战略思维和全局观</li>
+                            <li>• 追求技术与艺术的完美结合</li>
+                          </>
+                        )}
                       </ul>
                     </div>
                   </div>
@@ -470,7 +487,20 @@ export default function Levels() {
                         alt={selectedExercise.title}
                         className="w-full h-auto"
                         onError={(e) => {
-                          e.currentTarget.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400';
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement.innerHTML = `
+                            <div class="w-full h-64 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
+                              <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                              <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                              <div class="w-4 h-4 bg-white rounded-full"></div>
+                              <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
+                              <div class="absolute inset-0 opacity-20" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px);"></div>
+                            </div>
+                          `;
                         }}
                       />
                     </div>
