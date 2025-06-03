@@ -594,34 +594,32 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 居中显示裁剪后的桌子 */}
+                {/* 练习图片 - 全宽白色背景容器 */}
                 <div className="py-6">
-                  <div className="flex justify-center items-center">
-                    <div className="inline-block rounded-lg shadow-lg bg-white overflow-hidden">
-                      <img 
-                        src={selectedExercise?.imageUrl} 
-                        alt={selectedExercise?.title}
-                        className="block mx-auto"
-                        style={getCroppingStyle(selectedExercise!)}
-                        onError={(e) => {
-                          if (e.currentTarget.parentElement) {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement.innerHTML = `
-                              <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
-                                <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="w-4 h-4 bg-white rounded-full"></div>
-                                <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
-                              </div>
-                            `;
-                          }
-                        }}
-                      />
-                    </div>
+                  <div className="rounded-lg shadow-lg bg-white overflow-hidden p-6 flex justify-center items-center">
+                    <img 
+                      src={selectedExercise?.imageUrl} 
+                      alt={selectedExercise?.title}
+                      className="block"
+                      style={getCroppingStyle(selectedExercise!)}
+                      onError={(e) => {
+                        if (e.currentTarget.parentElement) {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement.innerHTML = `
+                            <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
+                              <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                              <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                              <div class="w-4 h-4 bg-white rounded-full"></div>
+                              <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
+                            </div>
+                          `;
+                        }
+                      }}
+                    />
                   </div>
                   
                   <div className="text-center text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg mt-4 mx-auto w-fit">
