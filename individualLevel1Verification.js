@@ -6,7 +6,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY 
 });
 
-async function extractPreciseDescription(imagePath) {
+async function extractAuthenticDescription(imagePath) {
   const imageData = fs.readFileSync(imagePath);
   const base64Image = imageData.toString('base64');
 
@@ -17,24 +17,24 @@ async function extractPreciseDescription(imagePath) {
         role: "user",
         content: [{
           type: "text",
-          text: "请准确提取图片中'题目说明：'后面的完整文字内容"
+          text: "提取图片中'题目说明：'的准确文字，只要题目说明部分"
         }, {
           type: "image_url",
           image_url: { url: `data:image/jpeg;base64,${base64Image}` }
         }]
       }],
-      max_tokens: 80,
+      max_tokens: 100,
       temperature: 0
     });
 
     let content = response.choices[0].message.content;
-    if (content && !content.includes('无法') && !content.includes('抱歉')) {
+    if (content && !content.includes('无法')) {
       content = content.replace(/^题目说明[：:]\s*/g, '');
       content = content.replace(/过关要求.*$/gm, '');
       content = content.replace(/[；。]$/, '');
       content = content.trim();
       
-      return content.length > 8 ? content : null;
+      return content.length > 5 ? content : null;
     }
   } catch (error) {
     console.error(`提取失败: ${error.message}`);
@@ -43,19 +43,15 @@ async function extractPreciseDescription(imagePath) {
   return null;
 }
 
-async function verifyAllLevel1Systematically() {
+async function verifySpecificExercises() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
 
-  console.log('逐个验证等级1练习描述...');
-  
-  const problematicExercises = [];
-  let processed = 0;
-
   // 重点验证可能有问题的练习
-  const suspiciousOnes = [1, 2, 3, 6, 7, 8, 12, 13, 14, 15, 16, 17, 18];
+  const exercisesToCheck = [1, 2, 3, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 18];
+  const corrections = [];
 
-  for (const exerciseNum of suspiciousOnes) {
+  for (const exerciseNum of exercisesToCheck) {
     const key = `1-${exerciseNum}`;
     const current = descriptions[key];
     
@@ -67,45 +63,46 @@ async function verifyAllLevel1Systematically() {
       `1、初窥门径_${fileIndex}.jpg`
     );
 
-    console.log(`\n验证 ${key}: "${current}"`);
+    console.log(`验证练习 ${key}`);
+    console.log(`当前描述: "${current}"`);
 
     if (fs.existsSync(imagePath)) {
-      const extracted = await extractPreciseDescription(imagePath);
+      const extracted = await extractAuthenticDescription(imagePath);
       
-      if (extracted) {
-        if (extracted !== current) {
-          problematicExercises.push({
-            key: key,
-            current: current,
-            extracted: extracted
-          });
-          
-          descriptions[key] = extracted;
-          console.log(`更新为: "${extracted}"`);
-        } else {
-          console.log(`确认正确`);
-        }
+      if (extracted && extracted !== current) {
+        corrections.push({
+          key: key,
+          old: current,
+          new: extracted
+        });
+        
+        descriptions[key] = extracted;
+        console.log(`需要更新为: "${extracted}"`);
+      } else if (extracted) {
+        console.log(`描述正确`);
       } else {
-        console.log(`提取失败`);
+        console.log(`提取失败，保持当前描述`);
       }
-      
-      processed++;
-      await new Promise(resolve => setTimeout(resolve, 800));
+    } else {
+      console.log(`图片文件不存在`);
     }
+    
+    console.log('---');
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
-  if (problematicExercises.length > 0) {
+  if (corrections.length > 0) {
     fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
     
-    console.log(`\n发现并修正 ${problematicExercises.length} 个不准确的描述:`);
-    problematicExercises.forEach(item => {
-      console.log(`${item.key}: "${item.current}" -> "${item.extracted}"`);
+    console.log(`\n完成验证，更新了 ${corrections.length} 个练习:`);
+    corrections.forEach(item => {
+      console.log(`${item.key}: "${item.old}" -> "${item.new}"`);
     });
   } else {
-    console.log('\n所有验证的练习描述都是准确的');
+    console.log('\n所有检查的练习描述都是正确的');
   }
 
-  return problematicExercises;
+  return corrections;
 }
 
-verifyAllLevel1Systematically().catch(console.error);
+verifySpecificExercises().catch(console.error);
