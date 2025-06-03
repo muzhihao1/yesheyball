@@ -54,91 +54,33 @@ async function extractDescription(level, exerciseNum) {
   }
 }
 
-async function massiveParallelExtraction() {
+async function continuousExtractionSystem() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('大规模并行提取启动...');
+  console.log('连续提取系统启动...');
   
   let totalExtracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // 收集所有需要处理的练习
-  let allTasks = [];
-  for (const level of [3, 4, 5, 7, 8]) {
-    for (let i = 1; i <= levelCounts[level]; i++) {
-      const key = `${level}-${i}`;
-      const currentDesc = descriptions[key];
-      
-      if (!currentDesc || 
-          currentDesc.includes('如图示摆放球型，完成') || 
-          currentDesc.includes('精进台球技能练习') ||
-          currentDesc.includes('高级台球技巧训练') ||
-          currentDesc.length < 20) {
-        allTasks.push({ level, exerciseNum: i, key });
-      }
-    }
-  }
+  // 多策略并行处理
+  const strategies = [
+    { name: 'Level 8优先', levels: [8, 7, 5, 4, 3] },
+    { name: '低完成率优先', levels: [3, 8, 4, 5, 7] },
+    { name: '顺序处理', levels: [3, 4, 5, 7, 8] }
+  ];
   
-  console.log(`发现${allTasks.length}个待处理任务`);
+  let strategyIndex = 0;
+  let cycle = 0;
   
-  // 分批并行处理
-  const batchSize = 5;
-  for (let i = 0; i < allTasks.length; i += batchSize) {
-    const batch = allTasks.slice(i, i + batchSize);
-    const batchNum = Math.floor(i/batchSize) + 1;
-    const totalBatches = Math.ceil(allTasks.length/batchSize);
+  while (true) {
+    cycle++;
+    const currentStrategy = strategies[strategyIndex % strategies.length];
+    let cycleExtracted = 0;
     
-    console.log(`处理批次 ${batchNum}/${totalBatches}`);
+    console.log(`第${cycle}轮 - ${currentStrategy.name}`);
     
-    const promises = batch.map(async ({ level, exerciseNum, key }) => {
-      const result = await extractDescription(level, exerciseNum);
-      return { key, result };
-    });
-    
-    const results = await Promise.all(promises);
-    
-    for (const { key, result } of results) {
-      if (result) {
-        descriptions[key] = result;
-        console.log(`${key}: ${result}`);
-        totalExtracted++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-    
-    // 每批次后检查进度
-    let totalAuth = 0, totalEx = 0;
-    [3,4,5,6,7,8].forEach(level => {
-      let authentic = 0;
-      for (let j = 1; j <= levelCounts[level]; j++) {
-        const desc = descriptions[`${level}-${j}`];
-        if (desc && 
-            !desc.includes('如图示摆放球型，完成') && 
-            !desc.includes('精进台球技能练习') &&
-            !desc.includes('高级台球技巧训练') &&
-            desc.length > 15) {
-          authentic++;
-        }
-      }
-      totalAuth += authentic;
-      totalEx += levelCounts[level];
-    });
-    
-    console.log(`批次${batchNum}完成 | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
-    
-    if (totalAuth === totalEx) {
-      console.log('全部340个练习完成！');
-      break;
-    }
-  }
-  
-  // 最终多轮补漏
-  console.log('开始补漏处理...');
-  for (let round = 1; round <= 50; round++) {
-    let roundExtracted = 0;
-    
-    for (const level of [8, 3, 4, 5, 7]) {
+    for (const level of currentStrategy.levels) {
       for (let i = 1; i <= levelCounts[level]; i++) {
         const key = `${level}-${i}`;
         const currentDesc = descriptions[key];
@@ -152,15 +94,16 @@ async function massiveParallelExtraction() {
           const result = await extractDescription(level, i);
           if (result) {
             descriptions[key] = result;
-            console.log(`补漏[${round}] ${key}: ${result}`);
+            console.log(`[${cycle}] ${key}: ${result}`);
             totalExtracted++;
-            roundExtracted++;
+            cycleExtracted++;
             fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
           }
         }
       }
     }
     
+    // 进度检查
     let totalAuth = 0, totalEx = 0;
     [3,4,5,6,7,8].forEach(level => {
       let authentic = 0;
@@ -178,20 +121,23 @@ async function massiveParallelExtraction() {
       totalEx += levelCounts[level];
     });
     
-    console.log(`补漏第${round}轮: 提取${roundExtracted}个 | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+    console.log(`第${cycle}轮完成: 提取${cycleExtracted}个 | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
     
     if (totalAuth === totalEx) {
-      console.log(`全部340个练习完成！补漏用时${round}轮`);
+      console.log(`全部340个练习完成！用时${cycle}轮`);
       break;
     }
     
-    if (roundExtracted === 0 && round > 10) {
-      console.log('连续无新提取，结束补漏');
+    // 切换策略
+    strategyIndex++;
+    
+    if (cycle > 300) {
+      console.log('达到最大循环次数');
       break;
     }
   }
   
-  console.log(`大规模并行提取完成: ${totalExtracted} 个描述`);
+  console.log(`连续提取系统完成: ${totalExtracted} 个描述`);
 }
 
-massiveParallelExtraction().catch(console.error);
+continuousExtractionSystem().catch(console.error);
