@@ -36,8 +36,8 @@ async function extractDescription(level, exerciseNum) {
           image_url: { url: `data:image/jpeg;base64,${base64Image}` }
         }]
       }],
-      max_tokens: 50,
-      temperature: 0
+      max_tokens: 60,
+      temperature: 0.1
     });
 
     let content = response.choices[0].message.content;
@@ -60,17 +60,16 @@ async function systematicAllLevelsExtraction() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('系统提取所有级别练习...');
+  console.log('系统性全级别提取...');
   
   let extracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Process all levels with priority on higher levels first
-  for (const level of [8, 7, 5, 4, 3]) {
-    console.log(`\n处理 Level ${level}...`);
-    const maxEx = levelCounts[level];
-    
-    for (let i = 1; i <= maxEx; i++) {
+  // Identify remaining exercises by level
+  const remaining = {};
+  [3,4,5,6,7,8].forEach(level => {
+    remaining[level] = [];
+    for (let i = 1; i <= levelCounts[level]; i++) {
       const key = `${level}-${i}`;
       const currentDesc = descriptions[key];
       
@@ -79,24 +78,41 @@ async function systematicAllLevelsExtraction() {
           currentDesc.includes('精进台球技能练习') ||
           currentDesc.includes('高级台球技巧训练') ||
           currentDesc.length < 20) {
-        
-        const result = await extractDescription(level, i);
-        if (result) {
-          descriptions[key] = result;
-          console.log(`✓ ${key}: ${result}`);
-          extracted++;
-          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-        }
+        remaining[level].push(i);
+      }
+    }
+  });
+  
+  // Log remaining counts
+  [3,4,5,6,7,8].forEach(level => {
+    if (remaining[level].length > 0) {
+      console.log(`Level ${level}: ${remaining[level].length} remaining`);
+    }
+  });
+  
+  // Process systematically - focus on levels with most remaining
+  const sortedLevels = Object.keys(remaining)
+    .map(l => parseInt(l))
+    .sort((a, b) => remaining[b].length - remaining[a].length);
+  
+  for (const level of sortedLevels) {
+    for (const i of remaining[level]) {
+      const key = `${level}-${i}`;
+      const result = await extractDescription(level, i);
+      if (result) {
+        descriptions[key] = result;
+        console.log(`${key}: ${result}`);
+        extracted++;
+        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
       }
     }
   }
   
-  console.log(`\n系统提取完成: ${extracted} 个描述`);
+  console.log(`系统性提取: ${extracted} 个描述`);
   
-  // Final status check
+  // Final verification
   let totalAuth = 0, totalEx = 0;
   
-  console.log('\n=== 完成状态 ===');
   [3,4,5,6,7,8].forEach(level => {
     let authentic = 0;
     for (let i = 1; i <= levelCounts[level]; i++) {
@@ -113,16 +129,15 @@ async function systematicAllLevelsExtraction() {
     totalEx += levelCounts[level];
     
     const pct = (authentic/levelCounts[level]*100).toFixed(1);
-    const status = authentic === levelCounts[level] ? ' ✅' : '';
-    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)${status}`);
+    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)`);
   });
   
-  console.log(`\n总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+  console.log(`总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
   
   if (totalAuth === totalEx) {
-    console.log('🎉 全部340个练习描述提取完成！');
+    console.log('全部340个练习完成');
   } else {
-    console.log(`剩余: ${totalEx - totalAuth} 个练习`);
+    console.log(`剩余: ${totalEx - totalAuth}`);
   }
 }
 
