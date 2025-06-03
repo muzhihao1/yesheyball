@@ -622,81 +622,50 @@ export default function Levels() {
               
               <div className="space-y-6">
                 {/* 练习图片和说明 */}
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* 左侧：题目说明 */}
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                      <h3 className="font-bold text-blue-700 mb-2">题目说明：</h3>
-                      <p className="text-gray-700">{selectedExercise.description}</p>
-                    </div>
-                    
-                    <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
-                      <h3 className="font-bold text-orange-700 mb-2">过关要求：</h3>
-                      <p className="text-gray-700">
-                        {getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
-                      </p>
-                    </div>
-                    
-                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
-                      <h3 className="font-bold text-green-700 mb-2">技术要点：</h3>
-                      <ul className="text-gray-700 text-sm space-y-1">
-                        {selectedExercise.level <= 3 ? (
-                          <>
-                            <li>• 控制击球力度，确保白球准确入袋</li>
-                            <li>• 注意瞄准角度和击球点位</li>
-                            <li>• 保持稳定的出杆动作</li>
-                          </>
-                        ) : selectedExercise.level <= 6 ? (
-                          <>
-                            <li>• 掌握复杂球型的处理技巧</li>
-                            <li>• 提高击球的精确度和稳定性</li>
-                            <li>• 学会预判和规划下一步走位</li>
-                          </>
-                        ) : (
-                          <>
-                            <li>• 运用高级技术处理困难球局</li>
-                            <li>• 发展战略思维和全局观</li>
-                            <li>• 追求技术与艺术的完美结合</li>
-                          </>
-                        )}
-                      </ul>
-                    </div>
+                <div className="space-y-6">
+                  {/* 题目说明 */}
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                    <h3 className="font-bold text-blue-700 mb-2">题目说明：</h3>
+                    <p className="text-gray-700">{selectedExercise.description}</p>
                   </div>
                   
-                  {/* 右侧：练习图片 */}
-                  <div className="space-y-4">
-                    <div className="border-2 border-gray-200 rounded-lg bg-white inline-block">
-                      <div className="relative flex items-center justify-center">
-                        <img 
-                          src={selectedExercise.imageUrl} 
-                          alt={selectedExercise.title}
-                          className="block"
-                          style={getCroppingStyle(selectedExercise)}
-                          onError={(e) => {
-                          if (e.currentTarget.parentElement) {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement.innerHTML = `
-                              <div class="w-full h-64 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
-                                <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="w-4 h-4 bg-white rounded-full"></div>
-                                <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
-                                <div class="absolute inset-0 opacity-20" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px);"></div>
-                              </div>
-                            `;
-                          }
-                        }}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="text-center text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                      {selectedLevel?.name}阶段练习第{selectedExercise.exerciseNumber}题，按照图示要求完成练习。
-                    </div>
+                  <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
+                    <h3 className="font-bold text-orange-700 mb-2">过关要求：</h3>
+                    <p className="text-gray-700">
+                      {getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
+                    </p>
+                  </div>
+                  
+                  {/* 练习图片 - 居中显示 */}
+                  <div className="flex justify-center">
+                    <img 
+                      src={selectedExercise.imageUrl} 
+                      alt={selectedExercise.title}
+                      className="block"
+                      style={getCroppingStyle(selectedExercise)}
+                      onError={(e) => {
+                        if (e.currentTarget.parentElement) {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement.innerHTML = `
+                            <div class="w-full h-64 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
+                              <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                              <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                              <div class="w-4 h-4 bg-white rounded-full"></div>
+                              <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
+                              <div class="absolute inset-0 opacity-20" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px);"></div>
+                            </div>
+                          `;
+                        }
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="text-center text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    {selectedLevel?.name}阶段练习第{selectedExercise.exerciseNumber}题，按照图示要求完成练习。
                   </div>
                 </div>
                 
