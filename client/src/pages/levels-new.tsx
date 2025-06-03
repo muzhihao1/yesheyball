@@ -58,15 +58,15 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - 显示更大的桌子
+  // Function to get cropping style - 显示更大且居中的桌子
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     return {
       clipPath: 'inset(19% 6% 3% 52%)', // 裁剪显示桌子
-      width: '450px',
+      width: '550px',
       height: 'auto',
       objectFit: 'contain' as const,
       display: 'block',
-      transform: 'translateX(-23%)', // 向左偏移以补偿左侧裁剪
+      transform: 'translate(-23%, -20%)', // 向左和向上偏移以更好利用空间
       transformOrigin: 'center'
     };
   };
