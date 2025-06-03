@@ -58,16 +58,15 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - balanced cropping for center alignment
+  // Function to get cropping style - show complete table with brown borders
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     return {
-      clipPath: 'inset(19% 20% 3% 20%)', // crop evenly from left and right for center alignment
+      clipPath: 'inset(19% 6% 3% 52%)', // original coordinates to show complete table with brown borders
       width: '100%',
       height: 'auto',
       maxWidth: '280px',
       objectFit: 'contain' as const,
-      display: 'block',
-      margin: '0 auto'
+      display: 'block'
     };
   };
 
@@ -594,20 +593,20 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 居中对齐 */}
+                {/* 练习图片 - 调整位置补偿裁剪偏移 */}
                 <div className="py-6">
                   <div className="flex justify-center">
-                    <div className="relative overflow-hidden rounded-lg shadow-lg bg-white flex justify-center items-center">
+                    <div className="relative overflow-hidden rounded-lg shadow-lg bg-white" style={{marginLeft: '-20px'}}>
                       <img 
                         src={selectedExercise?.imageUrl} 
                         alt={selectedExercise?.title}
-                        className="block mx-auto"
+                        className="block"
                         style={getCroppingStyle(selectedExercise!)}
                         onError={(e) => {
                           if (e.currentTarget.parentElement) {
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement.innerHTML = `
-                              <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
+                              <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
                                 <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
                                 <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
                                 <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
