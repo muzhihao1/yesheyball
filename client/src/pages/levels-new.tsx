@@ -577,57 +577,53 @@ export default function Levels() {
                 </DialogDescription>
               </DialogHeader>
               
+              {/* 练习内容 - 上下布局 */}
               <div className="space-y-6">
-                {/* 练习内容 - 左右分布在大屏幕，上下分布在小屏幕 */}
-                <div className="flex flex-col lg:flex-row gap-6">
-                  {/* 左侧：练习信息 */}
-                  <div className="lg:w-1/2 space-y-4">
-                    {/* 题目说明 */}
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                      <h3 className="font-bold text-blue-700 mb-2">题目说明</h3>
-                      <p className="text-gray-700">{selectedExercise?.description}</p>
-                    </div>
-                    
-                    {/* 过关要求 */}
-                    <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
-                      <h3 className="font-bold text-orange-700 mb-2">过关要求</h3>
-                      <p className="text-gray-700">
-                        {selectedExercise && getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
-                      </p>
-                    </div>
+                {/* 题目说明和要求 - 水平并排 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* 题目说明 */}
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                    <h3 className="font-bold text-blue-700 mb-2">题目说明</h3>
+                    <p className="text-gray-700">{selectedExercise?.description}</p>
                   </div>
                   
-                  {/* 右侧：练习图片 */}
-                  <div className="lg:w-1/2 flex flex-col items-center justify-center space-y-4">
-                    <div className="w-full flex justify-center">
-                      <div className="w-64 h-auto">
-                        <img 
-                          src={selectedExercise?.imageUrl} 
-                          alt={selectedExercise?.title}
-                          className="w-full h-auto rounded-lg shadow-lg object-contain"
-                          style={getCroppingStyle(selectedExercise!)}
-                          onError={(e) => {
-                            if (e.currentTarget.parentElement) {
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.parentElement.innerHTML = `
-                                <div class="w-64 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
-                                  <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                                  <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                                  <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                                  <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                                  <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                                  <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                                  <div class="w-4 h-4 bg-white rounded-full"></div>
-                                  <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
-                                </div>
-                              `;
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
+                  {/* 过关要求 */}
+                  <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
+                    <h3 className="font-bold text-orange-700 mb-2">过关要求</h3>
+                    <p className="text-gray-700">
+                      {selectedExercise && getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* 练习图片 - 完全居中 */}
+                <div className="flex justify-center items-center py-4">
+                  <div className="flex flex-col items-center space-y-3">
+                    <img 
+                      src={selectedExercise?.imageUrl} 
+                      alt={selectedExercise?.title}
+                      className="max-w-xs w-full h-auto rounded-lg shadow-lg"
+                      style={getCroppingStyle(selectedExercise!)}
+                      onError={(e) => {
+                        if (e.currentTarget.parentElement) {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement.innerHTML = `
+                            <div class="w-80 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
+                              <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                              <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                              <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                              <div class="w-4 h-4 bg-white rounded-full"></div>
+                              <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
+                            </div>
+                          `;
+                        }
+                      }}
+                    />
                     
-                    <div className="text-center text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                    <div className="text-center text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg">
                       {selectedLevel?.name}阶段练习第{selectedExercise?.exerciseNumber}题
                     </div>
                   </div>
