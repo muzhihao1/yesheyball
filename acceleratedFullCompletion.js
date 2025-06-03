@@ -65,10 +65,8 @@ async function acceleratedFullCompletion() {
   let extracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Process systematically by level
+  // Process all incomplete levels systematically
   for (const level of [8, 7, 5, 4, 3]) {
-    console.log(`处理 Level ${level}...`);
-    
     for (let i = 1; i <= levelCounts[level]; i++) {
       const key = `${level}-${i}`;
       const currentDesc = descriptions[key];
@@ -90,9 +88,9 @@ async function acceleratedFullCompletion() {
     }
   }
   
-  console.log(`全面提取: ${extracted} 个描述`);
+  console.log(`全面完成: ${extracted} 个描述`);
   
-  // Final status
+  // Final verification
   let totalAuth = 0, totalEx = 0;
   
   [3,4,5,6,7,8].forEach(level => {
