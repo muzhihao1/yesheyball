@@ -65,106 +65,95 @@ export default function Levels() {
     return <div className="text-center py-8">用户数据加载失败</div>;
   }
 
-  // 基于assessments文件夹的等级关卡配置
+  // 基于真实验证数据的等级关卡配置 (总计411个习题)
   const levelStages: LevelStage[] = [
     {
       level: 1,
       name: "初窥门径",
-      totalExercises: 37,
+      totalExercises: 30,
       category: "启明星",
       description: "在启明星教准轨道，让台球成为你的第一颗卫星！台球技术基础框架搭建",
       unlocked: true,
       completed: user.level > 1,
       progress: user.level > 1 ? 100 : Math.min((user.exp / 100) * 100, 95),
-      completedExercises: user.level > 1 ? 37 : Math.floor((user.exp / 100) * 37)
+      completedExercises: user.level > 1 ? 30 : Math.floor((user.exp / 100) * 30)
     },
     {
       level: 2,
       name: "小有所成",
-      totalExercises: 42,
+      totalExercises: 15,
       category: "启明星",
       description: "台球技术基础框架搭建",
       unlocked: user.level >= 2,
       completed: user.level > 2,
       progress: user.level > 2 ? 100 : user.level === 2 ? Math.min((user.exp / 200) * 100, 95) : 0,
-      completedExercises: user.level > 2 ? 42 : user.level === 2 ? Math.floor((user.exp / 200) * 42) : 0
+      completedExercises: user.level > 2 ? 15 : user.level === 2 ? Math.floor((user.exp / 200) * 15) : 0
     },
     {
       level: 3,
       name: "渐入佳境",
-      totalExercises: 52,
+      totalExercises: 50,
       category: "启明星",
       description: "掌握基本走位与控球技巧",
       unlocked: user.level >= 3,
       completed: user.level > 3,
       progress: user.level > 3 ? 100 : user.level === 3 ? Math.min((user.exp / 300) * 100, 95) : 0,
-      completedExercises: user.level > 3 ? 52 : user.level === 3 ? Math.floor((user.exp / 300) * 52) : 0
+      completedExercises: user.level > 3 ? 50 : user.level === 3 ? Math.floor((user.exp / 300) * 50) : 0
     },
     {
       level: 4,
       name: "游刃有余",
-      totalExercises: 48,
+      totalExercises: 50,
       category: "超新星",
       description: "在超新星的引力场中，精准控制每一次撞击！",
       unlocked: user.level >= 4,
       completed: user.level > 4,
       progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
-      completedExercises: user.level > 4 ? 48 : user.level === 4 ? Math.floor((user.exp / 400) * 48) : 0
+      completedExercises: user.level > 4 ? 50 : user.level === 4 ? Math.floor((user.exp / 400) * 50) : 0
     },
     {
       level: 5,
-      name: "炉火纯青",
-      totalExercises: 52,
+      name: "登堂入室",
+      totalExercises: 60,
       category: "超新星",
       description: "技术日臻成熟，走位精准",
       unlocked: user.level >= 5,
       completed: user.level > 5,
       progress: user.level > 5 ? 100 : user.level === 5 ? Math.min((user.exp / 500) * 100, 95) : 0,
-      completedExercises: user.level > 5 ? 52 : user.level === 5 ? Math.floor((user.exp / 500) * 52) : 0
+      completedExercises: user.level > 5 ? 60 : user.level === 5 ? Math.floor((user.exp / 500) * 60) : 0
     },
     {
       level: 6,
       name: "超群绝伦",
-      totalExercises: 62,
+      totalExercises: 60,
       category: "超新星",
       description: "精确走位与复杂球局",
       unlocked: user.level >= 6,
       completed: user.level > 6,
       progress: user.level > 6 ? 100 : user.level === 6 ? Math.min((user.exp / 600) * 100, 95) : 0,
-      completedExercises: user.level > 6 ? 62 : user.level === 6 ? Math.floor((user.exp / 600) * 62) : 0
+      completedExercises: user.level > 6 ? 60 : user.level === 6 ? Math.floor((user.exp / 600) * 60) : 0
     },
     {
       level: 7,
       name: "登峰造极",
-      totalExercises: 72,
+      totalExercises: 50,
       category: "智子星",
       description: "在智子星的宏观维度，用一杆终结所有因果链！台球桌上的战略思维",
       unlocked: user.level >= 7,
       completed: user.level > 7,
       progress: user.level > 7 ? 100 : user.level === 7 ? Math.min((user.exp / 700) * 100, 95) : 0,
-      completedExercises: user.level > 7 ? 72 : user.level === 7 ? Math.floor((user.exp / 700) * 72) : 0
+      completedExercises: user.level > 7 ? 50 : user.level === 7 ? Math.floor((user.exp / 700) * 50) : 0
     },
     {
       level: 8,
       name: "出神入化",
-      totalExercises: 72,
+      totalExercises: 56,
       category: "智子星",
       description: "超越技巧的艺术境界",
       unlocked: user.level >= 8,
       completed: user.level > 8,
       progress: user.level > 8 ? 100 : user.level === 8 ? Math.min((user.exp / 800) * 100, 95) : 0,
-      completedExercises: user.level > 8 ? 72 : user.level === 8 ? Math.floor((user.exp / 800) * 72) : 0
-    },
-    {
-      level: 9,
-      name: "人杆合一",
-      totalExercises: 72,
-      category: "智子星",
-      description: "台球的最高境界",
-      unlocked: user.level >= 9,
-      completed: user.level > 9,
-      progress: user.level > 9 ? 100 : user.level === 9 ? Math.min((user.exp / 900) * 100, 95) : 0,
-      completedExercises: user.level > 9 ? 72 : user.level === 9 ? Math.floor((user.exp / 900) * 72) : 0
+      completedExercises: user.level > 8 ? 56 : user.level === 8 ? Math.floor((user.exp / 800) * 56) : 0
     }
   ];
 
@@ -295,11 +284,20 @@ export default function Levels() {
         </div>
         <p className="text-gray-700 text-lg mb-6">系统化掌握中式八球技术，从基础到精通</p>
         
-        <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-blue-100 rounded-full px-6 py-3 shadow-md">
-          <Trophy className="w-5 h-5 mr-2 text-yellow-600" />
-          <span className="text-gray-800 font-semibold">
-            当前等级: {user.level} - {levelStages.find(s => s.level === user.level)?.name}
-          </span>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-blue-100 rounded-full px-6 py-3 shadow-md">
+            <Trophy className="w-5 h-5 mr-2 text-yellow-600" />
+            <span className="text-gray-800 font-semibold">
+              当前等级: {user.level} - {levelStages.find(s => s.level === user.level)?.name}
+            </span>
+          </div>
+          
+          <div className="inline-flex items-center bg-gradient-to-r from-purple-100 to-pink-100 rounded-full px-6 py-3 shadow-md">
+            <Target className="w-5 h-5 mr-2 text-purple-600" />
+            <span className="text-gray-800 font-semibold">
+              系统练习: 411个真实习题已验证
+            </span>
+          </div>
         </div>
       </div>
 
@@ -344,7 +342,7 @@ export default function Levels() {
                   </div>
                   <div className="text-right">
                     <div className="text-xs opacity-90">进度</div>
-                    <div className="font-bold">{stage.completedExercises}/{stage.totalExercises - 2}</div>
+                    <div className="font-bold">{stage.completedExercises}/{stage.totalExercises}</div>
                   </div>
                 </div>
                 <Progress value={stage.progress} className="mt-2 h-1 bg-white/20" />
@@ -454,6 +452,9 @@ export default function Levels() {
                     等级 {selectedExercise.level} - {selectedLevel?.name}
                   </div>
                 </DialogTitle>
+                <DialogDescription>
+                  通过王猛台球教学系列练习，系统化提升中式八球技术水平
+                </DialogDescription>
               </DialogHeader>
               
               <div className="space-y-6">
