@@ -388,9 +388,8 @@ export default function Levels() {
                             {isMilestone ? (
                               // Trophy milestone design for every 5th exercise
                               <div className="relative">
-                                {/* Trophy Base */}
                                 <div 
-                                  className={`w-24 h-28 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+                                  className={`cursor-pointer transition-all duration-300 ${
                                     !isUnlocked 
                                       ? 'cursor-not-allowed' 
                                       : 'hover:scale-105'
@@ -400,46 +399,57 @@ export default function Levels() {
                                     filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
                                   }}
                                 >
-                                  {/* Trophy Cup */}
-                                  <div className={`w-16 h-16 rounded-t-full flex items-center justify-center ${
-                                    !isUnlocked 
-                                      ? 'bg-gray-300 text-gray-500' 
-                                      : exercise.completed 
-                                        ? `${levelColors.node} text-white shadow-xl` 
-                                        : `bg-white border-4 ${levelColors.border} text-gray-700 shadow-xl`
-                                  }`}>
-                                    {!isUnlocked ? (
-                                      <Lock className="w-6 h-6" />
-                                    ) : (
-                                      <span className="text-2xl font-bold">{groupNumber}</span>
-                                    )}
+                                  {/* Trophy Design */}
+                                  <div className="relative w-24 h-28 flex flex-col items-center">
+                                    {/* Trophy Handles */}
+                                    <div className="absolute top-3 -left-2 w-1.5 h-8 rounded-full bg-gradient-to-b from-yellow-400 to-yellow-600"></div>
+                                    <div className="absolute top-3 -right-2 w-1.5 h-8 rounded-full bg-gradient-to-b from-yellow-400 to-yellow-600"></div>
+                                    
+                                    {/* Trophy Cup */}
+                                    <div className={`relative w-16 h-16 rounded-t-full flex items-center justify-center ${
+                                      !isUnlocked 
+                                        ? 'bg-gray-300 text-gray-500' 
+                                        : exercise.completed 
+                                          ? 'bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-600 text-white shadow-2xl border-2 border-yellow-300' 
+                                          : 'bg-gradient-to-b from-gray-100 to-gray-200 border-4 border-yellow-400 text-gray-700 shadow-xl'
+                                    }`}>
+                                      {/* Trophy inner glow */}
+                                      <div className="absolute inset-1 rounded-t-full bg-gradient-to-b from-white/30 to-transparent pointer-events-none"></div>
+                                      
+                                      {!isUnlocked ? (
+                                        <Lock className="w-6 h-6 relative z-10" />
+                                      ) : (
+                                        <span className="text-xl font-bold relative z-10">{groupNumber}</span>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Trophy Neck */}
+                                    <div className={`w-6 h-3 ${
+                                      !isUnlocked 
+                                        ? 'bg-gray-300' 
+                                        : exercise.completed 
+                                          ? 'bg-gradient-to-b from-yellow-600 to-yellow-700' 
+                                          : 'bg-gradient-to-b from-gray-200 to-gray-300 border-l-2 border-r-2 border-yellow-400'
+                                    }`}></div>
+                                    
+                                    {/* Trophy Base */}
+                                    <div className={`w-14 h-3 rounded-sm ${
+                                      !isUnlocked 
+                                        ? 'bg-gray-300' 
+                                        : exercise.completed 
+                                          ? 'bg-gradient-to-b from-yellow-600 to-yellow-700 shadow-lg' 
+                                          : 'bg-gradient-to-b from-gray-200 to-gray-300 border-2 border-yellow-400 shadow-lg'
+                                    }`}></div>
+                                    
+                                    {/* Trophy Bottom Platform */}
+                                    <div className={`w-16 h-1.5 rounded-full mt-0.5 ${
+                                      !isUnlocked 
+                                        ? 'bg-gray-400' 
+                                        : exercise.completed 
+                                          ? 'bg-gradient-to-b from-yellow-700 to-yellow-800' 
+                                          : 'bg-gradient-to-b from-gray-300 to-gray-400'
+                                    }`}></div>
                                   </div>
-                                  
-                                  {/* Trophy Stem */}
-                                  <div className={`w-4 h-4 ${
-                                    !isUnlocked 
-                                      ? 'bg-gray-300' 
-                                      : exercise.completed 
-                                        ? levelColors.node 
-                                        : `bg-white border-2 ${levelColors.border}`
-                                  }`}></div>
-                                  
-                                  {/* Trophy Base */}
-                                  <div className={`w-12 h-2 rounded ${
-                                    !isUnlocked 
-                                      ? 'bg-gray-300' 
-                                      : exercise.completed 
-                                        ? levelColors.node 
-                                        : `bg-white border-2 ${levelColors.border}`
-                                  }`}></div>
-                                </div>
-                                
-                                {/* Decorative elements */}
-                                <div className="absolute -left-3 top-4">
-                                  <div className={`w-2 h-6 rounded-full ${exercise.completed ? levelColors.node : 'bg-gray-300'}`}></div>
-                                </div>
-                                <div className="absolute -right-3 top-4">
-                                  <div className={`w-2 h-6 rounded-full ${exercise.completed ? levelColors.node : 'bg-gray-300'}`}></div>
                                 </div>
                               </div>
                             ) : (
