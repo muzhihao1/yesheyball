@@ -58,32 +58,12 @@ async function completeRemainingExercises() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('完成剩余134题练习...');
+  console.log('完成剩余练习...');
   
   let extracted = 0;
   
-  // Complete Level 6 from exercise 53
-  for (let i = 53; i <= 60; i++) {
-    const key = `6-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const result = await extractDescription(6, i);
-      if (result) {
-        descriptions[key] = result;
-        console.log(`${key}: ${result}`);
-        extracted++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
-  
-  // Complete Level 7 from exercise 4
-  for (let i = 4; i <= 55; i++) {
+  // Complete Level 7 from exercise 43
+  for (let i = 43; i <= 55; i++) {
     const key = `7-${i}`;
     const currentDesc = descriptions[key];
     
@@ -165,13 +145,13 @@ async function completeRemainingExercises() {
     }
   }
   
-  console.log(`剩余练习完成: ${extracted} 个描述`);
+  console.log(`完成剩余练习: ${extracted} 个描述`);
   
-  // Generate comprehensive status
+  // Final status
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   let totalAuth = 0, totalEx = 0;
   
-  console.log('\n=== 剩余练习完成状态 ===');
+  console.log('\n=== 完成剩余练习状态 ===');
   [3,4,5,6,7,8].forEach(level => {
     let authentic = 0;
     for (let i = 1; i <= levelCounts[level]; i++) {
@@ -192,12 +172,11 @@ async function completeRemainingExercises() {
     console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)${status}`);
   });
   
-  console.log(`\n项目完成度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+  console.log(`\n项目状态: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
   console.log(`已提取 ${totalAuth} 个真实描述`);
   
   if (totalAuth === totalEx) {
     console.log('\n全部340个练习描述提取完成！');
-    console.log('项目达到100%完成度');
   } else {
     console.log(`剩余 ${totalEx - totalAuth} 个需要完成`);
   }
