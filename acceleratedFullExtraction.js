@@ -9,7 +9,7 @@ const openai = new OpenAI({
 async function extractDescription(level, exerciseNum) {
   try {
     const folderNames = {
-      3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室',
+      3: '3、渐入佳境', 4: '4、炉火纯青', 5: '5、登堂入室',
       6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
     };
     
@@ -39,7 +39,7 @@ async function extractDescription(level, exerciseNum) {
     });
 
     let content = response.choices[0].message.content;
-    if (content && !content.includes('无法')) {
+    if (content && !content.includes('无法') && !content.includes("I'm sorry") && !content.includes("I can't")) {
       content = content.replace(/^题目说明[：:]\s*/g, '')
                      .replace(/过关要求.*$/gm, '')
                      .replace(/连续完成.*$/gm, '')
@@ -58,22 +58,25 @@ async function acceleratedFullExtraction() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('加速全量提取启动...');
+  console.log('加速全面提取系统启动...');
   
   let totalExtracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  let cycle = 0;
-  while (true) {
-    cycle++;
-    let cycleExtracted = 0;
+  // 高速连续提取直到完成
+  for (let rapid = 1; rapid <= 10000; rapid++) {
+    let rapidExtracted = 0;
     
-    console.log(`加速第${cycle}轮`);
+    // 快速轮换所有级别
+    const rapidSequences = [
+      [3, 4, 5, 7, 8], [8, 7, 5, 4, 3], [4, 8, 3, 7, 5],
+      [5, 3, 8, 4, 7], [7, 5, 4, 8, 3], [8, 4, 7, 3, 5],
+      [3, 7, 5, 8, 4], [4, 3, 8, 5, 7], [8, 5, 3, 7, 4]
+    ];
     
-    // 优先处理未完成级别
-    for (const level of [8, 3, 4, 5, 7]) {
-      let levelExtracted = 0;
-      
+    const rapidSeq = rapidSequences[rapid % rapidSequences.length];
+    
+    for (const level of rapidSeq) {
       for (let i = 1; i <= levelCounts[level]; i++) {
         const key = `${level}-${i}`;
         const currentDesc = descriptions[key];
@@ -87,24 +90,17 @@ async function acceleratedFullExtraction() {
           const result = await extractDescription(level, i);
           if (result) {
             descriptions[key] = result;
-            console.log(`[${cycle}] ${key}: ${result}`);
+            console.log(`加速全面${rapid} ${key}: ${result}`);
             totalExtracted++;
-            cycleExtracted++;
-            levelExtracted++;
+            rapidExtracted++;
             fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
           }
         }
       }
-      
-      if (levelExtracted > 0) {
-        console.log(`Level ${level}: 本轮提取${levelExtracted}个`);
-      }
     }
     
-    // 状态检查
+    // 每轮检查完成状态
     let totalAuth = 0, totalEx = 0;
-    const levelProgress = {};
-    
     [3,4,5,6,7,8].forEach(level => {
       let authentic = 0;
       for (let i = 1; i <= levelCounts[level]; i++) {
@@ -117,33 +113,43 @@ async function acceleratedFullExtraction() {
           authentic++;
         }
       }
-      levelProgress[level] = { current: authentic, total: levelCounts[level] };
       totalAuth += authentic;
       totalEx += levelCounts[level];
     });
     
-    console.log(`第${cycle}轮: 提取${cycleExtracted}个 | 总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
-    
-    // 显示各级别状态
-    Object.entries(levelProgress).forEach(([level, progress]) => {
-      const pct = (progress.current/progress.total*100).toFixed(1);
-      if (progress.current < progress.total) {
-        console.log(`  Level ${level}: ${progress.current}/${progress.total} (${pct}%) - 差${progress.total - progress.current}`);
-      }
-    });
+    console.log(`加速全面${rapid}: +${rapidExtracted} | 总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
     
     if (totalAuth === totalEx) {
-      console.log(`全部340个练习完成！共${cycle}轮，提取${totalExtracted}个`);
-      break;
+      console.log(`🎉 全部340个练习完成！加速全面第${rapid}轮完成`);
+      
+      // 最终完成验证
+      console.log('最终验证结果:');
+      [3,4,5,6,7,8].forEach(level => {
+        let authentic = 0;
+        for (let i = 1; i <= levelCounts[level]; i++) {
+          const desc = descriptions[`${level}-${i}`];
+          if (desc && 
+              !desc.includes('如图示摆放球型，完成') && 
+              !desc.includes('精进台球技能练习') &&
+              !desc.includes('高级台球技巧训练') &&
+              desc.length > 15) {
+            authentic++;
+          }
+        }
+        const pct = (authentic/levelCounts[level]*100).toFixed(1);
+        console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)`);
+      });
+      
+      return;
     }
     
-    if (cycle > 100) {
-      console.log('达到循环上限');
+    if (rapidExtracted === 0 && rapid > 500) {
+      console.log('连续500轮无进展');
       break;
     }
   }
   
-  console.log(`加速全量提取完成: ${totalExtracted}个描述`);
+  console.log(`加速全面提取系统结束: 总共提取${totalExtracted}个新描述`);
 }
 
 acceleratedFullExtraction().catch(console.error);
