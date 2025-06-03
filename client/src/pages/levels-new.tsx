@@ -57,6 +57,66 @@ export default function Levels() {
     queryKey: ["/api/user"],
   });
 
+  // Function to analyze table bounds using AI
+  const analyzeTableBounds = async (exercise: Exercise): Promise<void> => {
+    try {
+      setAnalyzingImage(true);
+      // Construct full URL for the image so OpenAI can access it
+      const fullImageUrl = `${window.location.origin}${exercise.imageUrl}`;
+      
+      const response = await fetch('/api/analyze-table-bounds', {
+        method: 'POST',
+        body: JSON.stringify({ imageUrl: fullImageUrl }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Analysis failed');
+      }
+      
+      const bounds: TableBounds = await response.json();
+      setTableBounds(prev => ({
+        ...prev,
+        [exercise.id]: bounds
+      }));
+      
+      toast({
+        title: "分析完成",
+        description: "台球桌边界已成功识别",
+      });
+    } catch (error) {
+      console.error('Failed to analyze table bounds:', error);
+      toast({
+        title: "分析失败",
+        description: "无法分析台球桌边界，将显示完整图片",
+        variant: "destructive"
+      });
+    } finally {
+      setAnalyzingImage(false);
+    }
+  };
+
+  // Function to get cropping style based on AI analysis
+  const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
+    const bounds = tableBounds[exercise.id];
+    if (!bounds) {
+      // Return original image without cropping if no bounds available
+      return {};
+    }
+
+    // Convert percentage bounds to CSS clip-path inset values
+    const insetTop = `${bounds.top}%`;
+    const insetRight = `${100 - bounds.right}%`;
+    const insetBottom = `${100 - bounds.bottom}%`;
+    const insetLeft = `${bounds.left}%`;
+
+    return {
+      clipPath: `inset(${insetTop} ${insetRight} ${insetBottom} ${insetLeft})`,
+      transform: 'scale(1.5)', // Slight zoom to make table more visible
+      transformOrigin: 'center center'
+    };
+  };
+
   if (userLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -612,6 +672,7 @@ export default function Levels() {
                           src={selectedExercise.imageUrl} 
                           alt={selectedExercise.title}
                           className="w-full h-auto object-contain"
+                          style={getCroppingStyle(selectedExercise)}
                           onError={(e) => {
                           if (e.currentTarget.parentElement) {
                             e.currentTarget.style.display = 'none';
