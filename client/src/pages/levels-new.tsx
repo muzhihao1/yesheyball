@@ -49,52 +49,14 @@ export default function Levels() {
   const [selectedLevel, setSelectedLevel] = useState<LevelStage | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
-  const [tableBounds, setTableBounds] = useState<Record<string, TableBounds>>({});
-  const [analyzingImage, setAnalyzingImage] = useState(false);
+
   const { toast } = useToast();
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ["/api/user"],
   });
 
-  // Function to analyze table bounds using AI
-  const analyzeTableBounds = async (exercise: Exercise): Promise<void> => {
-    try {
-      setAnalyzingImage(true);
-      // Construct full URL for the image so OpenAI can access it
-      const fullImageUrl = `${window.location.origin}${exercise.imageUrl}`;
-      
-      const response = await fetch('/api/analyze-table-bounds', {
-        method: 'POST',
-        body: JSON.stringify({ imageUrl: fullImageUrl }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Analysis failed');
-      }
-      
-      const bounds: TableBounds = await response.json();
-      setTableBounds(prev => ({
-        ...prev,
-        [exercise.id]: bounds
-      }));
-      
-      toast({
-        title: "分析完成",
-        description: "台球桌边界已成功识别",
-      });
-    } catch (error) {
-      console.error('Failed to analyze table bounds:', error);
-      toast({
-        title: "分析失败",
-        description: "无法分析台球桌边界，将显示完整图片",
-        variant: "destructive"
-      });
-    } finally {
-      setAnalyzingImage(false);
-    }
-  };
+
 
   // Function to get cropping style - using coordinates from red frame annotation
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
@@ -320,11 +282,6 @@ export default function Levels() {
   const handleExerciseClick = async (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setShowExerciseDialog(true);
-    
-    // Always re-analyze to get better cropping parameters with improved prompt
-    if (!analyzingImage) {
-      await analyzeTableBounds(exercise);
-    }
   };
 
   const handleCompleteExercise = async (exercise: Exercise) => {
@@ -641,34 +598,36 @@ export default function Levels() {
                   </div>
                   
                   {/* 右侧：练习图片 */}
-                  <div className="lg:w-1/2 flex flex-col items-center space-y-4">
-                    <div className="w-full max-w-md">
-                      <img 
-                        src={selectedExercise?.imageUrl} 
-                        alt={selectedExercise?.title}
-                        className="w-full h-auto rounded-lg shadow-lg"
-                        style={getCroppingStyle(selectedExercise!)}
-                        onError={(e) => {
-                          if (e.currentTarget.parentElement) {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement.innerHTML = `
-                              <div class="w-full aspect-[2/3] bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
-                                <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                                <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="w-4 h-4 bg-white rounded-full"></div>
-                                <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
-                              </div>
-                            `;
-                          }
-                        }}
-                      />
+                  <div className="lg:w-1/2 flex flex-col items-center justify-center space-y-4">
+                    <div className="w-full flex justify-center">
+                      <div className="w-64 h-auto">
+                        <img 
+                          src={selectedExercise?.imageUrl} 
+                          alt={selectedExercise?.title}
+                          className="w-full h-auto rounded-lg shadow-lg object-contain"
+                          style={getCroppingStyle(selectedExercise!)}
+                          onError={(e) => {
+                            if (e.currentTarget.parentElement) {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement.innerHTML = `
+                                <div class="w-64 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
+                                  <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                  <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                  <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                  <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                  <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                  <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                  <div class="w-4 h-4 bg-white rounded-full"></div>
+                                  <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
+                                </div>
+                              `;
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                     
-                    <div className="text-center text-sm text-gray-600 bg-gray-50 p-3 rounded-lg max-w-md">
+                    <div className="text-center text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
                       {selectedLevel?.name}阶段练习第{selectedExercise?.exerciseNumber}题
                     </div>
                   </div>
