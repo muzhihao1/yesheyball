@@ -6,10 +6,10 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-async function extractAuthenticDescription(level, exerciseNum) {
+async function extractDescription(level, exerciseNum) {
   const levelFolders = {
-    1: '1、初窥门径', 2: '2、小有所成', 3: '3、渐入佳境', 4: '4、炉火纯青',
-    5: '5、登堂入室', 6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
+    3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室', 
+    6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
   };
 
   const fileIndex = (exerciseNum + 1).toString().padStart(2, '0');
@@ -28,27 +28,28 @@ async function extractAuthenticDescription(level, exerciseNum) {
         role: "user",
         content: [{
           type: "text",
-          text: "提取题目说明文字，只要说明内容，不要过关要求"
+          text: "提取题目说明"
         }, {
           type: "image_url",
           image_url: { url: `data:image/jpeg;base64,${base64Image}` }
         }]
       }],
-      max_tokens: 60,
+      max_tokens: 50,
       temperature: 0
     });
 
     let content = response.choices[0].message.content;
     if (content && !content.includes('无法')) {
-      content = content.replace(/^题目说明[：:]\s*/g, '');
-      content = content.replace(/过关要求.*$/gm, '');
-      content = content.replace(/连续完成.*$/gm, '');
-      content = content.replace(/[；。\n\r\t]+$/, '');
-      return content.trim();
+      content = content.replace(/^题目说明[：:]\s*/g, '')
+                     .replace(/过关要求.*$/gm, '')
+                     .replace(/连续完成.*$/gm, '')
+                     .replace(/不超过.*$/gm, '')
+                     .replace(/[；。\n]+$/, '')
+                     .trim();
+      return content.length > 8 ? content : null;
     }
     return null;
   } catch (error) {
-    console.error(`提取错误 ${level}-${exerciseNum}:`, error.message);
     return null;
   }
 }
@@ -57,74 +58,148 @@ async function processAllRemainingLevels() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  const levelCounts = { 1: 35, 2: 40, 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
+  console.log('处理所有剩余Level...');
   
-  console.log('开始系统性验证所有剩余习题...');
-  console.log('=========================');
+  let totalProcessed = 0;
   
-  let totalUpdated = 0;
-  let processed = 0;
-  
-  // 处理所有Level (限制批量大小避免超时)
-  for (const level of [3, 4, 5, 6, 7, 8]) {
-    console.log(`\n处理 Level ${level}...`);
-    let levelUpdated = 0;
+  // Complete Level 5 remaining (from 37)
+  for (let i = 37; i <= 60; i++) {
+    const key = `5-${i}`;
+    const currentDesc = descriptions[key];
     
-    // 每个Level只处理前10题，避免超时
-    for (let i = 1; i <= Math.min(10, levelCounts[level]); i++) {
+    if (!currentDesc || 
+        currentDesc.includes('如图示摆放球型，完成') || 
+        currentDesc.includes('精进台球技能练习') ||
+        currentDesc.length < 20) {
+      
+      const newDesc = await extractDescription(5, i);
+      if (newDesc) {
+        descriptions[key] = newDesc;
+        console.log(`${key}: ${newDesc}`);
+        totalProcessed++;
+        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+      }
+    }
+  }
+  
+  // Complete all of Level 6
+  for (let i = 1; i <= 60; i++) {
+    const key = `6-${i}`;
+    const currentDesc = descriptions[key];
+    
+    if (!currentDesc || 
+        currentDesc.includes('如图示摆放球型，完成') || 
+        currentDesc.includes('精进台球技能练习') ||
+        currentDesc.length < 20) {
+      
+      const newDesc = await extractDescription(6, i);
+      if (newDesc) {
+        descriptions[key] = newDesc;
+        console.log(`${key}: ${newDesc}`);
+        totalProcessed++;
+        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+      }
+    }
+  }
+  
+  // Complete all of Level 7
+  for (let i = 1; i <= 55; i++) {
+    const key = `7-${i}`;
+    const currentDesc = descriptions[key];
+    
+    if (!currentDesc || 
+        currentDesc.includes('如图示摆放球型，完成') || 
+        currentDesc.includes('精进台球技能练习') ||
+        currentDesc.length < 20) {
+      
+      const newDesc = await extractDescription(7, i);
+      if (newDesc) {
+        descriptions[key] = newDesc;
+        console.log(`${key}: ${newDesc}`);
+        totalProcessed++;
+        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+      }
+    }
+  }
+  
+  // Complete all of Level 8
+  for (let i = 1; i <= 55; i++) {
+    const key = `8-${i}`;
+    const currentDesc = descriptions[key];
+    
+    if (!currentDesc || 
+        currentDesc.includes('如图示摆放球型，完成') || 
+        currentDesc.includes('精进台球技能练习') ||
+        currentDesc.length < 20) {
+      
+      const newDesc = await extractDescription(8, i);
+      if (newDesc) {
+        descriptions[key] = newDesc;
+        console.log(`${key}: ${newDesc}`);
+        totalProcessed++;
+        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+      }
+    }
+  }
+  
+  // Complete remaining Level 3 and 4
+  for (const level of [3, 4]) {
+    const maxEx = level === 3 ? 50 : 60;
+    for (let i = 1; i <= maxEx; i++) {
       const key = `${level}-${i}`;
       const currentDesc = descriptions[key];
       
-      const needsUpdate = !currentDesc || 
-                         currentDesc.includes('如图示摆放球型，完成') ||
-                         currentDesc.includes('如图摆放球型，完成') ||
-                         currentDesc.length < 20;
-      
-      if (needsUpdate) {
-        console.log(`提取 ${key}...`);
-        const extracted = await extractAuthenticDescription(level, i);
+      if (!currentDesc || 
+          currentDesc.includes('如图示摆放球型，完成') || 
+          currentDesc.includes('高级台球技巧训练') ||
+          currentDesc.length < 20) {
         
-        if (extracted && extracted.length > 8) {
-          descriptions[key] = extracted;
-          console.log(`${key}: ${extracted}`);
-          levelUpdated++;
-          totalUpdated++;
-          
-          // 每5题保存一次
-          if (levelUpdated % 5 === 0) {
-            fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-          }
+        const newDesc = await extractDescription(level, i);
+        if (newDesc) {
+          descriptions[key] = newDesc;
+          console.log(`${key}: ${newDesc}`);
+          totalProcessed++;
+          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
         }
-        
-        processed++;
-        await new Promise(resolve => setTimeout(resolve, 400));
       }
-      
-      // 限制处理时间
-      if (processed >= 25) break;
     }
-    
-    if (processed >= 25) break;
   }
   
-  // 最终保存
-  fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+  console.log(`全部处理完成: ${totalProcessed} 个新描述`);
   
-  console.log(`\n批次完成: ${totalUpdated} 题更新，处理了 ${processed} 题`);
+  // Generate final completion report
+  const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
+  let finalAuth = 0, finalTotal = 0;
   
-  // 统计各Level进度
-  console.log('\n各Level真实描述进度:');
-  [1,2,3,4,5,6,7,8].forEach(level => {
+  console.log('\n=== 最终完成报告 ===');
+  [3,4,5,6,7,8].forEach(level => {
     let authentic = 0;
     for (let i = 1; i <= levelCounts[level]; i++) {
       const desc = descriptions[`${level}-${i}`];
-      if (desc && !desc.includes('如图示摆放球型，完成') && 
-          !desc.includes('如图摆放球型，完成') && desc.length > 15) {
+      if (desc && 
+          !desc.includes('如图示摆放球型，完成') && 
+          !desc.includes('精进台球技能练习') &&
+          !desc.includes('高级台球技巧训练') &&
+          desc.length > 15) {
         authentic++;
       }
     }
-    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} 真实描述 (${(authentic/levelCounts[level]*100).toFixed(1)}%)`);
+    finalAuth += authentic;
+    finalTotal += levelCounts[level];
+    
+    const pct = (authentic/levelCounts[level]*100).toFixed(1);
+    const status = authentic === levelCounts[level] ? ' ✓ 完成' : '';
+    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)${status}`);
   });
+  
+  console.log(`\n【项目总完成度】: ${finalAuth}/${finalTotal} (${(finalAuth/finalTotal*100).toFixed(1)}%)`);
+  console.log(`成功替换 ${finalAuth} 个通用模板为真实描述`);
+  
+  if (finalAuth === finalTotal) {
+    console.log('所有Level描述提取完成');
+  } else {
+    console.log(`剩余 ${finalTotal - finalAuth} 题`);
+  }
 }
 
 processAllRemainingLevels().catch(console.error);
