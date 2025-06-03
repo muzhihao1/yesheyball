@@ -6,18 +6,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-async function extractDescription(level, exerciseNum) {
-  const levelFolders = {
-    3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室', 
-    6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
-  };
-
-  const fileIndex = (exerciseNum + 1).toString().padStart(2, '0');
-  const folderName = levelFolders[level];
-  const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
-
-  if (!fs.existsSync(imagePath)) return null;
-
+async function extractRequirement(imagePath) {
   try {
     const imageData = fs.readFileSync(imagePath);
     const base64Image = imageData.toString('base64');
@@ -61,94 +50,59 @@ async function finalCompletionEngine() {
   console.log('最终完成引擎启动...');
   
   let extracted = 0;
+  const levelFolders = {
+    3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室', 
+    6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
+  };
   
-  // Complete Level 7 from exercise 12
-  for (let i = 12; i <= 55; i++) {
-    const key = `7-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const result = await extractDescription(7, i);
-      if (result) {
-        descriptions[key] = result;
-        console.log(`${key}: ${result}`);
-        extracted++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
+  const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Complete Level 8 from exercise 8
-  for (let i = 8; i <= 55; i++) {
-    const key = `8-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const result = await extractDescription(8, i);
-      if (result) {
-        descriptions[key] = result;
-        console.log(`${key}: ${result}`);
-        extracted++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
+  // Get list of incomplete exercises
+  const incompleteExercises = [];
   
-  // Complete remaining Level 5 from exercise 57
-  for (let i = 57; i <= 60; i++) {
-    const key = `5-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const result = await extractDescription(5, i);
-      if (result) {
-        descriptions[key] = result;
-        console.log(`${key}: ${result}`);
-        extracted++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
-  
-  // Complete remaining Level 3 and 4 from exercise 42
-  for (const level of [3, 4]) {
-    const maxEx = level === 3 ? 50 : 60;
-    for (let i = 42; i <= maxEx; i++) {
+  for (const level of [3, 4, 5, 6, 7, 8]) {
+    for (let i = 1; i <= levelCounts[level]; i++) {
       const key = `${level}-${i}`;
       const currentDesc = descriptions[key];
       
       if (!currentDesc || 
           currentDesc.includes('如图示摆放球型，完成') || 
+          currentDesc.includes('精进台球技能练习') ||
           currentDesc.includes('高级台球技巧训练') ||
           currentDesc.length < 20) {
+        incompleteExercises.push({ level, exercise: i, key });
+      }
+    }
+  }
+  
+  console.log(`发现 ${incompleteExercises.length} 个待完成练习`);
+  
+  // Process incomplete exercises
+  for (const { level, exercise, key } of incompleteExercises) {
+    const fileIndex = (exercise + 1).toString().padStart(2, '0');
+    const folderName = levelFolders[level];
+    const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
+    
+    if (fs.existsSync(imagePath)) {
+      const result = await extractRequirement(imagePath);
+      if (result) {
+        descriptions[key] = result;
+        console.log(`✓ ${key}: ${result}`);
+        extracted++;
+        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
         
-        const result = await extractDescription(level, i);
-        if (result) {
-          descriptions[key] = result;
-          console.log(`${key}: ${result}`);
-          extracted++;
-          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        // Progress tracking
+        if (extracted % 5 === 0) {
+          const remaining = incompleteExercises.length - extracted;
+          console.log(`--- 已完成 ${extracted}/${incompleteExercises.length}, 剩余 ${remaining} ---`);
         }
       }
     }
   }
   
-  console.log(`最终完成引擎: ${extracted} 个描述`);
+  console.log(`\n最终引擎提取: ${extracted} 个描述`);
   
-  // Final status
-  const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
+  // Final comprehensive status check
   let totalAuth = 0, totalEx = 0;
   
   console.log('\n=== 最终完成状态 ===');
@@ -172,13 +126,14 @@ async function finalCompletionEngine() {
     console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)${status}`);
   });
   
-  console.log(`\n项目状态: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
-  console.log(`已提取 ${totalAuth} 个真实描述`);
+  console.log(`\n总体完成度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+  console.log(`成功提取 ${totalAuth} 个真实描述`);
   
   if (totalAuth === totalEx) {
     console.log('\n🎉 全部340个练习描述提取完成！');
+    console.log('系统已完成所有Level 3-8的练习描述提取任务');
   } else {
-    console.log(`剩余 ${totalEx - totalAuth} 个需要完成`);
+    console.log(`还有 ${totalEx - totalAuth} 个练习需要完成`);
   }
 }
 
