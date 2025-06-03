@@ -353,18 +353,33 @@ export default function Levels() {
                 </div>
 
                 {/* Exercise Nodes - Grouped by 5 */}
-                <div className="relative space-y-6">
+                <div className="relative">
                   {exercises.map((exercise, exerciseIndex) => {
-                    const isLeft = exerciseIndex % 2 === 0;
+                    const positionInGroup = exerciseIndex % 5; // 0-4 within each group
                     const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || exercises[exerciseIndex - 1]?.completed);
                     const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
                     
+                    // Position logic for Duolingo-style arrangement
+                    const getPositionClasses = () => {
+                      if (isMilestone) {
+                        return "flex justify-center mb-12"; // Center the milestone
+                      }
+                      
+                      // First 4 exercises in zigzag pattern
+                      if (positionInGroup === 0) return "flex justify-center mb-8"; // Center
+                      if (positionInGroup === 1) return "flex justify-start pl-8 mb-8"; // Left
+                      if (positionInGroup === 2) return "flex justify-end pr-8 mb-8"; // Right
+                      if (positionInGroup === 3) return "flex justify-center mb-8"; // Center
+                      
+                      return "flex justify-center mb-8";
+                    };
+                    
                     return (
                       <div key={exercise.id}>
                         {/* Exercise Row */}
-                        <div className={`flex ${isLeft ? 'justify-start pl-12' : 'justify-end pr-12'} items-center relative`}>
+                        <div className={`${getPositionClasses()} items-center relative`}>
                           {/* Exercise Circle */}
                           <div className="relative z-10">
                             {isMilestone ? (
