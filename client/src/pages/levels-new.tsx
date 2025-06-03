@@ -98,7 +98,10 @@ export default function Levels() {
 
   // Function to get cropping style based on AI analysis
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
-    const bounds = tableBounds[exercise.id];
+    // Use the first analyzed bounds for all exercises since they have the same layout
+    const allBounds = Object.values(tableBounds);
+    const bounds = allBounds.length > 0 ? allBounds[0] : null;
+    
     if (!bounds) {
       // Return original image without cropping if no bounds available
       return {};
@@ -112,7 +115,7 @@ export default function Levels() {
 
     return {
       clipPath: `inset(${insetTop} ${insetRight} ${insetBottom} ${insetLeft})`,
-      transform: 'scale(1.5)', // Slight zoom to make table more visible
+      transform: 'scale(1.8)', // Zoom to make table more visible after cropping
       transformOrigin: 'center center'
     };
   };
@@ -326,6 +329,11 @@ export default function Levels() {
   const handleExerciseClick = async (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setShowExerciseDialog(true);
+    
+    // Analyze the first image to get universal cropping parameters
+    if (Object.keys(tableBounds).length === 0 && !analyzingImage) {
+      await analyzeTableBounds(exercise);
+    }
   };
 
   const handleCompleteExercise = async (exercise: Exercise) => {
