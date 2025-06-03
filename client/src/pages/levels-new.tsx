@@ -596,11 +596,17 @@ export default function Levels() {
                   {/* 右侧：练习图片 */}
                   <div className="space-y-4">
                     <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-white">
-                      <img 
-                        src={selectedExercise.imageUrl} 
-                        alt={selectedExercise.title}
-                        className="w-full h-auto"
-                        onError={(e) => {
+                      <div className="relative w-full h-96 overflow-hidden">
+                        <img 
+                          src={selectedExercise.imageUrl} 
+                          alt={selectedExercise.title}
+                          className="absolute top-0 left-0 w-full h-auto"
+                          style={{
+                            clipPath: 'inset(20% 48% 25% 0%)', // top right bottom left - crops to table area only
+                            transform: 'scale(2.2) translateX(15%) translateY(10%)', // zoom and position the table
+                            transformOrigin: 'top left'
+                          }}
+                          onError={(e) => {
                           if (e.currentTarget.parentElement) {
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement.innerHTML = `
@@ -618,7 +624,8 @@ export default function Levels() {
                             `;
                           }
                         }}
-                      />
+                        />
+                      </div>
                     </div>
                     
                     <div className="text-center text-sm text-gray-600 bg-gray-50 p-2 rounded">
