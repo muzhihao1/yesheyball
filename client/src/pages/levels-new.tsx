@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import exerciseRequirementsData from "@/data/exerciseRequirements.json";
 
 interface LevelStage {
   level: number;
@@ -37,8 +38,6 @@ export default function Levels() {
   const [selectedLevel, setSelectedLevel] = useState<LevelStage | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
-  const [exerciseRequirements, setExerciseRequirements] = useState<{ [key: string]: string }>({});
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
@@ -188,47 +187,10 @@ export default function Levels() {
 
   const getExerciseRequirement = (level: number, exerciseNumber: number): string => {
     const key = `${level}-${exerciseNumber}`;
-    return exerciseRequirements[key] || "连续完成5次不失误";
+    return exerciseRequirementsData[key as keyof typeof exerciseRequirementsData] || "连续完成5次不失误";
   };
 
-  const analyzeExerciseRequirement = async (level: number, exerciseNumber: number, levelName: string) => {
-    const key = `${level}-${exerciseNumber}`;
-    
-    if (exerciseRequirements[key]) {
-      return exerciseRequirements[key];
-    }
 
-    try {
-      setIsAnalyzing(true);
-      const response = await fetch("/api/analyze-exercise", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          level,
-          levelName,
-          exerciseNumber: exerciseNumber + 1
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.requirement) {
-          const cleanRequirement = data.requirement.replace(/；$/, ''); // 移除末尾的分号
-          setExerciseRequirements(prev => ({
-            ...prev,
-            [key]: cleanRequirement
-          }));
-          return cleanRequirement;
-        }
-      }
-    } catch (error) {
-      console.error("Failed to analyze exercise image:", error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-    
-    return "连续完成5次不失误";
-  };
 
   const generateExercisesForLevel = (level: number): Exercise[] => {
     const stage = levelStages.find(s => s.level === level);
