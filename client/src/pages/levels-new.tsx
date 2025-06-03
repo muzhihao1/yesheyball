@@ -552,7 +552,7 @@ export default function Levels() {
 
       {/* Exercise Dialog */}
       <Dialog open={showExerciseDialog} onOpenChange={setShowExerciseDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto w-[95vw]">
           {selectedExercise && (
             <>
               <DialogHeader>
@@ -594,32 +594,34 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 1000px宽度的最大桌子容器 */}
-                <div className="py-6">
-                  <div className="rounded-lg shadow-lg bg-white overflow-hidden p-8 flex justify-center items-center min-h-[580px]">
-                    <img 
-                      src={selectedExercise?.imageUrl} 
-                      alt={selectedExercise?.title}
-                      className="block"
-                      style={getCroppingStyle(selectedExercise!)}
-                      onError={(e) => {
-                        if (e.currentTarget.parentElement) {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement.innerHTML = `
-                            <div class="w-[500px] h-[650px] bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
-                              <div class="absolute top-3 left-3 w-5 h-5 bg-black rounded-full"></div>
-                              <div class="absolute top-3 right-3 w-5 h-5 bg-black rounded-full"></div>
-                              <div class="absolute bottom-3 left-3 w-5 h-5 bg-black rounded-full"></div>
-                              <div class="absolute bottom-3 right-3 w-5 h-5 bg-black rounded-full"></div>
-                              <div class="absolute top-1/2 left-3 w-5 h-5 bg-black rounded-full transform -translate-y-1/2"></div>
-                              <div class="absolute top-1/2 right-3 w-5 h-5 bg-black rounded-full transform -translate-y-1/2"></div>
-                              <div class="w-6 h-6 bg-white rounded-full"></div>
-                              <div class="absolute top-6 right-6 w-6 h-6 bg-black rounded-full border-2 border-red-500"></div>
-                            </div>
-                          `;
-                        }
-                      }}
-                    />
+                {/* 练习图片 - 移除所有容器限制，让桌子真正放大 */}
+                <div className="py-6 w-full">
+                  <div className="rounded-lg shadow-lg bg-white p-4 w-full">
+                    <div className="w-full flex justify-center items-center">
+                      <img 
+                        src={selectedExercise?.imageUrl} 
+                        alt={selectedExercise?.title}
+                        className="block max-w-none"
+                        style={getCroppingStyle(selectedExercise!)}
+                        onError={(e) => {
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement.innerHTML = `
+                              <div class="w-[500px] h-[650px] bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
+                                <div class="absolute top-3 left-3 w-5 h-5 bg-black rounded-full"></div>
+                                <div class="absolute top-3 right-3 w-5 h-5 bg-black rounded-full"></div>
+                                <div class="absolute bottom-3 left-3 w-5 h-5 bg-black rounded-full"></div>
+                                <div class="absolute bottom-3 right-3 w-5 h-5 bg-black rounded-full"></div>
+                                <div class="absolute top-1/2 left-3 w-5 h-5 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="absolute top-1/2 right-3 w-5 h-5 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="w-6 h-6 bg-white rounded-full"></div>
+                                <div class="absolute top-6 right-6 w-6 h-6 bg-black rounded-full border-2 border-red-500"></div>
+                              </div>
+                            `;
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                   
                   <div className="text-center text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg mt-4 mx-auto w-fit">
