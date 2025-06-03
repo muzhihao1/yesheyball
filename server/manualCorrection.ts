@@ -12,7 +12,7 @@ export class RequirementCorrector {
   // Update specific exercise requirement
   updateExerciseRequirement(level: number, exerciseNumber: number, requirement: string): boolean {
     try {
-      let requirements = {};
+      let requirements: Record<string, string> = {};
       
       // Load existing requirements
       if (fs.existsSync(this.requirementsPath)) {
@@ -37,7 +37,7 @@ export class RequirementCorrector {
   // Batch update multiple requirements
   batchUpdateRequirements(updates: { level: number; exerciseNumber: number; requirement: string }[]): boolean {
     try {
-      let requirements = {};
+      let requirements: Record<string, string> = {};
       
       // Load existing requirements
       if (fs.existsSync(this.requirementsPath)) {
