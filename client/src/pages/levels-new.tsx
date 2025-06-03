@@ -160,14 +160,14 @@ export default function Levels() {
 
   const getLevelColors = (level: number) => {
     const colorSchemes = {
-      1: { bg: "from-emerald-400 to-green-500", node: "bg-emerald-500", border: "border-emerald-400" },
-      2: { bg: "from-blue-400 to-blue-500", node: "bg-blue-500", border: "border-blue-400" },
-      3: { bg: "from-purple-400 to-purple-500", node: "bg-purple-500", border: "border-purple-400" },
-      4: { bg: "from-orange-400 to-orange-500", node: "bg-orange-500", border: "border-orange-400" },
-      5: { bg: "from-pink-400 to-pink-500", node: "bg-pink-500", border: "border-pink-400" },
-      6: { bg: "from-indigo-400 to-indigo-500", node: "bg-indigo-500", border: "border-indigo-400" },
-      7: { bg: "from-red-400 to-red-500", node: "bg-red-500", border: "border-red-400" },
-      8: { bg: "from-amber-400 to-yellow-500", node: "bg-amber-500", border: "border-amber-400" },
+      1: { bg: "from-emerald-400 to-green-500", node: "bg-emerald-500", border: "border-emerald-400", hex: "#10b981" },
+      2: { bg: "from-blue-400 to-blue-500", node: "bg-blue-500", border: "border-blue-400", hex: "#3b82f6" },
+      3: { bg: "from-purple-400 to-purple-500", node: "bg-purple-500", border: "border-purple-400", hex: "#8b5cf6" },
+      4: { bg: "from-orange-400 to-orange-500", node: "bg-orange-500", border: "border-orange-400", hex: "#f97316" },
+      5: { bg: "from-pink-400 to-pink-500", node: "bg-pink-500", border: "border-pink-400", hex: "#ec4899" },
+      6: { bg: "from-indigo-400 to-indigo-500", node: "bg-indigo-500", border: "border-indigo-400", hex: "#6366f1" },
+      7: { bg: "from-red-400 to-red-500", node: "bg-red-500", border: "border-red-400", hex: "#ef4444" },
+      8: { bg: "from-amber-400 to-yellow-500", node: "bg-amber-500", border: "border-amber-400", hex: "#f59e0b" },
     };
     return colorSchemes[level as keyof typeof colorSchemes] || colorSchemes[1];
   };
@@ -354,14 +354,27 @@ export default function Levels() {
                   {exercises.map((exercise, exerciseIndex) => {
                     const isLeft = exerciseIndex % 2 === 0;
                     const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || exercises[exerciseIndex - 1]?.completed);
+                    const prevIsLeft = (exerciseIndex - 1) % 2 === 0;
                     
                     return (
                       <div key={exercise.id} className="relative mb-6">
-                        {/* Connecting Path */}
+                        {/* Curved Connecting Path */}
                         {exerciseIndex > 0 && (
-                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6">
-                            <div className={`w-1 h-6 ${isUnlocked ? levelColors.node : 'bg-gray-300'}`} />
-                          </div>
+                          <svg 
+                            className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6 pointer-events-none"
+                            width="120" 
+                            height="50" 
+                            viewBox="0 0 120 50"
+                          >
+                            <path
+                              d={`M 60 0 Q ${prevIsLeft === isLeft ? '60' : prevIsLeft ? '30' : '90'} 25 60 50`}
+                              stroke={isUnlocked ? levelColors.hex : '#d1d5db'}
+                              strokeWidth="4"
+                              fill="none"
+                              strokeLinecap="round"
+                              className="drop-shadow-sm"
+                            />
+                          </svg>
                         )}
                         
                         {/* Exercise Node Container */}
