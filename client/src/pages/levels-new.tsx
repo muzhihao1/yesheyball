@@ -352,99 +352,69 @@ export default function Levels() {
                   </div>
                 </div>
 
-                {/* Exercise Nodes */}
-                <div className="relative px-8">
+                {/* Exercise Nodes - Zigzag Pattern */}
+                <div className="relative space-y-6">
                   {exercises.map((exercise, exerciseIndex) => {
                     const isLeft = exerciseIndex % 2 === 0;
                     const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || exercises[exerciseIndex - 1]?.completed);
-                    const prevIsLeft = (exerciseIndex - 1) % 2 === 0;
                     
                     return (
-                      <div key={exercise.id} className="relative mb-8">
-                        {/* Curved Connecting Path */}
-                        {exerciseIndex > 0 && (
-                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 pointer-events-none">
-                            <svg 
-                              width="150" 
-                              height="60" 
-                              viewBox="0 0 150 60"
-                              className="overflow-visible"
-                            >
-                              <defs>
-                                <filter id="dropshadow" x="-50%" y="-50%" width="200%" height="200%">
-                                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.1"/>
-                                </filter>
-                              </defs>
-                              <path
-                                d={`M 75 5 Q ${prevIsLeft === isLeft ? '75' : prevIsLeft ? '40' : '110'} 30 75 55`}
-                                stroke={isUnlocked ? levelColors.hex : '#d1d5db'}
-                                strokeWidth="5"
-                                fill="none"
-                                strokeLinecap="round"
-                                filter="url(#dropshadow)"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                        
-                        {/* Exercise Node Container */}
-                        <div className={`flex ${isLeft ? 'justify-start' : 'justify-end'} items-center relative`}>
-                          {/* Exercise Circle */}
-                          <div className="relative z-10">
-                            <div 
-                              className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
-                                !isUnlocked 
-                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-lg' 
-                                  : exercise.completed 
-                                    ? `${levelColors.node} text-white shadow-2xl` 
-                                    : `bg-white border-4 ${levelColors.border} text-gray-700 hover:scale-105 shadow-xl hover:shadow-2xl`
-                              }`}
-                              onClick={() => isUnlocked && handleExerciseClick(exercise)}
-                              style={{
-                                filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
-                              }}
-                            >
-                              {!isUnlocked ? (
-                                <Lock className="w-7 h-7" />
-                              ) : exercise.completed ? (
-                                <Star className="w-10 h-10 fill-white" />
-                              ) : (
-                                <span className="text-xl font-bold">{exercise.exerciseNumber}</span>
-                              )}
-                            </div>
-                            
-                            {/* Stars Badge */}
-                            {exercise.completed && exercise.stars > 0 && (
-                              <div className="absolute -top-3 -right-3 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-                                {exercise.stars}
-                              </div>
+                      <div key={exercise.id} className={`flex ${isLeft ? 'justify-start pl-12' : 'justify-end pr-12'} items-center relative`}>
+                        {/* Exercise Circle */}
+                        <div className="relative z-10">
+                          <div 
+                            className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
+                              !isUnlocked 
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-lg' 
+                                : exercise.completed 
+                                  ? `${levelColors.node} text-white shadow-2xl` 
+                                  : `bg-white border-4 ${levelColors.border} text-gray-700 hover:scale-105 shadow-xl hover:shadow-2xl`
+                            }`}
+                            onClick={() => isUnlocked && handleExerciseClick(exercise)}
+                            style={{
+                              filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
+                            }}
+                          >
+                            {!isUnlocked ? (
+                              <Lock className="w-7 h-7" />
+                            ) : exercise.completed ? (
+                              <Star className="w-10 h-10 fill-white" />
+                            ) : (
+                              <span className="text-xl font-bold">{exercise.exerciseNumber}</span>
                             )}
                           </div>
                           
-                          {/* Exercise Label */}
-                          <div className={`absolute ${isLeft ? 'left-24' : 'right-24'} top-1/2 transform -translate-y-1/2 z-0`}>
-                            <div className="bg-white rounded-xl px-4 py-3 shadow-lg border border-gray-100 min-w-[120px]"
-                                 style={{
-                                   filter: 'drop-shadow(0 4px 15px rgba(0,0,0,0.1))'
-                                 }}>
-                              <div className="text-sm font-semibold text-gray-800 mb-1">{exercise.title}</div>
-                              {exercise.completed ? (
-                                <div className="flex items-center text-xs text-green-600">
-                                  <Star className="w-3 h-3 mr-1 fill-current" />
-                                  已完成
-                                </div>
-                              ) : isUnlocked ? (
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <div className="w-3 h-3 mr-1 rounded-full border border-gray-400"></div>
-                                  待完成
-                                </div>
-                              ) : (
-                                <div className="flex items-center text-xs text-gray-400">
-                                  <Lock className="w-3 h-3 mr-1" />
-                                  未解锁
-                                </div>
-                              )}
+                          {/* Stars Badge */}
+                          {exercise.completed && exercise.stars > 0 && (
+                            <div className="absolute -top-3 -right-3 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold text-white shadow-lg">
+                              {exercise.stars}
                             </div>
+                          )}
+                        </div>
+                        
+                        {/* Exercise Label */}
+                        <div className={`absolute ${isLeft ? 'left-24' : 'right-24'} top-1/2 transform -translate-y-1/2 z-0`}>
+                          <div className="bg-white rounded-xl px-4 py-3 shadow-lg border border-gray-100 min-w-[120px]"
+                               style={{
+                                 filter: 'drop-shadow(0 4px 15px rgba(0,0,0,0.1))'
+                               }}>
+                            <div className="text-sm font-semibold text-gray-800 mb-1">{exercise.title}</div>
+                            {exercise.completed ? (
+                              <div className="flex items-center text-xs text-green-600">
+                                <Star className="w-3 h-3 mr-1 fill-current" />
+                                已完成
+                              </div>
+                            ) : isUnlocked ? (
+                              <div className="flex items-center text-xs text-gray-500">
+                                <div className="w-3 h-3 mr-1 rounded-full border border-gray-400"></div>
+                                待完成
+                              </div>
+                            ) : (
+                              <div className="flex items-center text-xs text-gray-400">
+                                <Lock className="w-3 h-3 mr-1" />
+                                未解锁
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
