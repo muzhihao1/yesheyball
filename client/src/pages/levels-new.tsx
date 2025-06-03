@@ -58,15 +58,19 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - show complete table with brown borders
+  // Function to get cropping style - show complete table with brown borders and center the result
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     return {
-      clipPath: 'inset(19% 6% 3% 52%)', // original coordinates to show complete table with brown borders
+      clipPath: 'inset(19% 6% 3% 52%)', // crop to show complete table with brown borders
       width: '100%',
       height: 'auto',
       maxWidth: '280px',
       objectFit: 'contain' as const,
-      display: 'block'
+      display: 'block',
+      margin: '0 auto',
+      // After cropping, the visible content needs to be repositioned to center
+      transform: 'translateX(23%)', // shift right to center the cropped table content
+      transformOrigin: 'center center'
     };
   };
 
@@ -593,10 +597,10 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 调整位置补偿裁剪偏移 */}
+                {/* 练习图片 - 裁剪后居中对齐 */}
                 <div className="py-6">
                   <div className="flex justify-center">
-                    <div className="relative overflow-hidden rounded-lg shadow-lg bg-white" style={{marginLeft: '-20px'}}>
+                    <div className="relative overflow-hidden rounded-lg shadow-lg bg-white">
                       <img 
                         src={selectedExercise?.imageUrl} 
                         alt={selectedExercise?.title}
