@@ -53,19 +53,19 @@ async function extractDescription(level, exerciseNum) {
   }
 }
 
-async function continueAllLevelsExtraction() {
+async function finalExtractionCompletion() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('继续所有Level提取...');
+  console.log('最终提取完成模式...');
   
-  let extracted = 0;
+  let updated = 0;
   
-  // Continue processing from exercise 21 onwards
+  // Process all remaining exercises from 24 onwards
   for (const level of [5, 6, 7, 8, 3, 4]) {
     const maxEx = level === 3 ? 50 : (level <= 6 ? 60 : 55);
     
-    for (let i = 21; i <= maxEx; i++) {
+    for (let i = 24; i <= maxEx; i++) {
       const key = `${level}-${i}`;
       const currentDesc = descriptions[key];
       
@@ -79,20 +79,20 @@ async function continueAllLevelsExtraction() {
         if (newDesc) {
           descriptions[key] = newDesc;
           console.log(`${key}: ${newDesc}`);
-          extracted++;
+          updated++;
           fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
         }
       }
     }
   }
   
-  console.log(`继续提取: ${extracted} 个描述`);
+  console.log(`最终完成: ${updated} 个新描述`);
   
-  // Status update
+  // Final comprehensive report
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
-  let totalAuth = 0, totalEx = 0;
+  let totalAuthentic = 0, totalExercises = 0;
   
-  console.log('\n=== 当前进度 ===');
+  console.log('\n=== 最终提取报告 ===');
   [3,4,5,6,7,8].forEach(level => {
     let authentic = 0;
     for (let i = 1; i <= levelCounts[level]; i++) {
@@ -105,15 +105,42 @@ async function continueAllLevelsExtraction() {
         authentic++;
       }
     }
-    totalAuth += authentic;
-    totalEx += levelCounts[level];
+    totalAuthentic += authentic;
+    totalExercises += levelCounts[level];
     
-    const pct = (authentic/levelCounts[level]*100).toFixed(1);
-    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)`);
+    const percentage = (authentic/levelCounts[level]*100).toFixed(1);
+    const status = authentic === levelCounts[level] ? ' ✓ 完成' : '';
+    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${percentage}%)${status}`);
   });
   
-  console.log(`\n总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
-  console.log(`剩余: ${totalEx - totalAuth} 题`);
+  console.log(`\n【项目完成度】: ${totalAuthentic}/${totalExercises} (${(totalAuthentic/totalExercises*100).toFixed(1)}%)`);
+  console.log(`已成功替换 ${totalAuthentic} 个通用模板为真实描述`);
+  
+  const remaining = totalExercises - totalAuthentic;
+  if (remaining > 0) {
+    console.log(`剩余 ${remaining} 题待处理`);
+    
+    // Show remaining exercises by level
+    console.log('\n=== 剩余题目分布 ===');
+    [3,4,5,6,7,8].forEach(level => {
+      let remainingList = [];
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const desc = descriptions[`${level}-${i}`];
+        if (!desc || 
+            desc.includes('如图示摆放球型，完成') || 
+            desc.includes('精进台球技能练习') ||
+            desc.includes('高级台球技巧训练') ||
+            desc.length < 20) {
+          remainingList.push(i);
+        }
+      }
+      if (remainingList.length > 0) {
+        console.log(`Level ${level}: ${remainingList.slice(0, 10).join(',')}${remainingList.length > 10 ? '...' : ''} (${remainingList.length}题)`);
+      }
+    });
+  } else {
+    console.log('🎉 所有练习描述提取完成！');
+  }
 }
 
-continueAllLevelsExtraction().catch(console.error);
+finalExtractionCompletion().catch(console.error);
