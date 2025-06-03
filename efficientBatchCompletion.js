@@ -53,16 +53,17 @@ async function extractDescription(level, exerciseNum) {
   }
 }
 
-async function efficientBatchVerification() {
+async function efficientBatchCompletion() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('高效批量验证...');
+  console.log('高效批量完成...');
   
-  let processed = 0;
+  let processedCount = 0;
   
-  // Continue Level 5 from exercise 29
-  for (let i = 29; i <= 60; i++) {
+  // Process Level 5 completely first
+  console.log('完成 Level 5...');
+  for (let i = 26; i <= 60; i++) {
     const key = `5-${i}`;
     const currentDesc = descriptions[key];
     
@@ -75,13 +76,14 @@ async function efficientBatchVerification() {
       if (newDesc) {
         descriptions[key] = newDesc;
         console.log(`${key}: ${newDesc}`);
-        processed++;
+        processedCount++;
         fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
       }
     }
   }
   
-  // Complete Level 6
+  // Process Level 6 completely
+  console.log('完成 Level 6...');
   for (let i = 1; i <= 60; i++) {
     const key = `6-${i}`;
     const currentDesc = descriptions[key];
@@ -95,13 +97,14 @@ async function efficientBatchVerification() {
       if (newDesc) {
         descriptions[key] = newDesc;
         console.log(`${key}: ${newDesc}`);
-        processed++;
+        processedCount++;
         fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
       }
     }
   }
   
-  // Complete Level 7
+  // Process Level 7 completely
+  console.log('完成 Level 7...');
   for (let i = 1; i <= 55; i++) {
     const key = `7-${i}`;
     const currentDesc = descriptions[key];
@@ -115,13 +118,14 @@ async function efficientBatchVerification() {
       if (newDesc) {
         descriptions[key] = newDesc;
         console.log(`${key}: ${newDesc}`);
-        processed++;
+        processedCount++;
         fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
       }
     }
   }
   
-  // Complete Level 8
+  // Process Level 8 completely
+  console.log('完成 Level 8...');
   for (let i = 1; i <= 55; i++) {
     const key = `8-${i}`;
     const currentDesc = descriptions[key];
@@ -135,42 +139,19 @@ async function efficientBatchVerification() {
       if (newDesc) {
         descriptions[key] = newDesc;
         console.log(`${key}: ${newDesc}`);
-        processed++;
+        processedCount++;
         fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
       }
     }
   }
   
-  // Complete remaining Level 3 and 4
-  for (const level of [3, 4]) {
-    const maxEx = level === 3 ? 50 : 60;
-    for (let i = 1; i <= maxEx; i++) {
-      const key = `${level}-${i}`;
-      const currentDesc = descriptions[key];
-      
-      if (!currentDesc || 
-          currentDesc.includes('如图示摆放球型，完成') || 
-          currentDesc.includes('高级台球技巧训练') ||
-          currentDesc.length < 20) {
-        
-        const newDesc = await extractDescription(level, i);
-        if (newDesc) {
-          descriptions[key] = newDesc;
-          console.log(`${key}: ${newDesc}`);
-          processed++;
-          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-        }
-      }
-    }
-  }
+  console.log(`高效完成: ${processedCount} 个描述`);
   
-  console.log(`验证完成: ${processed} 个描述`);
-  
-  // Final verification report
+  // Final report
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   let totalAuth = 0, totalEx = 0;
   
-  console.log('\n=== 验证报告 ===');
+  console.log('\n=== 高效完成报告 ===');
   [3,4,5,6,7,8].forEach(level => {
     let authentic = 0;
     for (let i = 1; i <= levelCounts[level]; i++) {
@@ -192,8 +173,7 @@ async function efficientBatchVerification() {
   });
   
   console.log(`\n总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
-  console.log(`已替换 ${totalAuth} 个通用模板为真实描述`);
   console.log(`剩余: ${totalEx - totalAuth} 题`);
 }
 
-efficientBatchVerification().catch(console.error);
+efficientBatchCompletion().catch(console.error);
