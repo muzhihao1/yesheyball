@@ -361,18 +361,18 @@ export default function Levels() {
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
                     
-                    // Centered zigzag arrangement pattern
-                    let paddingLeft = 48; // Default center position
+                    // Position exercises in the left-center area
+                    let paddingLeft = 120; // Default center position for milestones
                     
                     if (!isMilestone) {
-                      // Create subtle zigzag pattern around center
+                      // Create zigzag pattern in the left-center region
                       const zigzagPosition = exerciseIndex % 4;
                       switch (zigzagPosition) {
-                        case 0: paddingLeft = 36; break;  // Slightly left of center
-                        case 1: paddingLeft = 60; break;  // Slightly right of center
-                        case 2: paddingLeft = 36; break;  // Slightly left of center  
-                        case 3: paddingLeft = 60; break;  // Slightly right of center
-                        default: paddingLeft = 48; break;
+                        case 0: paddingLeft = 100; break;  // Left side of region
+                        case 1: paddingLeft = 140; break;  // Right side of region
+                        case 2: paddingLeft = 100; break;  // Left side of region
+                        case 3: paddingLeft = 140; break;  // Right side of region
+                        default: paddingLeft = 120; break;
                       }
                     }
                     
