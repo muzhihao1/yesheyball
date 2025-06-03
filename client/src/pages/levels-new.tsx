@@ -620,34 +620,35 @@ export default function Levels() {
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-6">
-                {/* 练习图片和说明 */}
-                <div className="space-y-6">
-                  {/* 题目说明 */}
+              <div className="space-y-4">
+                {/* 题目说明和要求 - 水平排列 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
                     <h3 className="font-bold text-blue-700 mb-2">题目说明：</h3>
-                    <p className="text-gray-700">{selectedExercise.description}</p>
+                    <p className="text-gray-700">{selectedExercise?.description}</p>
                   </div>
                   
                   <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
                     <h3 className="font-bold text-orange-700 mb-2">过关要求：</h3>
                     <p className="text-gray-700">
-                      {getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
+                      {selectedExercise && getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
                     </p>
                   </div>
-                  
-                  {/* 练习图片 - 居中显示 */}
-                  <div className="flex justify-center">
+                </div>
+                
+                {/* 练习图片 - 居中显示，调整尺寸 */}
+                <div className="flex justify-center py-4">
+                  <div className="w-fit">
                     <img 
-                      src={selectedExercise.imageUrl} 
-                      alt={selectedExercise.title}
-                      className="block"
-                      style={getCroppingStyle(selectedExercise)}
+                      src={selectedExercise?.imageUrl} 
+                      alt={selectedExercise?.title}
+                      className="block max-w-md w-full h-auto"
+                      style={getCroppingStyle(selectedExercise!)}
                       onError={(e) => {
                         if (e.currentTarget.parentElement) {
                           e.currentTarget.style.display = 'none';
                           e.currentTarget.parentElement.innerHTML = `
-                            <div class="w-full h-64 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
+                            <div class="w-64 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
                               <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
                               <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
                               <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
@@ -663,22 +664,22 @@ export default function Levels() {
                       }}
                     />
                   </div>
-                  
-                  <div className="text-center text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                    {selectedLevel?.name}阶段练习第{selectedExercise.exerciseNumber}题，按照图示要求完成练习。
-                  </div>
+                </div>
+                
+                <div className="text-center text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                  {selectedLevel?.name}阶段练习第{selectedExercise?.exerciseNumber}题，按照图示要求完成练习。
                 </div>
                 
                 {/* 练习状态和操作 */}
                 <div className="border-t pt-6">
-                  {selectedExercise.completed ? (
+                  {selectedExercise?.completed ? (
                     <div className="text-center space-y-4">
                       <div className="inline-flex items-center space-x-2 bg-green-100 text-green-700 px-6 py-3 rounded-full">
                         <span className="text-xl">✅</span>
                         <span className="font-medium">已完成此练习</span>
                       </div>
                       <div className="text-yellow-600 text-lg">
-                        获得 {'⭐'.repeat(selectedExercise.stars)} 星评价
+                        获得 {'⭐'.repeat(selectedExercise?.stars || 0)} 星评价
                       </div>
                       <div className="space-x-3">
                         <Button 
@@ -689,7 +690,7 @@ export default function Levels() {
                         </Button>
                         <Button 
                           variant="outline"
-                          onClick={() => handleCompleteExercise(selectedExercise)}
+                          onClick={() => selectedExercise && handleCompleteExercise(selectedExercise)}
                         >
                           重新练习
                         </Button>
@@ -706,7 +707,7 @@ export default function Levels() {
                       
                       <div className="flex justify-center space-x-3">
                         <Button 
-                          onClick={() => handleCompleteExercise(selectedExercise)}
+                          onClick={() => selectedExercise && handleCompleteExercise(selectedExercise)}
                           className="bg-blue-500 hover:bg-blue-600 px-8"
                         >
                           开始练习
@@ -727,7 +728,7 @@ export default function Levels() {
                 </div>
                 
                 {/* 练习记录 */}
-                {selectedExercise.completed && (
+                {selectedExercise?.completed && (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h4 className="font-medium text-gray-800 mb-2">练习记录</h4>
                     <div className="text-sm text-gray-600 space-y-1">
