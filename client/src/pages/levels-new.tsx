@@ -365,14 +365,14 @@ export default function Levels() {
                     let paddingLeft = 120; // Default center position for milestones
                     
                     if (!isMilestone) {
-                      // Create zigzag pattern in the left-center region
+                      // Create zigzag pattern in the left-center region, shifted more to the right
                       const zigzagPosition = exerciseIndex % 4;
                       switch (zigzagPosition) {
-                        case 0: paddingLeft = 100; break;  // Left side of region
-                        case 1: paddingLeft = 140; break;  // Right side of region
-                        case 2: paddingLeft = 100; break;  // Left side of region
-                        case 3: paddingLeft = 140; break;  // Right side of region
-                        default: paddingLeft = 120; break;
+                        case 0: paddingLeft = 130; break;  // Right side of region
+                        case 1: paddingLeft = 170; break;  // Further right
+                        case 2: paddingLeft = 130; break;  // Right side of region
+                        case 3: paddingLeft = 170; break;  // Further right
+                        default: paddingLeft = 150; break;
                       }
                     }
                     
