@@ -457,17 +457,7 @@ export default function Levels() {
                             )}
                           </div>
                           
-                          {/* Exercise Label */}
-                          <div className={`absolute ${isLeft ? 'left-28' : 'right-28'} top-1/2 transform -translate-y-1/2 z-0`}>
-                            <div className="bg-white rounded-xl px-4 py-3 shadow-lg border border-gray-100"
-                                 style={{
-                                   filter: 'drop-shadow(0 4px 15px rgba(0,0,0,0.1))'
-                                 }}>
-                              <div className="text-sm font-semibold text-gray-800">
-                                {isMilestone ? `第${groupNumber}组` : '练习'}
-                              </div>
-                            </div>
-                          </div>
+
                         </div>
                         
                         {/* Group Separator */}
