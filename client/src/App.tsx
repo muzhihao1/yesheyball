@@ -16,6 +16,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Levels} />
+      <Route path="/levels" component={Levels} />
       <Route path="/tasks" component={Tasks} />
       <Route path="/test" component={Test} />
       <Route path="/diary" component={Diary} />

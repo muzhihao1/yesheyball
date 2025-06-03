@@ -6,23 +6,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY 
 });
 
-// 完整的等级配置，基于实际文件结构
-const LEVEL_CONFIGS = [
-  { level: 1, folderName: "1、初窥门径", totalFiles: 37 },
-  { level: 2, folderName: "2、小有所成", totalFiles: 42 },
-  { level: 3, folderName: "3、渐入佳境", totalFiles: 52 },
-  { level: 4, folderName: "4、炉火纯青", totalFiles: 62 },
-  { level: 5, folderName: "5、登堂入室", totalFiles: 62 },
-  { level: 6, folderName: "6、超群绝伦", totalFiles: 62 },
-  { level: 7, folderName: "7、登峰造极", totalFiles: 72 }
-];
-
 async function analyzeExerciseImage(imagePath) {
   try {
-    if (!fs.existsSync(imagePath)) {
-      return null;
-    }
-
     const imageData = fs.readFileSync(imagePath);
     const base64Image = imageData.toString('base64');
 
@@ -34,78 +19,76 @@ async function analyzeExerciseImage(imagePath) {
           content: [
             {
               type: "text",
-              text: "分析这张台球习题图片，提取过关要求文字。只返回具体要求，如连续完成5次不失误。"
+              text: "从台球习题图片中提取'过关要求'后的中文文字，只返回要求内容。"
             },
             {
               type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Image}`
-              }
+              image_url: { url: `data:image/jpeg;base64,${base64Image}` }
             }
           ],
         },
       ],
-      max_tokens: 50,
+      max_tokens: 25,
+      temperature: 0
     });
 
     const content = response.choices[0].message.content;
-    return content ? content.replace(/[；;。]$/, '').trim() : null;
+    return content ? content.replace(/过关要求[:：]\s*/, '').replace(/[；;。，,\s]+$/, '').trim() : null;
   } catch (error) {
-    console.error(`分析失败: ${error.message}`);
     return null;
   }
 }
 
 async function extractBatchRequirements() {
-  console.log("开始批量提取习题过关要求...");
+  console.log("快速批量提取习题过关要求...\n");
   
-  const allRequirements = {};
-  let totalProcessed = 0;
+  const requirementsPath = 'client/src/data/exerciseRequirements.json';
+  let requirements = {};
   
-  // 限制处理数量以避免API限制
-  const maxPerLevel = 10;
-  
-  for (const config of LEVEL_CONFIGS.slice(0, 3)) { // 先处理前3个等级
-    console.log(`\n处理等级 ${config.level}...`);
+  if (fs.existsSync(requirementsPath)) {
+    requirements = JSON.parse(fs.readFileSync(requirementsPath, 'utf8'));
+    console.log(`已有 ${Object.keys(requirements).length} 个习题\n`);
+  }
+
+  const batches = [
+    // 第1级剩余习题
+    { level: 1, folder: "1、初窥门径", start: 11, end: 25 },
+    // 第2级习题
+    { level: 2, folder: "2、小有所成", start: 1, end: 15 },
+    // 第3级习题
+    { level: 3, folder: "3、渐入佳境", start: 1, end: 10 }
+  ];
+
+  for (const batch of batches) {
+    console.log(`处理 ${batch.level}级 第${batch.start}-${batch.end}题`);
     
-    const processCount = Math.min(maxPerLevel, config.totalFiles - 2);
-    
-    for (let i = 0; i < processCount; i++) {
-      const fileIndex = (i + 2).toString().padStart(2, '0');
-      const exerciseNumber = i + 1;
-      const imagePath = path.join(process.cwd(), 'assessments', config.folderName, `${config.folderName}_${fileIndex}.jpg`);
+    for (let i = batch.start; i <= batch.end; i++) {
+      const fileIndex = (i + 1).toString().padStart(2, '0');
+      const imagePath = path.join(process.cwd(), 'assessments', batch.folder, `${batch.folder}_${fileIndex}.jpg`);
       
-      console.log(`  习题 ${exerciseNumber}...`);
-      
-      try {
+      if (fs.existsSync(imagePath)) {
+        process.stdout.write(`  ${i}题... `);
+        
         const requirement = await analyzeExerciseImage(imagePath);
-        if (requirement) {
-          const key = `${config.level}-${exerciseNumber}`;
-          allRequirements[key] = requirement;
-          console.log(`    ✓ ${requirement}`);
-          totalProcessed++;
+        
+        if (requirement && !requirement.includes('无法') && !requirement.includes('抱歉')) {
+          requirements[`${batch.level}-${i}`] = requirement;
+          console.log(`✓ ${requirement}`);
+        } else {
+          console.log(`✗`);
         }
         
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-      } catch (error) {
-        console.error(`    ✗ 处理失败`);
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
+    
+    // 每批次保存一次
+    fs.writeFileSync(requirementsPath, JSON.stringify(requirements, null, 2), 'utf8');
+    console.log(`${batch.level}级已保存\n`);
   }
-  
-  // 合并现有数据
-  const outputPath = path.join(process.cwd(), 'client/src/data/exerciseRequirements.json');
-  let existingData = {};
-  if (fs.existsSync(outputPath)) {
-    existingData = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
-  }
-  
-  const mergedData = { ...existingData, ...allRequirements };
-  fs.writeFileSync(outputPath, JSON.stringify(mergedData, null, 2), 'utf8');
-  
-  console.log(`\n✅ 提取完成！处理了 ${totalProcessed} 个习题`);
-  console.log(`💾 数据已保存`);
+
+  console.log(`提取完成！总计 ${Object.keys(requirements).length} 个习题要求`);
+  return requirements;
 }
 
 extractBatchRequirements().catch(console.error);
