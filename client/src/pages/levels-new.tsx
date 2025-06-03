@@ -96,13 +96,13 @@ export default function Levels() {
     }
   };
 
-  // Function to get cropping style - using optimized fixed coordinates for billiard table
+  // Function to get cropping style - using exact coordinates from reference image
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
-    // Fixed coordinates based on billiard table layout analysis
-    // These coordinates use brown border as boundary to capture complete table frame
+    // Coordinates based on your perfect reference image showing complete table with brown borders
+    // This matches exactly what the cropped result should look like
     return {
-      clipPath: 'inset(6% 2% 15% 32%)', // top right bottom left - brown border as outer boundary
-      transform: 'scale(2.8) translateX(5%)', // scale to show complete table with brown frame
+      clipPath: 'inset(3% 0% 12% 30%)', // top right bottom left - captures complete brown border frame
+      transform: 'scale(3.2) translateX(10%)', // scale and position to match reference layout
       transformOrigin: 'center center'
     };
   };
