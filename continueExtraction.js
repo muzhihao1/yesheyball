@@ -60,65 +60,66 @@ async function continueExtraction() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('继续提取...');
+  console.log('继续提取处理...');
   
-  let extracted = 0;
+  let totalExtracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Process all levels systematically
-  for (const level of [8, 7, 5, 4, 3]) {
-    for (let i = 1; i <= levelCounts[level]; i++) {
-      const key = `${level}-${i}`;
-      const currentDesc = descriptions[key];
-      
-      if (!currentDesc || 
-          currentDesc.includes('如图示摆放球型，完成') || 
-          currentDesc.includes('精进台球技能练习') ||
-          currentDesc.includes('高级台球技巧训练') ||
-          currentDesc.length < 20) {
+  // 持续处理直到完成
+  while (true) {
+    let cycleExtracted = 0;
+    
+    // 处理剩余练习
+    for (const level of [8, 7, 5, 4, 3]) {
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const key = `${level}-${i}`;
+        const currentDesc = descriptions[key];
         
-        const result = await extractDescription(level, i);
-        if (result) {
-          descriptions[key] = result;
-          console.log(`${key}: ${result}`);
-          extracted++;
-          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        if (!currentDesc || 
+            currentDesc.includes('如图示摆放球型，完成') || 
+            currentDesc.includes('精进台球技能练习') ||
+            currentDesc.includes('高级台球技巧训练') ||
+            currentDesc.length < 20) {
+          
+          const result = await extractDescription(level, i);
+          if (result) {
+            descriptions[key] = result;
+            console.log(`${key}: ${result}`);
+            cycleExtracted++;
+            totalExtracted++;
+            fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+          }
         }
       }
     }
-  }
-  
-  console.log(`提取: ${extracted} 个描述`);
-  
-  // Status check
-  let totalAuth = 0, totalEx = 0;
-  
-  [3,4,5,6,7,8].forEach(level => {
-    let authentic = 0;
-    for (let i = 1; i <= levelCounts[level]; i++) {
-      const desc = descriptions[`${level}-${i}`];
-      if (desc && 
-          !desc.includes('如图示摆放球型，完成') && 
-          !desc.includes('精进台球技能练习') &&
-          !desc.includes('高级台球技巧训练') &&
-          desc.length > 15) {
-        authentic++;
-      }
-    }
-    totalAuth += authentic;
-    totalEx += levelCounts[level];
     
-    const pct = (authentic/levelCounts[level]*100).toFixed(1);
-    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)`);
-  });
-  
-  console.log(`总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
-  
-  if (totalAuth === totalEx) {
-    console.log('全部完成');
-  } else {
-    console.log(`剩余: ${totalEx - totalAuth}`);
+    // 统计状态
+    let totalAuth = 0, totalEx = 0;
+    [3,4,5,6,7,8].forEach(level => {
+      let authentic = 0;
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const desc = descriptions[`${level}-${i}`];
+        if (desc && 
+            !desc.includes('如图示摆放球型，完成') && 
+            !desc.includes('精进台球技能练习') &&
+            !desc.includes('高级台球技巧训练') &&
+            desc.length > 15) {
+          authentic++;
+        }
+      }
+      totalAuth += authentic;
+      totalEx += levelCounts[level];
+    });
+    
+    console.log(`本轮: ${cycleExtracted} | 进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+    
+    if (totalAuth === totalEx) {
+      console.log('全部340个练习描述提取完成');
+      break;
+    }
   }
+  
+  console.log(`总计提取: ${totalExtracted} 个描述`);
 }
 
 continueExtraction().catch(console.error);
