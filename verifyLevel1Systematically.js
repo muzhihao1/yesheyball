@@ -6,7 +6,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY 
 });
 
-async function extractCleanDescription(exerciseNum) {
+async function extractSingleExercise(exerciseNum) {
   const fileIndex = (exerciseNum + 1).toString().padStart(2, '0');
   const imagePath = path.join(
     process.cwd(), 
@@ -31,7 +31,7 @@ async function extractCleanDescription(exerciseNum) {
           content: [
             {
               type: "text",
-              text: "从图中提取题目说明的文字，只要说明部分："
+              text: "提取题目说明的文字内容："
             },
             {
               type: "image_url",
@@ -40,16 +40,15 @@ async function extractCleanDescription(exerciseNum) {
           ],
         },
       ],
-      max_tokens: 60,
+      max_tokens: 80,
       temperature: 0
     });
 
     let content = response.choices[0].message.content;
-    if (content && !content.includes('无法') && !content.includes('抱歉') && content.length > 8) {
+    if (content && !content.includes('无法') && !content.includes('抱歉')) {
       content = content.replace(/^题目说明[：:]\s*/g, '');
       content = content.replace(/过关要求.*$/gm, '');
       content = content.replace(/；$/, '');
-      content = content.replace(/。$/, '');
       return content.trim();
     }
     return null;
@@ -58,48 +57,38 @@ async function extractCleanDescription(exerciseNum) {
   }
 }
 
-async function verifyAllLevel1() {
+async function verifySpecificExercises() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
 
-  console.log('完整验证等级1所有35个练习...');
-  let updated = 0;
+  // 需要特别验证的练习
+  const exercisesToVerify = [32, 34];
 
-  for (let i = 1; i <= 35; i++) {
-    const key = `1-${i}`;
+  console.log('验证特定等级1练习...');
+
+  for (const exerciseNum of exercisesToVerify) {
+    const key = `1-${exerciseNum}`;
     const current = descriptions[key];
     
-    console.log(`验证 ${key}...`);
+    console.log(`验证 ${key}:`);
+    console.log(`  当前: ${current}`);
     
-    const extracted = await extractCleanDescription(i);
+    const extracted = await extractSingleExercise(exerciseNum);
     
-    if (extracted && extracted !== current && extracted.length > current.length * 0.8) {
+    if (extracted && extracted !== current) {
       descriptions[key] = extracted;
-      console.log(`  更新: ${extracted}`);
-      updated++;
+      console.log(`  更新为: ${extracted}`);
     } else if (extracted) {
-      console.log(`  保持: ${current}`);
+      console.log(`  确认正确: ${extracted}`);
     } else {
-      console.log(`  无法提取，保持当前`);
+      console.log(`  提取失败，保持当前描述`);
     }
     
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    if (i % 10 === 0) {
-      fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      console.log(`已处理 ${i}/35`);
-    }
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
   fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-  console.log(`等级1验证完成，更新了 ${updated} 个描述`);
-  
-  // 显示所有等级1描述的摘要
-  console.log('\n等级1所有描述:');
-  for (let i = 1; i <= 35; i++) {
-    const key = `1-${i}`;
-    console.log(`${key}: ${descriptions[key]}`);
-  }
+  console.log('特定练习验证完成');
 }
 
-verifyAllLevel1().catch(console.error);
+verifySpecificExercises().catch(console.error);
