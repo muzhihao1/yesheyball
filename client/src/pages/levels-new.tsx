@@ -464,7 +464,7 @@ export default function Levels() {
                                    filter: 'drop-shadow(0 4px 15px rgba(0,0,0,0.1))'
                                  }}>
                               <div className="text-sm font-semibold text-gray-800">
-                                {isMilestone ? `第${groupNumber}组完成` : exercise.title}
+                                {isMilestone ? `第${groupNumber}组` : '练习'}
                               </div>
                             </div>
                           </div>
