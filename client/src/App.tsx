@@ -9,6 +9,7 @@ import Tasks from "@/pages/tasks";
 import Test from "@/pages/test";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
+import AdaptiveLearning from "@/pages/adaptive-learning";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/tasks" component={Tasks} />
       <Route path="/test" component={Test} />
       <Route path="/diary" component={Diary} />
+      <Route path="/adaptive" component={AdaptiveLearning} />
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>

@@ -135,7 +135,7 @@ export class AdaptiveLearningEngine {
     
     recommendations.push(...nextExercises);
     
-    return [...new Set(recommendations)].slice(0, 5);
+    return Array.from(new Set(recommendations)).slice(0, 5);
   }
   
   private calculateNextMilestone(
