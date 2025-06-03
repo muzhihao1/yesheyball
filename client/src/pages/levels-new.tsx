@@ -189,10 +189,8 @@ export default function Levels() {
     const exercises: Exercise[] = [];
     const levelName = stage.name;
     
-    const actualExerciseCount = stage.totalExercises - 2;
-    
-    for (let i = 0; i < actualExerciseCount; i++) {
-      const exerciseNumber = (i + 2).toString().padStart(2, '0');
+    for (let i = 0; i < stage.totalExercises; i++) {
+      const exerciseNumber = (i + 1).toString().padStart(2, '0');
       const exerciseNum = i + 1;
       
       exercises.push({
@@ -284,20 +282,11 @@ export default function Levels() {
         </div>
         <p className="text-gray-700 text-lg mb-6">系统化掌握中式八球技术，从基础到精通</p>
         
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-blue-100 rounded-full px-6 py-3 shadow-md">
-            <Trophy className="w-5 h-5 mr-2 text-yellow-600" />
-            <span className="text-gray-800 font-semibold">
-              当前等级: {user.level} - {levelStages.find(s => s.level === user.level)?.name}
-            </span>
-          </div>
-          
-          <div className="inline-flex items-center bg-gradient-to-r from-purple-100 to-pink-100 rounded-full px-6 py-3 shadow-md">
-            <Target className="w-5 h-5 mr-2 text-purple-600" />
-            <span className="text-gray-800 font-semibold">
-              系统练习: 411个真实习题已验证
-            </span>
-          </div>
+        <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-blue-100 rounded-full px-6 py-3 shadow-md">
+          <Trophy className="w-5 h-5 mr-2 text-yellow-600" />
+          <span className="text-gray-800 font-semibold">
+            当前等级: {user.level} - {levelStages.find(s => s.level === user.level)?.name}
+          </span>
         </div>
       </div>
 
