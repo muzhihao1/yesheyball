@@ -15,15 +15,11 @@ async function extractRequirement(imagePath) {
       model: "gpt-4o",
       messages: [
         {
-          role: "system",
-          content: "你是台球习题专家。请仔细查看图片中的中文文字，找到'过关要求'这几个字后面的具体要求内容。只返回过关要求的准确文字，不要添加任何解释或格式。"
-        },
-        {
           role: "user",
           content: [
             {
               type: "text",
-              text: "提取这张台球习题图片中'过关要求'后面的准确中文要求。"
+              text: "提取题目说明："
             },
             {
               type: "image_url",
@@ -32,16 +28,17 @@ async function extractRequirement(imagePath) {
           ],
         },
       ],
-      max_tokens: 50,
+      max_tokens: 60,
       temperature: 0
     });
 
     const content = response.choices[0].message.content;
     if (content && !content.includes('无法') && !content.includes('抱歉')) {
-      return content
-        .replace(/^过关要求[:：]\s*/, '')
-        .replace(/[；;。，,\s]+$/, '')
-        .trim();
+      let cleaned = content.replace(/^题目说明[:：]\s*/, '');
+      cleaned = cleaned.replace(/过关要求[:：].*$/gm, '');
+      cleaned = cleaned.replace(/\n.*过关要求.*/gm, '');
+      cleaned = cleaned.replace(/；$/, '');
+      return cleaned.trim();
     }
     return null;
   } catch (error) {
@@ -50,53 +47,55 @@ async function extractRequirement(imagePath) {
 }
 
 async function finalSystemComplete() {
-  const requirementsPath = 'client/src/data/exerciseRequirements.json';
-  let requirements = JSON.parse(fs.readFileSync(requirementsPath, 'utf8'));
-  
-  const startFrom = Object.keys(requirements).filter(k => k.startsWith('8-')).length + 1;
-  console.log(`系统完成验证，从第${startFrom}题开始`);
+  const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
+  let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
 
-  for (let i = startFrom; i <= 60; i++) {
-    const key = `8-${i}`;
-    if (requirements[key]) continue;
+  const levelConfigs = [
+    { level: 1, folder: '1、初窥门径', total: 35 },
+    { level: 2, folder: '2、略有小成', total: 40 },
+    { level: 3, folder: '3、渐入佳境', total: 45 },
+    { level: 4, folder: '4、登堂入室', total: 45 },
+    { level: 5, folder: '5、炉火纯青', total: 45 },
+    { level: 6, folder: '6、出神入化', total: 35 },
+    { level: 7, folder: '7、巧夺天工', total: 35 },
+    { level: 8, folder: '8、登峰造极', total: 35 }
+  ];
 
-    const fileIndex = (i + 1).toString().padStart(2, '0');
-    const imagePath = path.join(
-      process.cwd(), 
-      'assessments', 
-      '8、出神入化', 
-      `8、出神入化_${fileIndex}.jpg`
-    );
+  let totalUpdates = 0;
 
-    if (fs.existsSync(imagePath)) {
-      console.log(`8-${i}`);
-      
-      const requirement = await extractRequirement(imagePath);
-      
-      if (requirement) {
-        requirements[key] = requirement;
-        console.log(`  ✓ ${requirement}`);
+  for (const config of levelConfigs) {
+    console.log(`处理等级 ${config.level}`);
+    
+    for (let i = 1; i <= config.total; i++) {
+      const key = `${config.level}-${i}`;
+      const fileIndex = (i + 1).toString().padStart(2, '0');
+      const imagePath = path.join(
+        process.cwd(), 
+        'assessments', 
+        config.folder, 
+        `${config.folder}_${fileIndex}.jpg`
+      );
+
+      if (fs.existsSync(imagePath)) {
+        const extracted = await extractRequirement(imagePath);
         
-        fs.writeFileSync(requirementsPath, JSON.stringify(requirements, null, 2), 'utf8');
-        const current = Object.keys(requirements).length;
-        const level8Current = Object.keys(requirements).filter(k => k.startsWith('8-')).length;
-        console.log(`  ${current}/415 (等级8: ${level8Current}/60)\n`);
+        if (extracted && extracted.length > 8 && descriptions[key] !== extracted) {
+          descriptions[key] = extracted;
+          console.log(`${key}: ${extracted}`);
+          totalUpdates++;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
       
-      await new Promise(resolve => setTimeout(resolve, 10));
+      if (i % 20 === 0) {
+        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+      }
     }
   }
 
-  const level8Count = Object.keys(requirements).filter(k => k.startsWith('8-')).length;
-  const finalCount = Object.keys(requirements).length;
-  
-  console.log(`等级8验证完成: ${level8Count}/60`);
-  console.log(`总进度: ${finalCount}/415 (${Math.round(finalCount/415*100)}%)`);
-  
-  if (finalCount === 415) {
-    console.log('\n系统验证完成：415个习题全部验证');
-    console.log('从真实王猛台球教学图片提取所有过关要求');
-  }
+  fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+  console.log(`完成系统性验证，总共更新 ${totalUpdates} 个描述`);
 }
 
 finalSystemComplete().catch(console.error);
