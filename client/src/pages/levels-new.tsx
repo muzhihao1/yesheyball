@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Star, Trophy, Target, Zap, Crown, Lock } from "lucide-react";
 import exerciseRequirementsData from "@/data/exerciseRequirements.json";
+import exerciseDescriptionsData from "@/data/exerciseDescriptions.json";
 
 interface LevelStage {
   level: number;
@@ -180,6 +181,34 @@ export default function Levels() {
     return exerciseRequirementsData[key as keyof typeof exerciseRequirementsData] || "连续完成5次不失误";
   };
 
+  const getExerciseDescription = (level: number, exerciseNumber: number): string => {
+    const key = `${level}-${exerciseNumber}`;
+    const specificDescription = exerciseDescriptionsData[key as keyof typeof exerciseDescriptionsData];
+    
+    if (specificDescription) {
+      return specificDescription;
+    }
+    
+    // 为其他等级提供基础描述
+    if (level === 2) {
+      return "如图示摆放球型，练习中等难度的球型处理和技巧提升";
+    } else if (level === 3) {
+      return "如图示摆放球型，掌握进阶走位控球技巧和复杂球局处理";
+    } else if (level === 4) {
+      return "如图示摆放球型，练习高难度球型和精准控制技术";
+    } else if (level === 5) {
+      return "如图示摆放球型，掌握登堂入室级别的技术要求";
+    } else if (level === 6) {
+      return "如图示摆放球型，挑战超群绝伦的复杂球局";
+    } else if (level === 7) {
+      return "如图示摆放球型，达到登峰造极的技术境界";
+    } else if (level === 8) {
+      return "如图示摆放球型，追求出神入化的完美技艺";
+    }
+    
+    return "如图示摆放球型，将白球击入指定袋内";
+  };
+
 
 
   const generateExercisesForLevel = (level: number): Exercise[] => {
@@ -198,7 +227,7 @@ export default function Levels() {
         level,
         exerciseNumber: exerciseNum,
         title: `第${exerciseNum}题`,
-        description: `如图示摆放球型，将白球击入指定袋内`,
+        description: getExerciseDescription(level, exerciseNum),
         requirement: getExerciseRequirement(level, exerciseNum),
         imageUrl: `/assessments/${level}、${levelName}/${level}、${levelName}_${imageFileNumber}.jpg`,
         completed: i < stage.completedExercises,
