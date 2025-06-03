@@ -58,15 +58,15 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - 真正裁剪图片只显示桌子部分
+  // Function to get cropping style - 使用clipPath并计算实际尺寸
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     return {
-      width: '280px',
-      height: '200px',
-      objectFit: 'cover' as const,
-      objectPosition: '80% 50%', // 调整图片位置显示桌子部分
-      transform: 'scale(2.4)', // 放大图片使桌子部分填满容器
-      transformOrigin: 'center center'
+      clipPath: 'inset(19% 6% 3% 52%)', // 裁剪显示桌子
+      width: '667px', // 原图宽度/可见宽度比例 (280/0.42)
+      height: '359px', // 原图高度/可见高度比例 (280/0.78)
+      objectFit: 'contain' as const,
+      marginLeft: '-347px', // 负边距去掉左侧空白 (667*0.52)
+      marginTop: '-68px' // 负边距去掉顶部空白 (359*0.19)
     };
   };
 
