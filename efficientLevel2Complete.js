@@ -22,22 +22,20 @@ async function extractDescription(exerciseNum) {
         role: "user",
         content: [{
           type: "text",
-          text: "精确提取'题目说明：'后的完整文字，只要说明部分"
+          text: "提取题目说明"
         }, {
           type: "image_url",
           image_url: { url: `data:image/jpeg;base64,${base64Image}` }
         }]
       }],
-      max_tokens: 80,
+      max_tokens: 50,
       temperature: 0
     });
 
     let content = response.choices[0].message.content;
     if (content && !content.includes('无法')) {
-      content = content.replace(/^题目说明[：:]\s*/g, '');
-      content = content.replace(/过关要求.*$/gm, '');
-      content = content.replace(/[；。]+$/, '');
-      return content.trim();
+      content = content.replace(/^题目说明[：:]\s*/g, '').replace(/过关要求.*$/gm, '').replace(/[；。\n]+$/, '').trim();
+      return content.length > 8 ? content : null;
     }
     return null;
   } catch (error) {
@@ -49,36 +47,43 @@ async function processRemainingLevel2() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
+  const remaining = [32, 33, 34, 35, 36, 37, 38, 39, 40];
   let updated = 0;
   
-  // Process exercises that still have generic descriptions
-  const exercisesToUpdate = [];
-  for (let i = 1; i <= 40; i++) {
-    const key = `2-${i}`;
-    const current = descriptions[key];
-    if (!current || current.includes('如图摆放球型，白球任意位置') || current.length < 20) {
-      exercisesToUpdate.push(i);
-    }
-  }
+  console.log(`Processing final ${remaining.length} Level 2 exercises...`);
   
-  console.log(`需要更新 ${exercisesToUpdate.length} 个练习描述`);
-  
-  for (const exerciseNum of exercisesToUpdate.slice(0, 15)) { // Process first 15
+  // Process remaining exercises (limit to 6 to avoid timeout)
+  for (const exerciseNum of remaining.slice(0, 6)) {
     const key = `2-${exerciseNum}`;
     
     const extracted = await extractDescription(exerciseNum);
     
-    if (extracted && extracted.length > 10) {
+    if (extracted) {
       descriptions[key] = extracted;
       console.log(`${key}: ${extracted}`);
       updated++;
+      fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
     }
     
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 400));
   }
   
-  fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-  console.log(`\n更新了 ${updated} 个描述`);
+  console.log(`Final batch: ${updated} updates`);
+  
+  // Final count
+  let authentic = 0;
+  for (let i = 1; i <= 40; i++) {
+    const desc = descriptions[`2-${i}`];
+    if (desc && !desc.includes('如图摆放球型，白球任意位置') && desc.length > 20) {
+      authentic++;
+    }
+  }
+  
+  console.log(`Level 2 current: ${authentic}/40 authentic descriptions (${(authentic/40*100).toFixed(1)}%)`);
+  
+  if (authentic >= 37) {
+    console.log('Level 2 is nearly complete! Only a few exercises remain.');
+  }
 }
 
 processRemainingLevel2().catch(console.error);
