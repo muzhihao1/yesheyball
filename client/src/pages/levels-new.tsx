@@ -104,57 +104,57 @@ export default function Levels() {
     {
       level: 4,
       name: "游刃有余",
-      totalExercises: 60,
+      totalExercises: 48,
       category: "超新星",
       description: "在超新星的引力场中，精准控制每一次撞击！",
       unlocked: user.level >= 4,
       completed: user.level > 4,
       progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
-      completedExercises: user.level > 4 ? 60 : user.level === 4 ? Math.floor((user.exp / 400) * 60) : 0
+      completedExercises: user.level > 4 ? 48 : user.level === 4 ? Math.floor((user.exp / 400) * 48) : 0
     },
     {
       level: 5,
-      name: "登堂入室",
-      totalExercises: 60,
+      name: "炉火纯青",
+      totalExercises: 52,
       category: "超新星",
       description: "技术日臻成熟，走位精准",
       unlocked: user.level >= 5,
       completed: user.level > 5,
       progress: user.level > 5 ? 100 : user.level === 5 ? Math.min((user.exp / 500) * 100, 95) : 0,
-      completedExercises: user.level > 5 ? 60 : user.level === 5 ? Math.floor((user.exp / 500) * 60) : 0
+      completedExercises: user.level > 5 ? 52 : user.level === 5 ? Math.floor((user.exp / 500) * 52) : 0
     },
     {
       level: 6,
       name: "超群绝伦",
-      totalExercises: 60,
+      totalExercises: 62,
       category: "超新星",
       description: "精确走位与复杂球局",
       unlocked: user.level >= 6,
       completed: user.level > 6,
       progress: user.level > 6 ? 100 : user.level === 6 ? Math.min((user.exp / 600) * 100, 95) : 0,
-      completedExercises: user.level > 6 ? 60 : user.level === 6 ? Math.floor((user.exp / 600) * 60) : 0
+      completedExercises: user.level > 6 ? 62 : user.level === 6 ? Math.floor((user.exp / 600) * 62) : 0
     },
     {
       level: 7,
       name: "登峰造极",
-      totalExercises: 50,
+      totalExercises: 72,
       category: "智子星",
       description: "在智子星的宏观维度，用一杆终结所有因果链！台球桌上的战略思维",
       unlocked: user.level >= 7,
       completed: user.level > 7,
       progress: user.level > 7 ? 100 : user.level === 7 ? Math.min((user.exp / 700) * 100, 95) : 0,
-      completedExercises: user.level > 7 ? 50 : user.level === 7 ? Math.floor((user.exp / 700) * 50) : 0
+      completedExercises: user.level > 7 ? 72 : user.level === 7 ? Math.floor((user.exp / 700) * 72) : 0
     },
     {
       level: 8,
       name: "出神入化",
-      totalExercises: 56,
+      totalExercises: 72,
       category: "智子星",
       description: "超越技巧的艺术境界",
       unlocked: user.level >= 8,
       completed: user.level > 8,
       progress: user.level > 8 ? 100 : user.level === 8 ? Math.min((user.exp / 800) * 100, 95) : 0,
-      completedExercises: user.level > 8 ? 56 : user.level === 8 ? Math.floor((user.exp / 800) * 56) : 0
+      completedExercises: user.level > 8 ? 72 : user.level === 8 ? Math.floor((user.exp / 800) * 72) : 0
     }
   ];
 

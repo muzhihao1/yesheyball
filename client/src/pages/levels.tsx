@@ -102,25 +102,25 @@ export default function Levels() {
     },
     {
       level: 4,
-      name: "炉火纯青",
-      totalExercises: 62,
+      name: "游刃有余",
+      totalExercises: 48,
       category: "超新星",
-      description: "引爆超新星的潜能，用球杆雕刻台面法则！力度与杆法的完美艺术",
+      description: "在超新星的引力场中，精准控制每一次撞击！",
       unlocked: user.level >= 4,
       completed: user.level > 4,
       progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
-      completedExercises: user.level > 4 ? 62 : user.level === 4 ? Math.floor((user.exp / 400) * 62) : 0
+      completedExercises: user.level > 4 ? 48 : user.level === 4 ? Math.floor((user.exp / 400) * 48) : 0
     },
     {
       level: 5,
-      name: "登堂入室",
-      totalExercises: 62,
+      name: "炉火纯青",
+      totalExercises: 52,
       category: "超新星",
-      description: "高阶控球与实战训练",
+      description: "技术日臻成熟，走位精准",
       unlocked: user.level >= 5,
       completed: user.level > 5,
       progress: user.level > 5 ? 100 : user.level === 5 ? Math.min((user.exp / 500) * 100, 95) : 0,
-      completedExercises: user.level > 5 ? 62 : user.level === 5 ? Math.floor((user.exp / 500) * 62) : 0
+      completedExercises: user.level > 5 ? 52 : user.level === 5 ? Math.floor((user.exp / 500) * 52) : 0
     },
     {
       level: 6,
