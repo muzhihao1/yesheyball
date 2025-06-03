@@ -361,21 +361,75 @@ export default function Levels() {
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
                     
-                    // Diagonal zigzag arrangement
+                    // Diagonal staircase arrangement
                     const getPositionClasses = () => {
                       if (isMilestone) {
                         return "flex justify-center mb-12"; // Center the milestone
                       }
                       
-                      // Diagonal zigzag pattern: left -> right -> left -> right
-                      const isLeft = exerciseIndex % 2 === 0;
-                      return isLeft ? "flex justify-start pl-16 mb-8" : "flex justify-end pr-16 mb-8";
+                      // Create diagonal staircase pattern within each group
+                      const groupIndex = Math.floor(exerciseIndex / 5);
+                      const isOddGroup = groupIndex % 2 === 1;
+                      
+                      // For even groups (0, 2, 4...): left to right diagonal
+                      // For odd groups (1, 3, 5...): right to left diagonal
+                      let paddingLeft, paddingRight;
+                      
+                      if (isOddGroup) {
+                        // Right to left diagonal
+                        switch (positionInGroup) {
+                          case 0: paddingLeft = 64; paddingRight = 8; break;  // Far right
+                          case 1: paddingLeft = 48; paddingRight = 24; break; // Medium right
+                          case 2: paddingLeft = 32; paddingRight = 40; break; // Center
+                          case 3: paddingLeft = 16; paddingRight = 56; break; // Medium left
+                          default: paddingLeft = 32; paddingRight = 40; break;
+                        }
+                      } else {
+                        // Left to right diagonal
+                        switch (positionInGroup) {
+                          case 0: paddingLeft = 8; paddingRight = 64; break;  // Far left
+                          case 1: paddingLeft = 24; paddingRight = 48; break; // Medium left
+                          case 2: paddingLeft = 40; paddingRight = 32; break; // Center
+                          case 3: paddingLeft = 56; paddingRight = 16; break; // Medium right
+                          default: paddingLeft = 40; paddingRight = 32; break;
+                        }
+                      }
+                      
+                      return `flex justify-start mb-8`;
                     };
+                    
+                    // Calculate padding for diagonal effect
+                    const groupIndex = Math.floor(exerciseIndex / 5);
+                    const isOddGroup = groupIndex % 2 === 1;
+                    let paddingLeft = 32;
+                    
+                    if (!isMilestone) {
+                      if (isOddGroup) {
+                        // Right to left diagonal
+                        switch (positionInGroup) {
+                          case 0: paddingLeft = 80; break;  // Far right
+                          case 1: paddingLeft = 60; break;  // Medium right
+                          case 2: paddingLeft = 40; break;  // Center
+                          case 3: paddingLeft = 20; break;  // Medium left
+                        }
+                      } else {
+                        // Left to right diagonal
+                        switch (positionInGroup) {
+                          case 0: paddingLeft = 20; break;  // Far left
+                          case 1: paddingLeft = 40; break;  // Medium left
+                          case 2: paddingLeft = 60; break;  // Center
+                          case 3: paddingLeft = 80; break;  // Medium right
+                        }
+                      }
+                    }
                     
                     return (
                       <div key={exercise.id}>
                         {/* Exercise Row */}
-                        <div className={`${getPositionClasses()} items-center relative`}>
+                        <div 
+                          className={`${getPositionClasses()} items-center relative`}
+                          style={!isMilestone ? { paddingLeft: `${paddingLeft}px` } : {}}
+                        >
                           {/* Exercise Circle */}
                           <div className="relative z-10">
                             {isMilestone ? (
