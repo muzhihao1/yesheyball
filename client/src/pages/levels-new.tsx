@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Star, Trophy, Target, Zap, Crown, Lock, ArrowUp, ChevronRight } from "lucide-react";
+import { Star, Trophy, Target, Zap, Crown, Lock } from "lucide-react";
 import exerciseRequirementsData from "@/data/exerciseRequirements.json";
 import exerciseDescriptionsData from "@/data/exerciseDescriptions.json";
 
@@ -40,7 +40,6 @@ export default function Levels() {
   const [selectedLevel, setSelectedLevel] = useState<LevelStage | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
-  const currentLevelRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
@@ -300,200 +299,155 @@ export default function Levels() {
     return stage.level > 1 && stage.completedExercises >= stage.totalExercises;
   };
 
-  const scrollToCurrentLevel = () => {
-    currentLevelRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center'
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-green-500/10 rounded-full blur-xl"></div>
-        <div className="absolute top-40 right-20 w-40 h-40 bg-blue-500/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-purple-500/10 rounded-full blur-xl"></div>
-      </div>
-
-      {/* Top status bar */}
-      <div className="relative z-10 flex justify-between items-center p-4 text-white">
-        <div className="flex items-center space-x-4">
-          <div className="w-8 h-6 bg-red-500 rounded-sm flex items-center justify-center">
-            <span className="text-yellow-400 text-xs">🇨🇳</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center">
-              <span className="text-xs">🔥</span>
-            </div>
-            <span className="text-sm font-bold">{Math.floor(user.exp / 100)}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-xs">💎</span>
-            </div>
-            <span className="text-sm font-bold">{user.exp}</span>
-          </div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="relative">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-red-600 bg-clip-text text-transparent mb-4">
+            台球大师之路
+          </h1>
+          <div className="absolute -top-2 -right-8 text-2xl">🎱</div>
         </div>
-        <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-          SUPER
-        </div>
-      </div>
-
-      {/* Current level banner */}
-      <div className="relative z-10 mx-4 mb-6">
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-4 text-white shadow-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="text-sm opacity-90">第 {user.level} 阶段，第 3 部分</div>
-              <div className="text-xl font-bold">{levelStages.find(s => s.level === user.level)?.name}</div>
-            </div>
-            <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">📚</span>
-            </div>
-          </div>
-        </div>
+        <p className="text-gray-700 text-lg mb-6">通过耶氏台球学院系列练习，系统化提升中式八球技术水平</p>
         
-        {/* Arrow pointing down */}
-        <div className="flex justify-center mt-2">
-          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center transform rotate-45 border-4 border-green-600"></div>
+        <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-blue-100 rounded-full px-6 py-3 shadow-md">
+          <Trophy className="w-5 h-5 mr-2 text-yellow-600" />
+          <span className="text-gray-800 font-semibold">
+            当前等级: {user.level} - {levelStages.find(s => s.level === user.level)?.name}
+          </span>
         </div>
       </div>
 
-      {/* Main content area */}
-      <div className="relative z-10 flex-1 px-4 pb-20">
-        <div className="max-w-md mx-auto">
-          {/* Character and current exercise */}
-          <div className="text-center mb-8">
-            <div className="relative inline-block mb-4">
-              <div className="w-32 h-32 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-6xl">👨‍🎓</span>
-              </div>
-              <div className="absolute -top-2 -right-2">
-                <span className="text-2xl">🐝</span>
-              </div>
-              <div className="absolute top-4 -left-4">
-                <span className="text-2xl">🐝</span>
+      {/* 多邻国风格的垂直滚动关卡地图 */}
+      <div className="max-w-md mx-auto bg-gradient-to-b from-green-50 to-blue-50 rounded-xl p-6">
+        {/* 用户进度显示 */}
+        <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 shadow-lg border border-gray-100">
+          <div className="flex items-center space-x-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+              {user.username.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div className="font-bold text-gray-800 text-lg">{user.username}</div>
+              <div className="text-sm text-gray-600 flex items-center">
+                <Target className="w-4 h-4 mr-1" />
+                等级 {user.level} - {levelStages.find(s => s.level === user.level)?.name}
               </div>
             </div>
-            
-            {/* Jump to current level text */}
-            <div className="text-gray-400 text-sm mb-4">跳到这儿了？</div>
-            
-            {/* Continue button */}
-            <button 
-              onClick={scrollToCurrentLevel}
-              className="w-16 h-16 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200 mb-8"
-            >
-              <ChevronRight className="w-8 h-8 text-white ml-1" />
-            </button>
           </div>
+          <div className="text-right">
+            <div className="text-xl font-bold text-orange-500">{user.exp}</div>
+            <div className="text-xs text-gray-500 flex items-center justify-end">
+              <Star className="w-3 h-3 mr-1" />
+              经验值
+            </div>
+          </div>
+        </div>
 
-          {/* Level path */}
-          <div className="space-y-16">
-            {levelStages.slice().reverse().map((stage, stageIndex) => {
-              const isCurrentLevel = stage.level === user.level;
-              return (
-                <div 
-                  key={stage.level} 
-                  className={`relative ${isCurrentLevel ? 'z-20' : 'z-10'}`}
-                  ref={isCurrentLevel ? currentLevelRef : null}
-                >
-                  {/* Level exercises */}
-                  <div className="space-y-12">
-                    {generateExercisesForLevel(stage.level).slice().reverse().map((exercise, exerciseIndex) => {
-                      const isLeft = exerciseIndex % 2 === 0;
-                      const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || generateExercisesForLevel(stage.level)[exerciseIndex - 1]?.completed);
-                      const isNextExercise = !exercise.completed && isUnlocked;
-                      
-                      return (
-                        <div 
-                          key={exercise.id} 
-                          className={`flex ${isLeft ? 'justify-start pl-8' : 'justify-end pr-8'} relative`}
-                        >
-                          {/* Exercise node */}
-                          <div 
-                            className={`relative ${
-                              !isUnlocked 
-                                ? 'w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center cursor-not-allowed opacity-50' 
-                                : exercise.completed 
-                                  ? 'w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center cursor-pointer shadow-lg' 
-                                  : isNextExercise
-                                    ? 'w-24 h-24 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center cursor-pointer shadow-xl border-4 border-white animate-pulse'
-                                    : 'w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center cursor-pointer opacity-50'
-                            } transition-all duration-300 hover:scale-110`}
-                            onClick={() => isUnlocked && handleExerciseClick(exercise)}
-                          >
-                            {!isUnlocked ? (
-                              <Lock className="w-6 h-6 text-gray-400" />
-                            ) : exercise.completed ? (
-                              <Star className="w-10 h-10 text-white fill-white" />
-                            ) : isNextExercise ? (
-                              <span className="text-2xl font-bold text-white">{exercise.exerciseNumber}</span>
-                            ) : (
-                              <span className="text-lg font-bold text-gray-400">{exercise.exerciseNumber}</span>
-                            )}
-                            
-                            {/* Stars rating */}
-                            {exercise.completed && exercise.stars > 0 && (
-                              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                                {[1, 2, 3].map((star) => (
-                                  <Star 
-                                    key={star} 
-                                    className={`w-4 h-4 ${
-                                      star <= exercise.stars 
-                                        ? 'text-yellow-400 fill-yellow-400' 
-                                        : 'text-gray-600'
-                                    }`} 
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Connecting path */}
-                          {exerciseIndex < generateExercisesForLevel(stage.level).length - 1 && (
-                            <div className={`absolute ${isLeft ? 'left-16' : 'right-16'} top-8 w-16 h-12`}>
-                              <svg width="64" height="48" className="overflow-visible">
-                                <path
-                                  d={isLeft ? "M 0 0 Q 32 24 64 48" : "M 64 0 Q 32 24 0 48"}
-                                  fill="none"
-                                  stroke={isUnlocked ? "#10b981" : "#6b7280"}
-                                  strokeWidth="3"
-                                  strokeDasharray={isUnlocked ? "0" : "5,5"}
-                                />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+        {/* 垂直滚动的关卡路径 */}
+        <div className="space-y-8">
+          {levelStages.map((stage, stageIndex) => (
+            <div key={stage.level} className="relative">
+              {/* 等级标题卡片 */}
+              <div className={`bg-gradient-to-r ${getCategoryColor(stage.category)} rounded-lg p-4 mb-6 text-white shadow-lg`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-2xl">{getCategoryIcon(stage.category)}</span>
+                    <div>
+                      <div className="font-bold">等级 {stage.level}: {stage.name}</div>
+                      <div className="text-xs opacity-90">{stage.category}阶段</div>
+                    </div>
                   </div>
+                  <div className="text-right">
+                    <div className="text-xs opacity-90">进度</div>
+                    <div className="font-bold">{stage.completedExercises}/{stage.totalExercises}</div>
+                  </div>
+                </div>
+                <Progress value={stage.progress} className="mt-2 h-1 bg-white/20" />
+              </div>
 
-                  {/* Level separator */}
-                  {stageIndex < levelStages.length - 1 && (
-                    <div className="flex justify-center mt-16">
-                      <div className="text-center">
-                        <div className="text-gray-500 text-sm mb-4">在{stage.category}中出行</div>
-                        <div className="w-px h-16 bg-gray-600 mx-auto"></div>
+              {/* 习题关卡点 - 垂直Z字形排列 */}
+              <div className="space-y-4 pl-4">
+                {generateExercisesForLevel(stage.level).map((exercise, exerciseIndex) => {
+                  const isLeft = exerciseIndex % 2 === 0;
+                  const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || generateExercisesForLevel(stage.level)[exerciseIndex - 1]?.completed);
+                  
+                  return (
+                    <div 
+                      key={exercise.id} 
+                      className={`flex ${isLeft ? 'justify-start' : 'justify-end'} relative`}
+                    >
+                      {/* 连接线 */}
+                      {exerciseIndex > 0 && (
+                        <div className={`absolute top-0 w-8 h-4 border-gray-300 ${
+                          isLeft ? 'right-12 border-r-2 border-b-2' : 'left-12 border-l-2 border-b-2'
+                        } transform -translate-y-4`} />
+                      )}
+                      
+                      {/* 关卡圆圈 */}
+                      <div 
+                        className={`relative w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 shadow-lg ${
+                          !isUnlocked 
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                            : exercise.completed 
+                              ? 'bg-gradient-to-br from-green-400 to-green-600 text-white transform scale-105' 
+                              : 'bg-gradient-to-br from-white to-green-50 border-4 border-green-500 text-green-600 hover:scale-110 hover:shadow-xl'
+                        }`}
+                        onClick={() => isUnlocked && handleExerciseClick(exercise)}
+                      >
+                        {!isUnlocked ? (
+                          <Lock className="w-6 h-6" />
+                        ) : exercise.completed ? (
+                          <Star className="w-8 h-8 fill-white" />
+                        ) : (
+                          <span className="text-lg font-bold">{exercise.exerciseNumber}</span>
+                        )}
+                        
+                        {/* 星星评分 */}
+                        {exercise.completed && exercise.stars > 0 && (
+                          <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full px-1.5 py-0.5 text-xs font-bold text-yellow-900 min-w-[20px] text-center">
+                            {exercise.stars}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* 题目标签 */}
+                      <div className={`absolute ${isLeft ? 'left-20' : 'right-20'} top-2 bg-white rounded-lg px-3 py-1 shadow-sm ${
+                        !isUnlocked ? 'opacity-50' : ''
+                      }`}>
+                        <div className="text-sm font-medium text-gray-800">{exercise.title}</div>
+                        {exercise.completed && (
+                          <div className="text-xs text-green-600">已完成</div>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+                  );
+                })}
+              </div>
 
-      {/* Floating jump to current level button */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={scrollToCurrentLevel}
-          className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform duration-200"
-        >
-          <ArrowUp className="w-6 h-6" />
-        </button>
+              {/* 等级考核关卡 */}
+              {canTakeExam(stage) && (
+                <div className="flex justify-center mt-8">
+                  <div className="relative">
+                    <div className="w-20 h-20 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center cursor-pointer shadow-xl transform hover:scale-110 transition-all duration-300">
+                      <span className="text-2xl">🏆</span>
+                    </div>
+                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap">
+                      等级考核
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 连接下一等级的线 */}
+              {stageIndex < levelStages.length - 1 && (
+                <div className="flex justify-center mt-8">
+                  <div className="w-0.5 h-12 bg-gray-300"></div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Exercise Dialog */}
