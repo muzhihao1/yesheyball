@@ -302,124 +302,150 @@ export default function Levels() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-green-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
-      <div className="pt-4 pb-6 text-center">
-        <div className="flex items-center justify-center space-x-4 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+      <div className="pt-6 pb-4 text-center">
+        <div className="flex items-center justify-center space-x-6 mb-6">
+          <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
             {user.username.charAt(0).toUpperCase()}
           </div>
-          <div className="flex items-center space-x-2 bg-white rounded-full px-4 py-2 shadow-md">
-            <Star className="w-4 h-4 text-orange-400" />
-            <span className="font-bold text-gray-700">{user.exp}</span>
+          <div className="flex items-center space-x-3 bg-white rounded-full px-5 py-3 shadow-lg border border-gray-100">
+            <Star className="w-5 h-5 text-orange-400" />
+            <span className="font-bold text-gray-700 text-lg">{user.exp}</span>
           </div>
-          <div className="flex items-center space-x-2 bg-white rounded-full px-4 py-2 shadow-md">
-            <Trophy className="w-4 h-4 text-yellow-500" />
-            <span className="font-bold text-gray-700">等级 {user.level}</span>
+          <div className="flex items-center space-x-3 bg-white rounded-full px-5 py-3 shadow-lg border border-gray-100">
+            <Trophy className="w-5 h-5 text-yellow-500" />
+            <span className="font-bold text-gray-700 text-lg">等级 {user.level}</span>
           </div>
         </div>
       </div>
 
       {/* Duolingo-style Level Map */}
-      <div className="max-w-sm mx-auto px-4 pb-8">
+      <div className="max-w-lg mx-auto px-4 pb-12">
         <div className="relative">
           {levelStages.map((stage, stageIndex) => {
             const levelColors = getLevelColors(stage.level);
             const exercises = generateExercisesForLevel(stage.level);
             
             return (
-              <div key={stage.level} className="relative mb-16">
+              <div key={stage.level} className="relative mb-20">
                 {/* Level Header */}
-                <div className={`bg-gradient-to-r ${levelColors.bg} rounded-2xl p-4 mb-8 text-white shadow-lg mx-4`}>
+                <div className={`bg-gradient-to-r ${levelColors.bg} rounded-3xl p-6 mb-12 text-white shadow-2xl mx-6`}
+                     style={{
+                       filter: 'drop-shadow(0 10px 30px rgba(0,0,0,0.15))'
+                     }}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-bold text-lg">{stage.name}</div>
-                      <div className="text-sm opacity-90">等级 {stage.level}</div>
+                      <div className="font-bold text-xl">{stage.name}</div>
+                      <div className="text-sm opacity-90 mt-1">等级 {stage.level} • {stage.category}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm opacity-90">进度</div>
-                      <div className="font-bold">{stage.completedExercises}/{stage.totalExercises}</div>
+                      <div className="font-bold text-lg">{stage.completedExercises}/{stage.totalExercises}</div>
                     </div>
                   </div>
-                  <div className="mt-3 bg-white/20 rounded-full h-2">
+                  <div className="mt-4 bg-white/20 rounded-full h-3 overflow-hidden">
                     <div 
-                      className="bg-white rounded-full h-2 transition-all duration-500"
+                      className="bg-white rounded-full h-3 transition-all duration-700 ease-out"
                       style={{ width: `${stage.progress}%` }}
                     />
                   </div>
                 </div>
 
                 {/* Exercise Nodes */}
-                <div className="relative">
+                <div className="relative px-8">
                   {exercises.map((exercise, exerciseIndex) => {
                     const isLeft = exerciseIndex % 2 === 0;
                     const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || exercises[exerciseIndex - 1]?.completed);
                     const prevIsLeft = (exerciseIndex - 1) % 2 === 0;
                     
                     return (
-                      <div key={exercise.id} className="relative mb-6">
+                      <div key={exercise.id} className="relative mb-8">
                         {/* Curved Connecting Path */}
                         {exerciseIndex > 0 && (
-                          <svg 
-                            className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6 pointer-events-none"
-                            width="120" 
-                            height="50" 
-                            viewBox="0 0 120 50"
-                          >
-                            <path
-                              d={`M 60 0 Q ${prevIsLeft === isLeft ? '60' : prevIsLeft ? '30' : '90'} 25 60 50`}
-                              stroke={isUnlocked ? levelColors.hex : '#d1d5db'}
-                              strokeWidth="4"
-                              fill="none"
-                              strokeLinecap="round"
-                              className="drop-shadow-sm"
-                            />
-                          </svg>
+                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 pointer-events-none">
+                            <svg 
+                              width="150" 
+                              height="60" 
+                              viewBox="0 0 150 60"
+                              className="overflow-visible"
+                            >
+                              <defs>
+                                <filter id="dropshadow" x="-50%" y="-50%" width="200%" height="200%">
+                                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.1"/>
+                                </filter>
+                              </defs>
+                              <path
+                                d={`M 75 5 Q ${prevIsLeft === isLeft ? '75' : prevIsLeft ? '40' : '110'} 30 75 55`}
+                                stroke={isUnlocked ? levelColors.hex : '#d1d5db'}
+                                strokeWidth="5"
+                                fill="none"
+                                strokeLinecap="round"
+                                filter="url(#dropshadow)"
+                              />
+                            </svg>
+                          </div>
                         )}
                         
                         {/* Exercise Node Container */}
-                        <div className={`flex ${isLeft ? 'justify-start pl-8' : 'justify-end pr-8'} items-center`}>
+                        <div className={`flex ${isLeft ? 'justify-start' : 'justify-end'} items-center relative`}>
                           {/* Exercise Circle */}
-                          <div className="relative">
+                          <div className="relative z-10">
                             <div 
-                              className={`w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 shadow-lg ${
+                              className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
                                 !isUnlocked 
-                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-lg' 
                                   : exercise.completed 
-                                    ? `${levelColors.node} text-white scale-105 shadow-xl` 
-                                    : `bg-white ${levelColors.border} border-4 text-gray-600 hover:scale-110 hover:shadow-xl`
+                                    ? `${levelColors.node} text-white shadow-2xl` 
+                                    : `bg-white border-4 ${levelColors.border} text-gray-700 hover:scale-105 shadow-xl hover:shadow-2xl`
                               }`}
                               onClick={() => isUnlocked && handleExerciseClick(exercise)}
+                              style={{
+                                filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
+                              }}
                             >
                               {!isUnlocked ? (
-                                <Lock className="w-6 h-6" />
+                                <Lock className="w-7 h-7" />
                               ) : exercise.completed ? (
-                                <Star className="w-8 h-8 fill-white" />
+                                <Star className="w-10 h-10 fill-white" />
                               ) : (
-                                <span className="text-lg font-bold">{exercise.exerciseNumber}</span>
+                                <span className="text-xl font-bold">{exercise.exerciseNumber}</span>
                               )}
                             </div>
                             
                             {/* Stars Badge */}
                             {exercise.completed && exercise.stars > 0 && (
-                              <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold text-yellow-900">
+                              <div className="absolute -top-3 -right-3 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold text-white shadow-lg">
                                 {exercise.stars}
                               </div>
                             )}
                           </div>
                           
                           {/* Exercise Label */}
-                          {isUnlocked && (
-                            <div className={`absolute ${isLeft ? 'left-24' : 'right-24'} bg-white rounded-lg px-3 py-2 shadow-md ${levelColors.border} border-l-4 max-w-32`}>
-                              <div className="text-sm font-medium text-gray-800 truncate">{exercise.title}</div>
-                              {exercise.completed && (
-                                <div className="text-xs text-green-600 flex items-center">
-                                  <Star className="w-3 h-3 mr-1" />
+                          <div className={`absolute ${isLeft ? 'left-24' : 'right-24'} top-1/2 transform -translate-y-1/2 z-0`}>
+                            <div className="bg-white rounded-xl px-4 py-3 shadow-lg border border-gray-100 min-w-[120px]"
+                                 style={{
+                                   filter: 'drop-shadow(0 4px 15px rgba(0,0,0,0.1))'
+                                 }}>
+                              <div className="text-sm font-semibold text-gray-800 mb-1">{exercise.title}</div>
+                              {exercise.completed ? (
+                                <div className="flex items-center text-xs text-green-600">
+                                  <Star className="w-3 h-3 mr-1 fill-current" />
                                   已完成
+                                </div>
+                              ) : isUnlocked ? (
+                                <div className="flex items-center text-xs text-gray-500">
+                                  <div className="w-3 h-3 mr-1 rounded-full border border-gray-400"></div>
+                                  待完成
+                                </div>
+                              ) : (
+                                <div className="flex items-center text-xs text-gray-400">
+                                  <Lock className="w-3 h-3 mr-1" />
+                                  未解锁
                                 </div>
                               )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
                     );
