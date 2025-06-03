@@ -39,10 +39,10 @@ function App() {
             <div className="max-w-7xl mx-auto px-4">
               <div className="flex space-x-8">
                 <TabButton href="/tasks" icon="📝" label="每日训练" />
-                <TabButton href="/" icon="🗺️" label="关卡地图" />
-                <TabButton href="/adaptive" icon="🧠" label="智能学习" />
-                <TabButton href="/test" icon="🏆" label="等级考核" />
                 <TabButton href="/diary" icon="📖" label="练习日记" />
+                <TabButton href="/" icon="🗺️" label="关卡地图" />
+                <TabButton href="/test" icon="🏆" label="等级考核" />
+                <TabButton href="/adaptive" icon="🧠" label="智能学习" />
                 <TabButton href="/profile" icon="👤" label="个人资料" />
               </div>
             </div>
