@@ -60,17 +60,16 @@ async function completeRemainingExercises() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('连续完成剩余练习...');
+  console.log('完成剩余练习提取...');
   
-  let extracted = 0;
+  let totalExtracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Continuous processing loop
-  let completed = false;
-  while (!completed) {
+  // 持续提取直到全部完成
+  while (true) {
     let cycleExtracted = 0;
     
-    // Process all incomplete exercises
+    // 处理所有未完成练习
     for (const level of [8, 7, 5, 4, 3]) {
       for (let i = 1; i <= levelCounts[level]; i++) {
         const key = `${level}-${i}`;
@@ -86,17 +85,16 @@ async function completeRemainingExercises() {
           if (result) {
             descriptions[key] = result;
             console.log(`${key}: ${result}`);
-            extracted++;
             cycleExtracted++;
+            totalExtracted++;
             fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
           }
         }
       }
     }
     
-    // Check completion status
+    // 检查完成状态
     let totalAuth = 0, totalEx = 0;
-    
     [3,4,5,6,7,8].forEach(level => {
       let authentic = 0;
       for (let i = 1; i <= levelCounts[level]; i++) {
@@ -113,19 +111,15 @@ async function completeRemainingExercises() {
       totalEx += levelCounts[level];
     });
     
-    const progress = (totalAuth / totalEx * 100).toFixed(1);
-    console.log(`本轮提取: ${cycleExtracted} | 总进度: ${totalAuth}/${totalEx} (${progress}%)`);
+    console.log(`本轮: ${cycleExtracted} | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
     
     if (totalAuth === totalEx) {
-      completed = true;
-      console.log('🎉 全部340个练习完成!');
-    } else if (cycleExtracted === 0) {
-      console.log(`剩余 ${totalEx - totalAuth} 个练习无法提取`);
+      console.log('全部340个练习描述提取完成');
       break;
     }
   }
   
-  console.log(`总提取: ${extracted} 个描述`);
+  console.log(`总提取: ${totalExtracted} 个描述`);
 }
 
 completeRemainingExercises().catch(console.error);
