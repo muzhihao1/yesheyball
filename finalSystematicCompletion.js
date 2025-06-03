@@ -7,18 +7,20 @@ const openai = new OpenAI({
 });
 
 async function extractDescription(level, exerciseNum) {
-  const levelFolders = {
-    3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室', 
-    6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
-  };
-
-  const fileIndex = (exerciseNum + 1).toString().padStart(2, '0');
-  const folderName = levelFolders[level];
-  const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
-
-  if (!fs.existsSync(imagePath)) return null;
-
   try {
+    const levelFolders = {
+      3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室', 
+      6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
+    };
+    
+    const folderName = levelFolders[level];
+    const fileIndex = (exerciseNum + 1).toString().padStart(2, '0');
+    const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
+
+    if (!fs.existsSync(imagePath)) {
+      return null;
+    }
+
     const imageData = fs.readFileSync(imagePath);
     const base64Image = imageData.toString('base64');
 
@@ -58,120 +60,82 @@ async function finalSystematicCompletion() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('最终系统化完成...');
+  console.log('最终系统完成所有剩余练习...');
   
-  let processed = 0;
+  let totalExtracted = 0;
+  const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Complete Level 5 from 46 onwards
-  for (let i = 46; i <= 60; i++) {
-    const key = `5-${i}`;
-    const currentDesc = descriptions[key];
+  // Continuous extraction until completion
+  let attempt = 1;
+  while (true) {
+    console.log(`\n=== 尝试 ${attempt} ===`);
+    let attemptExtracted = 0;
     
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const newDesc = await extractDescription(5, i);
-      if (newDesc) {
-        descriptions[key] = newDesc;
-        console.log(`${key}: ${newDesc}`);
-        processed++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
-  
-  // Complete Level 6 entirely
-  for (let i = 1; i <= 60; i++) {
-    const key = `6-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const newDesc = await extractDescription(6, i);
-      if (newDesc) {
-        descriptions[key] = newDesc;
-        console.log(`${key}: ${newDesc}`);
-        processed++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
-  
-  // Complete Level 7 entirely
-  for (let i = 1; i <= 55; i++) {
-    const key = `7-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const newDesc = await extractDescription(7, i);
-      if (newDesc) {
-        descriptions[key] = newDesc;
-        console.log(`${key}: ${newDesc}`);
-        processed++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
-  
-  // Complete Level 8 entirely
-  for (let i = 1; i <= 55; i++) {
-    const key = `8-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const newDesc = await extractDescription(8, i);
-      if (newDesc) {
-        descriptions[key] = newDesc;
-        console.log(`${key}: ${newDesc}`);
-        processed++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
-  
-  // Complete remaining Level 3 and 4
-  for (const level of [3, 4]) {
-    const maxEx = level === 3 ? 50 : 60;
-    for (let i = 1; i <= maxEx; i++) {
-      const key = `${level}-${i}`;
-      const currentDesc = descriptions[key];
-      
-      if (!currentDesc || 
-          currentDesc.includes('如图示摆放球型，完成') || 
-          currentDesc.includes('高级台球技巧训练') ||
-          currentDesc.length < 20) {
+    // Process all incomplete exercises
+    for (const level of [3, 4, 5, 7, 8]) { // Skip Level 6 (100% complete)
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const key = `${level}-${i}`;
+        const currentDesc = descriptions[key];
         
-        const newDesc = await extractDescription(level, i);
-        if (newDesc) {
-          descriptions[key] = newDesc;
-          console.log(`${key}: ${newDesc}`);
-          processed++;
-          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        if (!currentDesc || 
+            currentDesc.includes('如图示摆放球型，完成') || 
+            currentDesc.includes('精进台球技能练习') ||
+            currentDesc.includes('高级台球技巧训练') ||
+            currentDesc.length < 20) {
+          
+          const result = await extractDescription(level, i);
+          if (result) {
+            descriptions[key] = result;
+            console.log(`${key}: ${result}`);
+            attemptExtracted++;
+            totalExtracted++;
+            fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+          }
         }
       }
     }
+    
+    // Check current status
+    let totalAuth = 0, totalEx = 0;
+    [3,4,5,6,7,8].forEach(level => {
+      let authentic = 0;
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const desc = descriptions[`${level}-${i}`];
+        if (desc && 
+            !desc.includes('如图示摆放球型，完成') && 
+            !desc.includes('精进台球技能练习') &&
+            !desc.includes('高级台球技巧训练') &&
+            desc.length > 15) {
+          authentic++;
+        }
+      }
+      totalAuth += authentic;
+      totalEx += levelCounts[level];
+    });
+    
+    console.log(`尝试 ${attempt}: 提取 ${attemptExtracted} | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+    
+    if (totalAuth === totalEx) {
+      console.log('🎉 全部340个练习描述提取完成！');
+      break;
+    }
+    
+    if (attemptExtracted === 0 && attempt >= 2) {
+      console.log('无更多可提取内容，停止处理');
+      break;
+    }
+    
+    attempt++;
+    if (attempt > 5) {
+      console.log('达到最大尝试次数');
+      break;
+    }
   }
   
-  console.log(`最终系统化完成: ${processed} 个描述`);
+  console.log(`\n总提取: ${totalExtracted} 个描述`);
   
-  // Final completion analysis
-  const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
+  // Final status report
   let totalAuth = 0, totalEx = 0;
-  
-  console.log('\n=== 最终系统化报告 ===');
   [3,4,5,6,7,8].forEach(level => {
     let authentic = 0;
     for (let i = 1; i <= levelCounts[level]; i++) {
@@ -188,18 +152,11 @@ async function finalSystematicCompletion() {
     totalEx += levelCounts[level];
     
     const pct = (authentic/levelCounts[level]*100).toFixed(1);
-    const status = authentic === levelCounts[level] ? ' ✓ 完成' : '';
-    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)${status}`);
+    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)`);
   });
   
-  console.log(`\n【项目总完成度】: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
-  console.log(`成功替换 ${totalAuth} 个通用模板为真实描述`);
-  
-  if (totalAuth === totalEx) {
-    console.log('🎉 所有Level描述提取完成！');
-  } else {
-    console.log(`剩余 ${totalEx - totalAuth} 题`);
-  }
+  console.log(`\n最终状态: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+  console.log(`剩余未完成: ${totalEx - totalAuth} 个练习`);
 }
 
 finalSystematicCompletion().catch(console.error);

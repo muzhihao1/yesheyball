@@ -60,14 +60,13 @@ async function acceleratedMassCompletion() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('加速批量完成...');
+  console.log('加速大规模完成...');
   
   let extracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Get all incomplete exercises
-  const incomplete = [];
-  for (const level of [3, 4, 5, 6, 7, 8]) {
+  // Process all incomplete levels
+  for (const level of [8, 7, 5, 4, 3]) {
     for (let i = 1; i <= levelCounts[level]; i++) {
       const key = `${level}-${i}`;
       const currentDesc = descriptions[key];
@@ -77,29 +76,21 @@ async function acceleratedMassCompletion() {
           currentDesc.includes('精进台球技能练习') ||
           currentDesc.includes('高级台球技巧训练') ||
           currentDesc.length < 20) {
-        incomplete.push({ level, exercise: i, key });
+        
+        const result = await extractDescription(level, i);
+        if (result) {
+          descriptions[key] = result;
+          console.log(`${key}: ${result}`);
+          extracted++;
+          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        }
       }
     }
   }
   
-  console.log(`待处理: ${incomplete.length} 个练习`);
+  console.log(`加速完成: ${extracted} 个描述`);
   
-  // Process all incomplete exercises
-  for (let idx = 0; idx < incomplete.length; idx++) {
-    const { level, exercise, key } = incomplete[idx];
-    
-    const result = await extractDescription(level, exercise);
-    if (result) {
-      descriptions[key] = result;
-      console.log(`${key}: ${result}`);
-      extracted++;
-      fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-    }
-  }
-  
-  console.log(`批量提取: ${extracted} 个描述`);
-  
-  // Status check
+  // Status verification
   let totalAuth = 0, totalEx = 0;
   
   [3,4,5,6,7,8].forEach(level => {
@@ -124,7 +115,7 @@ async function acceleratedMassCompletion() {
   console.log(`总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
   
   if (totalAuth === totalEx) {
-    console.log('完成所有340个练习！');
+    console.log('全部340个练习完成');
   } else {
     console.log(`剩余: ${totalEx - totalAuth}`);
   }

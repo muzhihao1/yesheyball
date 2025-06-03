@@ -65,7 +65,7 @@ async function acceleratedBatchProcessing() {
   let extracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Process all levels in order of complexity
+  // Process all incomplete levels in priority order
   for (const level of [8, 7, 5, 4, 3]) {
     for (let i = 1; i <= levelCounts[level]; i++) {
       const key = `${level}-${i}`;
@@ -88,9 +88,9 @@ async function acceleratedBatchProcessing() {
     }
   }
   
-  console.log(`批处理提取: ${extracted} 个描述`);
+  console.log(`批处理完成: ${extracted} 个描述`);
   
-  // Progress verification
+  // Final status
   let totalAuth = 0, totalEx = 0;
   
   [3,4,5,6,7,8].forEach(level => {
@@ -115,7 +115,7 @@ async function acceleratedBatchProcessing() {
   console.log(`总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
   
   if (totalAuth === totalEx) {
-    console.log('340个练习全部完成');
+    console.log('全部340个练习完成');
   } else {
     console.log(`剩余: ${totalEx - totalAuth}`);
   }
