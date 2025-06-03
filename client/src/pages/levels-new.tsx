@@ -236,19 +236,6 @@ export default function Levels() {
   const handleExerciseClick = async (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setShowExerciseDialog(true);
-    
-    // 异步分析习题要求并更新选中的习题
-    const levelStage = levelStages.find(s => s.level === exercise.level);
-    if (levelStage) {
-      await analyzeExerciseRequirement(exercise.level, exercise.exerciseNumber, levelStage.name);
-      
-      // 更新选中习题的要求
-      const key = `${exercise.level}-${exercise.exerciseNumber}`;
-      if (exerciseRequirements[key]) {
-        exercise.requirement = exerciseRequirements[key];
-        setSelectedExercise({...exercise, requirement: exerciseRequirements[key]});
-      }
-    }
   };
 
   const handleCompleteExercise = async (exercise: Exercise) => {
@@ -467,10 +454,7 @@ export default function Levels() {
                     <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
                       <h3 className="font-bold text-orange-700 mb-2">过关要求：</h3>
                       <p className="text-gray-700">
-                        {selectedExercise.requirement}
-                        {isAnalyzing && (
-                          <span className="text-xs text-gray-500 ml-2">(正在分析图片...)</span>
-                        )}
+                        {getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
                       </p>
                     </div>
                     
