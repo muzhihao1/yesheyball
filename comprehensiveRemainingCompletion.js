@@ -60,76 +60,66 @@ async function comprehensiveRemainingCompletion() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('综合完成剩余练习...');
+  console.log('综合剩余完成开始...');
   
-  let extracted = 0;
+  let totalExtracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Priority: Level 8 first (highest complexity), then others
-  const levelOrder = [8, 7, 5, 4, 3];
-  
-  for (const level of levelOrder) {
-    console.log(`处理 Level ${level}...`);
-    const maxEx = levelCounts[level];
+  // 无限循环直到完成所有练习
+  while (true) {
+    let cycleExtracted = 0;
     
-    for (let i = 1; i <= maxEx; i++) {
-      const key = `${level}-${i}`;
-      const currentDesc = descriptions[key];
-      
-      if (!currentDesc || 
-          currentDesc.includes('如图示摆放球型，完成') || 
-          currentDesc.includes('精进台球技能练习') ||
-          currentDesc.includes('高级台球技巧训练') ||
-          currentDesc.length < 20) {
+    // 处理所有未完成的练习，优先级从高到低
+    for (const level of [8, 7, 5, 4, 3]) {
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const key = `${level}-${i}`;
+        const currentDesc = descriptions[key];
         
-        const result = await extractDescription(level, i);
-        if (result) {
-          descriptions[key] = result;
-          console.log(`✓ ${key}: ${result}`);
-          extracted++;
-          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        if (!currentDesc || 
+            currentDesc.includes('如图示摆放球型，完成') || 
+            currentDesc.includes('精进台球技能练习') ||
+            currentDesc.includes('高级台球技巧训练') ||
+            currentDesc.length < 20) {
+          
+          const result = await extractDescription(level, i);
+          if (result) {
+            descriptions[key] = result;
+            console.log(`${key}: ${result}`);
+            cycleExtracted++;
+            totalExtracted++;
+            fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+          }
         }
       }
     }
-  }
-  
-  console.log(`综合提取: ${extracted} 个描述`);
-  
-  // Final status verification
-  let totalAuth = 0, totalEx = 0;
-  const finalStatus = {};
-  
-  [3,4,5,6,7,8].forEach(level => {
-    let authentic = 0;
-    for (let i = 1; i <= levelCounts[level]; i++) {
-      const desc = descriptions[`${level}-${i}`];
-      if (desc && 
-          !desc.includes('如图示摆放球型，完成') && 
-          !desc.includes('精进台球技能练习') &&
-          !desc.includes('高级台球技巧训练') &&
-          desc.length > 15) {
-        authentic++;
-      }
-    }
-    totalAuth += authentic;
-    totalEx += levelCounts[level];
     
-    const pct = (authentic/levelCounts[level]*100).toFixed(1);
-    const status = authentic === levelCounts[level] ? '完成' : '进行中';
-    finalStatus[level] = { authentic, total: levelCounts[level], percentage: pct, status };
-    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%) ${status === '完成' ? '✅' : ''}`);
-  });
-  
-  const overallPct = (totalAuth/totalEx*100).toFixed(1);
-  console.log(`\n总体: ${totalAuth}/${totalEx} (${overallPct}%)`);
-  
-  if (totalAuth === totalEx) {
-    console.log('🎉 所有340个练习描述提取完成！');
-  } else {
-    console.log(`剩余: ${totalEx - totalAuth} 个练习`);
+    // 检查完成状态
+    let totalAuth = 0, totalEx = 0;
+    [3,4,5,6,7,8].forEach(level => {
+      let authentic = 0;
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const desc = descriptions[`${level}-${i}`];
+        if (desc && 
+            !desc.includes('如图示摆放球型，完成') && 
+            !desc.includes('精进台球技能练习') &&
+            !desc.includes('高级台球技巧训练') &&
+            desc.length > 15) {
+          authentic++;
+        }
+      }
+      totalAuth += authentic;
+      totalEx += levelCounts[level];
+    });
+    
+    console.log(`本轮提取: ${cycleExtracted} | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+    
+    if (totalAuth === totalEx) {
+      console.log('全部340个练习描述提取完成');
+      break;
+    }
   }
   
-  return { extracted, totalAuth, totalEx, overallPct, finalStatus };
+  console.log(`综合完成总计: ${totalExtracted} 个描述`);
 }
 
 comprehensiveRemainingCompletion().catch(console.error);
