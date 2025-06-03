@@ -49,53 +49,38 @@ async function extractRequirement(imagePath) {
   }
 }
 
-async function completeAllRemaining() {
+async function streamlineVerify() {
   const requirementsPath = 'client/src/data/exerciseRequirements.json';
   let requirements = JSON.parse(fs.readFileSync(requirementsPath, 'utf8'));
   
   const startCount = Object.keys(requirements).length;
-  console.log(`完成所有剩余验证 - 当前: ${startCount}/415\n`);
+  console.log(`流水线验证 - 当前: ${startCount}/415\n`);
 
-  const allRemaining = [];
+  const todoQueue = [];
   
-  // 等级3剩余17个
+  // 等级3剩余20个
   for (let i = 1; i <= 50; i++) {
     if (!requirements[`3-${i}`]) {
-      allRemaining.push({level: 3, exercise: i, folder: "3、渐入佳境"});
+      todoQueue.push({level: 3, exercise: i, folder: "3、渐入佳境"});
     }
   }
   
-  // 等级4全部60个
-  for (let i = 1; i <= 60; i++) {
-    allRemaining.push({level: 4, exercise: i, folder: "4、炉火纯青"});
+  // 等级4前50个
+  for (let i = 1; i <= 50; i++) {
+    todoQueue.push({level: 4, exercise: i, folder: "4、炉火纯青"});
   }
   
-  // 等级5全部60个
-  for (let i = 1; i <= 60; i++) {
-    allRemaining.push({level: 5, exercise: i, folder: "5、登堂入室"});
-  }
-  
-  // 等级6全部60个
-  for (let i = 1; i <= 60; i++) {
-    allRemaining.push({level: 6, exercise: i, folder: "6、超群绝伦"});
-  }
-  
-  // 等级7全部55个
-  for (let i = 1; i <= 55; i++) {
-    allRemaining.push({level: 7, exercise: i, folder: "7、登峰造极"});
-  }
-  
-  // 等级8全部55个
-  for (let i = 1; i <= 55; i++) {
-    allRemaining.push({level: 8, exercise: i, folder: "8、出神入化"});
+  // 等级5前50个
+  for (let i = 1; i <= 50; i++) {
+    todoQueue.push({level: 5, exercise: i, folder: "5、登堂入室"});
   }
 
-  console.log(`处理所有剩余 ${allRemaining.length} 个习题\n`);
+  console.log(`处理队列: ${todoQueue.length} 个习题\n`);
 
   let successful = 0;
   
-  for (let i = 0; i < allRemaining.length; i++) {
-    const item = allRemaining[i];
+  for (let i = 0; i < todoQueue.length; i++) {
+    const item = todoQueue[i];
     const key = `${item.level}-${item.exercise}`;
     const fileIndex = (item.exercise + 1).toString().padStart(2, '0');
     const imagePath = path.join(
@@ -117,23 +102,16 @@ async function completeAllRemaining() {
         
         fs.writeFileSync(requirementsPath, JSON.stringify(requirements, null, 2), 'utf8');
         const current = Object.keys(requirements).length;
-        console.log(`  ${current}/415 (${Math.round(current/415*100)}%)\n`);
+        console.log(`  ${current}/415\n`);
       }
       
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
 
   const finalCount = Object.keys(requirements).length;
-  
-  console.log("所有验证工作完成!");
-  console.log(`开始: ${startCount}/415`);
-  console.log(`结束: ${finalCount}/415`);
+  console.log(`流水线验证完成: ${startCount} → ${finalCount}/415`);
   console.log(`新增: ${finalCount - startCount} 个习题`);
-  
-  if (finalCount === 415) {
-    console.log('\n台球大师之路应用的所有415个习题过关要求验证完成！');
-  }
 }
 
-completeAllRemaining().catch(console.error);
+streamlineVerify().catch(console.error);
