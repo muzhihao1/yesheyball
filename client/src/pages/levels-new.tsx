@@ -352,55 +352,117 @@ export default function Levels() {
                   </div>
                 </div>
 
-                {/* Exercise Nodes - Zigzag Pattern */}
+                {/* Exercise Nodes - Grouped by 5 */}
                 <div className="relative space-y-6">
                   {exercises.map((exercise, exerciseIndex) => {
                     const isLeft = exerciseIndex % 2 === 0;
                     const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || exercises[exerciseIndex - 1]?.completed);
+                    const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
+                    const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
+                    const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
                     
                     return (
-                      <div key={exercise.id} className={`flex ${isLeft ? 'justify-start pl-12' : 'justify-end pr-12'} items-center relative`}>
-                        {/* Exercise Circle */}
-                        <div className="relative z-10">
-                          <div 
-                            className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
-                              !isUnlocked 
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-lg' 
-                                : exercise.completed 
-                                  ? `${levelColors.node} text-white shadow-2xl` 
-                                  : `bg-white border-4 ${levelColors.border} text-gray-700 hover:scale-105 shadow-xl hover:shadow-2xl`
-                            }`}
-                            onClick={() => isUnlocked && handleExerciseClick(exercise)}
-                            style={{
-                              filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
-                            }}
-                          >
-                            {!isUnlocked ? (
-                              <Lock className="w-7 h-7" />
-                            ) : exercise.completed ? (
-                              <Star className="w-10 h-10 fill-white" />
+                      <div key={exercise.id}>
+                        {/* Exercise Row */}
+                        <div className={`flex ${isLeft ? 'justify-start pl-12' : 'justify-end pr-12'} items-center relative`}>
+                          {/* Exercise Circle */}
+                          <div className="relative z-10">
+                            {isMilestone ? (
+                              // Special milestone design for every 5th exercise
+                              <div className="relative">
+                                <div 
+                                  className={`w-24 h-24 flex items-center justify-center cursor-pointer transition-all duration-300 ${
+                                    !isUnlocked 
+                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-lg' 
+                                      : exercise.completed 
+                                        ? `${levelColors.node} text-white shadow-2xl` 
+                                        : `bg-white border-4 ${levelColors.border} text-gray-700 hover:scale-105 shadow-xl hover:shadow-2xl`
+                                  }`}
+                                  onClick={() => isUnlocked && handleExerciseClick(exercise)}
+                                  style={{
+                                    borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
+                                    filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
+                                  }}
+                                >
+                                  {!isUnlocked ? (
+                                    <Lock className="w-8 h-8" />
+                                  ) : exercise.completed ? (
+                                    <span className="text-2xl font-bold text-white">{groupNumber}</span>
+                                  ) : (
+                                    <span className="text-2xl font-bold">{groupNumber}</span>
+                                  )}
+                                </div>
+                                
+                                {/* Decorative elements for milestone */}
+                                <div className="absolute -left-4 top-1/2 transform -translate-y-1/2">
+                                  <div className={`w-3 h-3 ${exercise.completed ? levelColors.node : 'bg-gray-300'} rounded-full`}></div>
+                                </div>
+                                <div className="absolute -right-4 top-1/2 transform -translate-y-1/2">
+                                  <div className={`w-3 h-3 ${exercise.completed ? levelColors.node : 'bg-gray-300'} rounded-full`}></div>
+                                </div>
+                                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                  <div className={`w-3 h-3 ${exercise.completed ? levelColors.node : 'bg-gray-300'} rounded-full`}></div>
+                                </div>
+                                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2">
+                                  <div className={`w-3 h-3 ${exercise.completed ? levelColors.node : 'bg-gray-300'} rounded-full`}></div>
+                                </div>
+                              </div>
                             ) : (
-                              <span className="text-xl font-bold">{exercise.exerciseNumber}</span>
+                              // Regular exercise circle
+                              <div 
+                                className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
+                                  !isUnlocked 
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-lg' 
+                                    : exercise.completed 
+                                      ? `${levelColors.node} text-white shadow-2xl` 
+                                      : `bg-white border-4 ${levelColors.border} text-gray-700 hover:scale-105 shadow-xl hover:shadow-2xl`
+                                }`}
+                                onClick={() => isUnlocked && handleExerciseClick(exercise)}
+                                style={{
+                                  filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
+                                }}
+                              >
+                                {!isUnlocked ? (
+                                  <Lock className="w-7 h-7" />
+                                ) : exercise.completed ? (
+                                  <Star className="w-10 h-10 fill-white" />
+                                ) : (
+                                  <span className="text-xl font-bold">{exercise.exerciseNumber}</span>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Stars Badge */}
+                            {exercise.completed && exercise.stars > 0 && !isMilestone && (
+                              <div className="absolute -top-3 -right-3 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold text-white shadow-lg">
+                                {exercise.stars}
+                              </div>
                             )}
                           </div>
                           
-                          {/* Stars Badge */}
-                          {exercise.completed && exercise.stars > 0 && (
-                            <div className="absolute -top-3 -right-3 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-                              {exercise.stars}
+                          {/* Exercise Label */}
+                          <div className={`absolute ${isLeft ? 'left-28' : 'right-28'} top-1/2 transform -translate-y-1/2 z-0`}>
+                            <div className="bg-white rounded-xl px-4 py-3 shadow-lg border border-gray-100"
+                                 style={{
+                                   filter: 'drop-shadow(0 4px 15px rgba(0,0,0,0.1))'
+                                 }}>
+                              <div className="text-sm font-semibold text-gray-800">
+                                {isMilestone ? `第${groupNumber}组完成` : exercise.title}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        
-                        {/* Exercise Label */}
-                        <div className={`absolute ${isLeft ? 'left-24' : 'right-24'} top-1/2 transform -translate-y-1/2 z-0`}>
-                          <div className="bg-white rounded-xl px-4 py-3 shadow-lg border border-gray-100"
-                               style={{
-                                 filter: 'drop-shadow(0 4px 15px rgba(0,0,0,0.1))'
-                               }}>
-                            <div className="text-sm font-semibold text-gray-800">{exercise.title}</div>
                           </div>
                         </div>
+                        
+                        {/* Group Separator */}
+                        {showSeparator && (
+                          <div className="flex items-center justify-center my-8">
+                            <div className="flex-1 h-0.5 bg-gray-300 mx-8"></div>
+                            <div className="px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-500 font-medium">
+                              第{groupNumber + 1}组
+                            </div>
+                            <div className="flex-1 h-0.5 bg-gray-300 mx-8"></div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
