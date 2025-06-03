@@ -54,64 +54,50 @@ async function extractDescription(level, exerciseNum) {
   }
 }
 
-async function comprehensiveExtractionEngine() {
+async function completeFinal40() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('综合提取引擎启动...');
+  console.log('完成最后40个练习...');
   
   let extracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // 批量处理策略
-  const batchSize = 10;
-  let allRemaining = [];
-  
-  // 收集所有需要处理的练习
-  for (const level of [8, 3, 4, 5, 7]) {
-    for (let i = 1; i <= levelCounts[level]; i++) {
-      const key = `${level}-${i}`;
-      const currentDesc = descriptions[key];
-      
-      if (!currentDesc || 
-          currentDesc.includes('如图示摆放球型，完成') || 
-          currentDesc.includes('精进台球技能练习') ||
-          currentDesc.includes('高级台球技巧训练') ||
-          currentDesc.length < 20) {
-        allRemaining.push({ level, exerciseNum: i, key });
-      }
-    }
-  }
-  
-  console.log(`发现${allRemaining.length}个待处理练习`);
-  
-  // 分批处理
-  for (let i = 0; i < allRemaining.length; i += batchSize) {
-    const batch = allRemaining.slice(i, i + batchSize);
-    console.log(`处理批次 ${Math.floor(i/batchSize) + 1}/${Math.ceil(allRemaining.length/batchSize)}`);
+  // 多轮处理确保完成
+  for (let round = 1; round <= 20; round++) {
+    let roundExtracted = 0;
+    console.log(`第${round}轮开始`);
     
-    const promises = batch.map(async ({ level, exerciseNum, key }) => {
-      const result = await extractDescription(level, exerciseNum);
-      return { key, result };
-    });
-    
-    const results = await Promise.all(promises);
-    
-    for (const { key, result } of results) {
-      if (result) {
-        descriptions[key] = result;
-        console.log(`${key}: ${result}`);
-        extracted++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+    // 处理所有未完成练习
+    for (const level of [3, 4, 5, 7, 8]) {
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const key = `${level}-${i}`;
+        const currentDesc = descriptions[key];
+        
+        if (!currentDesc || 
+            currentDesc.includes('如图示摆放球型，完成') || 
+            currentDesc.includes('精进台球技能练习') ||
+            currentDesc.includes('高级台球技巧训练') ||
+            currentDesc.length < 20) {
+          
+          const result = await extractDescription(level, i);
+          if (result) {
+            descriptions[key] = result;
+            console.log(`[${round}] ${key}: ${result}`);
+            extracted++;
+            roundExtracted++;
+            fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+          }
+        }
       }
     }
     
-    // 进度检查
+    // 检查完成状态
     let totalAuth = 0, totalEx = 0;
     [3,4,5,6,7,8].forEach(level => {
       let authentic = 0;
-      for (let j = 1; j <= levelCounts[level]; j++) {
-        const desc = descriptions[`${level}-${j}`];
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const desc = descriptions[`${level}-${i}`];
         if (desc && 
             !desc.includes('如图示摆放球型，完成') && 
             !desc.includes('精进台球技能练习') &&
@@ -124,15 +110,20 @@ async function comprehensiveExtractionEngine() {
       totalEx += levelCounts[level];
     });
     
-    console.log(`批次完成 | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+    console.log(`第${round}轮: 提取${roundExtracted}个 | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
     
     if (totalAuth === totalEx) {
-      console.log('全部340个练习完成');
+      console.log(`🎉 全部340个练习完成！用时${round}轮`);
+      break;
+    }
+    
+    if (roundExtracted === 0 && round > 5) {
+      console.log('连续多轮无新提取，可能已达到最佳状态');
       break;
     }
   }
   
-  console.log(`综合引擎完成: ${extracted} 个描述`);
+  console.log(`最后40完成: ${extracted} 个描述`);
 }
 
-comprehensiveExtractionEngine().catch(console.error);
+completeFinal40().catch(console.error);
