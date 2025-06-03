@@ -58,11 +58,11 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - 1000px宽度的最大桌子
+  // Function to get cropping style - 1200px宽度的超大桌子
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     return {
       clipPath: 'inset(19% 6% 3% 52%)', // 裁剪显示桌子
-      width: '1000px',
+      width: '1200px',
       height: 'auto',
       objectFit: 'contain' as const,
       display: 'block',
