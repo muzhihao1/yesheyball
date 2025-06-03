@@ -591,10 +591,10 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 桌子部分完全居中显示 */}
+                {/* 练习图片 - 去掉空白，只显示桌子 */}
                 <div className="py-6">
                   <div className="flex justify-center items-center">
-                    <div className="w-[280px] h-[200px] overflow-hidden rounded-lg shadow-lg bg-white flex justify-center items-center">
+                    <div className="inline-block overflow-hidden rounded-lg shadow-lg bg-white">
                       <img 
                         src={selectedExercise?.imageUrl} 
                         alt={selectedExercise?.title}
@@ -604,15 +604,15 @@ export default function Levels() {
                           if (e.currentTarget.parentElement) {
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement.innerHTML = `
-                              <div class="w-full h-full bg-green-600 border-4 border-amber-800 rounded flex items-center justify-center relative">
-                                <div class="absolute top-1 left-1 w-2 h-2 bg-black rounded-full"></div>
-                                <div class="absolute top-1 right-1 w-2 h-2 bg-black rounded-full"></div>
-                                <div class="absolute bottom-1 left-1 w-2 h-2 bg-black rounded-full"></div>
-                                <div class="absolute bottom-1 right-1 w-2 h-2 bg-black rounded-full"></div>
-                                <div class="absolute top-1/2 left-1 w-2 h-2 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="absolute top-1/2 right-1 w-2 h-2 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="w-3 h-3 bg-white rounded-full"></div>
-                                <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full border border-red-500"></div>
+                              <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
+                                <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="w-4 h-4 bg-white rounded-full"></div>
+                                <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
                               </div>
                             `;
                           }
