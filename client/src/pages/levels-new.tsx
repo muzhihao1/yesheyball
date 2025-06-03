@@ -394,27 +394,11 @@ export default function Levels() {
                         
                         {/* Exercise Label */}
                         <div className={`absolute ${isLeft ? 'left-24' : 'right-24'} top-1/2 transform -translate-y-1/2 z-0`}>
-                          <div className="bg-white rounded-xl px-4 py-3 shadow-lg border border-gray-100 min-w-[120px]"
+                          <div className="bg-white rounded-xl px-4 py-3 shadow-lg border border-gray-100"
                                style={{
                                  filter: 'drop-shadow(0 4px 15px rgba(0,0,0,0.1))'
                                }}>
-                            <div className="text-sm font-semibold text-gray-800 mb-1">{exercise.title}</div>
-                            {exercise.completed ? (
-                              <div className="flex items-center text-xs text-green-600">
-                                <Star className="w-3 h-3 mr-1 fill-current" />
-                                已完成
-                              </div>
-                            ) : isUnlocked ? (
-                              <div className="flex items-center text-xs text-gray-500">
-                                <div className="w-3 h-3 mr-1 rounded-full border border-gray-400"></div>
-                                待完成
-                              </div>
-                            ) : (
-                              <div className="flex items-center text-xs text-gray-400">
-                                <Lock className="w-3 h-3 mr-1" />
-                                未解锁
-                              </div>
-                            )}
+                            <div className="text-sm font-semibold text-gray-800">{exercise.title}</div>
                           </div>
                         </div>
                       </div>
