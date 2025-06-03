@@ -6,20 +6,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY 
 });
 
-// 先处理前几个等级的关键习题进行验证
-const TEST_SAMPLES = [
-  { level: 1, name: "初窥门径", exercises: [2, 3, 4, 5, 6] }, // 对应 02.jpg, 03.jpg 等
-  { level: 2, name: "小有所成", exercises: [2, 3, 4, 5, 6] },
-  { level: 3, name: "渐入佳境", exercises: [2, 3, 4, 5, 6] }
-];
-
 async function analyzeExerciseImage(imagePath) {
   try {
-    if (!fs.existsSync(imagePath)) {
-      console.log(`图片不存在: ${imagePath}`);
-      return null;
-    }
-
     const imageData = fs.readFileSync(imagePath);
     const base64Image = imageData.toString('base64');
 
@@ -27,86 +15,111 @@ async function analyzeExerciseImage(imagePath) {
       model: "gpt-4o",
       messages: [
         {
+          role: "system",
+          content: "你是台球习题专家。提取图片中'过关要求'后的准确中文内容，只返回要求文字，不要解释。"
+        },
+        {
           role: "user",
           content: [
             {
               type: "text",
-              text: "请分析这张台球习题图片，提取过关要求文字。只返回具体要求，如连续完成5次不失误或全部一次成功不失误。"
+              text: "提取'过关要求'的准确内容"
             },
             {
               type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Image}`
-              }
+              image_url: { url: `data:image/jpeg;base64,${base64Image}` }
             }
           ],
         },
       ],
-      max_tokens: 100,
+      max_tokens: 30,
+      temperature: 0
     });
 
     const content = response.choices[0].message.content;
-    if (content) {
-      return content.replace(/；$/, '').replace(/;$/, '').trim();
+    if (content && !content.includes('无法') && !content.includes('抱歉')) {
+      return content.replace(/^过关要求[:：]\s*/, '').replace(/[；;。，,\s]+$/, '').trim();
     }
     return null;
   } catch (error) {
-    console.error(`分析图片失败:`, error.message);
     return null;
   }
 }
 
 async function extractSampleRequirements() {
-  console.log("开始提取样本习题的过关要求...");
+  console.log("批量提取习题过关要求...\n");
   
-  const allRequirements = {};
-  let totalProcessed = 0;
+  const requirementsPath = 'client/src/data/exerciseRequirements.json';
+  let requirements = {};
   
-  for (const sample of TEST_SAMPLES) {
-    console.log(`\n正在处理等级 ${sample.level}: ${sample.name}...`);
+  if (fs.existsSync(requirementsPath)) {
+    requirements = JSON.parse(fs.readFileSync(requirementsPath, 'utf8'));
+  }
+
+  // 第1级剩余习题 (11-20)
+  console.log("处理第1级习题 11-20...");
+  for (let i = 11; i <= 20; i++) {
+    const fileIndex = (i + 1).toString().padStart(2, '0');
+    const imagePath = path.join(process.cwd(), 'assessments', '1、初窥门径', `1、初窥门径_${fileIndex}.jpg`);
     
-    for (const exerciseNum of sample.exercises) {
-      const paddedNum = exerciseNum.toString().padStart(2, '0');
-      const levelName = sample.level + "、" + sample.name;
-      const imagePath = path.join(process.cwd(), 'assessments', levelName, `${levelName}_${paddedNum}.jpg`);
+    if (fs.existsSync(imagePath)) {
+      console.log(`  第${i}题...`);
+      const requirement = await analyzeExerciseImage(imagePath);
       
-      console.log(`  处理习题 ${exerciseNum - 1} (图片: ${paddedNum}.jpg)...`);
-      
-      try {
-        const requirement = await analyzeExerciseImage(imagePath);
-        if (requirement) {
-          const key = `${sample.level}-${exerciseNum - 1}`;
-          allRequirements[key] = requirement;
-          console.log(`    ✓ 提取成功: ${requirement}`);
-          totalProcessed++;
-        } else {
-          console.log(`    ✗ 提取失败`);
-        }
-        
-        // 添加延迟避免API限制
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-      } catch (error) {
-        console.error(`    ✗ 处理习题时出错:`, error.message);
+      if (requirement) {
+        requirements[`1-${i}`] = requirement;
+        console.log(`    ✓ ${requirement}`);
       }
+      
+      await new Promise(resolve => setTimeout(resolve, 700));
     }
   }
-  
-  // 保存到JSON文件
-  const outputPath = path.join(process.cwd(), 'client/src/data/exerciseRequirements.json');
-  
-  // 读取现有数据并合并
-  let existingData = {};
-  if (fs.existsSync(outputPath)) {
-    existingData = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+
+  // 第2级前10题
+  console.log("\n处理第2级习题 1-10...");
+  for (let i = 1; i <= 10; i++) {
+    const fileIndex = (i + 1).toString().padStart(2, '0');
+    const imagePath = path.join(process.cwd(), 'assessments', '2、小有所成', `2、小有所成_${fileIndex}.jpg`);
+    
+    if (fs.existsSync(imagePath)) {
+      console.log(`  第${i}题...`);
+      const requirement = await analyzeExerciseImage(imagePath);
+      
+      if (requirement) {
+        requirements[`2-${i}`] = requirement;
+        console.log(`    ✓ ${requirement}`);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 700));
+    }
   }
+
+  // 第3级前5题
+  console.log("\n处理第3级习题 1-5...");
+  for (let i = 1; i <= 5; i++) {
+    const fileIndex = (i + 1).toString().padStart(2, '0');
+    const imagePath = path.join(process.cwd(), 'assessments', '3、渐入佳境', `3、渐入佳境_${fileIndex}.jpg`);
+    
+    if (fs.existsSync(imagePath)) {
+      console.log(`  第${i}题...`);
+      const requirement = await analyzeExerciseImage(imagePath);
+      
+      if (requirement) {
+        requirements[`3-${i}`] = requirement;
+        console.log(`    ✓ ${requirement}`);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 700));
+    }
+  }
+
+  // 保存结果
+  fs.writeFileSync(requirementsPath, JSON.stringify(requirements, null, 2), 'utf8');
   
-  const mergedData = { ...existingData, ...allRequirements };
-  fs.writeFileSync(outputPath, JSON.stringify(mergedData, null, 2), 'utf8');
+  console.log(`\n批量提取完成！`);
+  console.log(`总习题数: ${Object.keys(requirements).length}`);
   
-  console.log(`\n✅ 样本提取完成！`);
-  console.log(`📊 总共处理了 ${totalProcessed} 个习题`);
-  console.log(`💾 数据已保存到: ${outputPath}`);
+  return requirements;
 }
 
 extractSampleRequirements().catch(console.error);
