@@ -22,13 +22,13 @@ async function extractDescription(exerciseNum) {
         role: "user",
         content: [{
           type: "text",
-          text: "提取题目说明文字"
+          text: "提取题目说明文字，不要过关要求"
         }, {
           type: "image_url",
           image_url: { url: `data:image/jpeg;base64,${base64Image}` }
         }]
       }],
-      max_tokens: 50,
+      max_tokens: 60,
       temperature: 0
     });
 
@@ -45,20 +45,21 @@ async function extractDescription(exerciseNum) {
   }
 }
 
-async function completeLevel2Remaining() {
+async function completeFinalExercises() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  const remaining = [11, 12, 18, 32, 33, 34, 35, 36, 37, 38, 39, 40];
   let updated = 0;
   
-  console.log(`Processing ${remaining.length} remaining Level 2 exercises...`);
-  
-  // Process remaining exercises (limit to 8 to avoid timeout)
-  for (const exerciseNum of remaining.slice(0, 8)) {
-    const key = `2-${exerciseNum}`;
+  // Process final exercises 27-40
+  for (let i = 27; i <= 40; i++) {
+    const key = `2-${i}`;
     
-    const extracted = await extractDescription(exerciseNum);
+    if (descriptions[key] && !descriptions[key].includes('如图摆放球型，白球任意位置')) {
+      continue;
+    }
+    
+    const extracted = await extractDescription(i);
     
     if (extracted && extracted.length > 10) {
       descriptions[key] = extracted;
@@ -70,9 +71,9 @@ async function completeLevel2Remaining() {
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   
-  console.log(`Batch complete: ${updated} updates`);
+  console.log(`Final exercises complete: ${updated} updates`);
   
-  // Count progress
+  // Count final authentic descriptions
   let authentic = 0;
   for (let i = 1; i <= 40; i++) {
     const desc = descriptions[`2-${i}`];
@@ -81,7 +82,7 @@ async function completeLevel2Remaining() {
     }
   }
   
-  console.log(`Level 2 progress: ${authentic}/40 authentic descriptions (${(authentic/40*100).toFixed(1)}%)`);
+  console.log(`Level 2 completion: ${authentic}/40 authentic descriptions (${(authentic/40*100).toFixed(1)}%)`);
 }
 
-completeLevel2Remaining().catch(console.error);
+completeFinalExercises().catch(console.error);

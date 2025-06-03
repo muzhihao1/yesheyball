@@ -22,7 +22,7 @@ async function extractDescription(exerciseNum) {
         role: "user",
         content: [{
           type: "text",
-          text: "提取题目说明文字"
+          text: "提取题目说明"
         }, {
           type: "image_url",
           image_url: { url: `data:image/jpeg;base64,${base64Image}` }
@@ -34,10 +34,8 @@ async function extractDescription(exerciseNum) {
 
     let content = response.choices[0].message.content;
     if (content && !content.includes('无法')) {
-      content = content.replace(/^题目说明[：:]\s*/g, '');
-      content = content.replace(/过关要求.*$/gm, '');
-      content = content.replace(/[；。\n]+$/, '');
-      return content.trim();
+      content = content.replace(/^题目说明[：:]\s*/g, '').replace(/过关要求.*$/gm, '').replace(/[；。\n]+$/, '').trim();
+      return content.length > 8 ? content : null;
     }
     return null;
   } catch (error) {
@@ -45,34 +43,35 @@ async function extractDescription(exerciseNum) {
   }
 }
 
-async function completeLevel2Remaining() {
+async function processRemainingBatch() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  const remaining = [11, 12, 18, 32, 33, 34, 35, 36, 37, 38, 39, 40];
   let updated = 0;
   
-  console.log(`Processing ${remaining.length} remaining Level 2 exercises...`);
-  
-  // Process remaining exercises (limit to 8 to avoid timeout)
-  for (const exerciseNum of remaining.slice(0, 8)) {
-    const key = `2-${exerciseNum}`;
+  // Process exercises 28-40 (13 exercises, limited to avoid timeout)
+  for (let i = 28; i <= 40; i++) {
+    const key = `2-${i}`;
     
-    const extracted = await extractDescription(exerciseNum);
+    if (descriptions[key] && !descriptions[key].includes('如图摆放球型，白球任意位置') && descriptions[key].length > 20) {
+      continue;
+    }
     
-    if (extracted && extracted.length > 10) {
+    const extracted = await extractDescription(i);
+    
+    if (extracted) {
       descriptions[key] = extracted;
       console.log(`${key}: ${extracted}`);
       updated++;
       fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
     }
     
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 400));
   }
   
-  console.log(`Batch complete: ${updated} updates`);
+  console.log(`Remaining batch complete: ${updated} updates`);
   
-  // Count progress
+  // Final count
   let authentic = 0;
   for (let i = 1; i <= 40; i++) {
     const desc = descriptions[`2-${i}`];
@@ -81,7 +80,7 @@ async function completeLevel2Remaining() {
     }
   }
   
-  console.log(`Level 2 progress: ${authentic}/40 authentic descriptions (${(authentic/40*100).toFixed(1)}%)`);
+  console.log(`Level 2 final status: ${authentic}/40 authentic descriptions (${(authentic/40*100).toFixed(1)}%)`);
 }
 
-completeLevel2Remaining().catch(console.error);
+processRemainingBatch().catch(console.error);
