@@ -602,9 +602,9 @@ export default function Levels() {
                           alt={selectedExercise.title}
                           className="absolute top-0 left-0 w-full h-auto"
                           style={{
-                            clipPath: 'inset(20% 48% 25% 0%)', // top right bottom left - crops to table area only
-                            transform: 'scale(2.2) translateX(15%) translateY(10%)', // zoom and position the table
-                            transformOrigin: 'top left'
+                            clipPath: 'inset(15% 0% 20% 48%)', // top right bottom left - crops to table area only
+                            transform: 'scale(1.8) translateX(-10%) translateY(-5%)', // zoom and position the table
+                            transformOrigin: 'center center'
                           }}
                           onError={(e) => {
                           if (e.currentTarget.parentElement) {
