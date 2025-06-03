@@ -43,11 +43,11 @@ async function extractRequirement(imagePath) {
   }
 }
 
-async function complete415() {
+async function completeAll338() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('完成415...');
+  console.log('完成All338...');
   
   let extracted = 0;
   const levelFolders = {
@@ -56,11 +56,9 @@ async function complete415() {
   };
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // 持续处理直到全部完成
   while (true) {
     let cycleExtracted = 0;
     
-    // 处理所有未完成练习
     for (const level of [8, 7, 5, 4, 3]) {
       for (let i = 1; i <= levelCounts[level]; i++) {
         const key = `${level}-${i}`;
@@ -90,7 +88,6 @@ async function complete415() {
       }
     }
     
-    // 检查完成状态
     let totalAuth = 0, totalEx = 0;
     [3,4,5,6,7,8].forEach(level => {
       let authentic = 0;
@@ -114,13 +111,9 @@ async function complete415() {
       console.log('全部340个练习完成');
       break;
     }
-    
-    if (cycleExtracted === 0) {
-      console.log('当前周期无新提取，继续下一轮');
-    }
   }
   
-  console.log(`415完成: ${extracted} 个描述`);
+  console.log(`338完成: ${extracted} 个描述`);
 }
 
-complete415().catch(console.error);
+completeAll338().catch(console.error);
