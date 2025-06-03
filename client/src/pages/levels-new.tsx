@@ -58,15 +58,14 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - 使用clipPath并计算实际尺寸
+  // Function to get cropping style - 简单有效的桌子显示
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     return {
-      clipPath: 'inset(19% 6% 3% 52%)', // 裁剪显示桌子
-      width: '667px', // 原图宽度/可见宽度比例 (280/0.42)
-      height: '359px', // 原图高度/可见高度比例 (280/0.78)
-      objectFit: 'contain' as const,
-      marginLeft: '-347px', // 负边距去掉左侧空白 (667*0.52)
-      marginTop: '-68px' // 负边距去掉顶部空白 (359*0.19)
+      width: '400px',
+      height: '300px',
+      objectFit: 'none' as const,
+      objectPosition: '-208px -57px', // 精确定位到桌子部分
+      transform: 'scale(1)'
     };
   };
 
@@ -593,10 +592,10 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 精确裁剪显示桌子 */}
+                {/* 练习图片 - 桌子窗口显示 */}
                 <div className="py-6">
                   <div className="flex justify-center items-center">
-                    <div className="w-[280px] h-[200px] overflow-hidden rounded-lg shadow-lg bg-white">
+                    <div className="w-[168px] h-[234px] overflow-hidden rounded-lg shadow-lg bg-white">
                       <img 
                         src={selectedExercise?.imageUrl} 
                         alt={selectedExercise?.title}
