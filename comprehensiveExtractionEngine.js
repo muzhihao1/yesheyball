@@ -9,7 +9,7 @@ const openai = new OpenAI({
 async function extractDescription(level, exerciseNum) {
   try {
     const folderNames = {
-      3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室',
+      3: '3、渐入佳境', 4: '4、炉火纯青', 5: '5、登堂入室',
       6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
     };
     
@@ -39,7 +39,7 @@ async function extractDescription(level, exerciseNum) {
     });
 
     let content = response.choices[0].message.content;
-    if (content && !content.includes('无法')) {
+    if (content && !content.includes('无法') && !content.includes("I'm sorry") && !content.includes("I can't")) {
       content = content.replace(/^题目说明[：:]\s*/g, '')
                      .replace(/过关要求.*$/gm, '')
                      .replace(/连续完成.*$/gm, '')
@@ -60,15 +60,12 @@ async function comprehensiveExtractionEngine() {
   
   console.log('综合提取引擎启动...');
   
-  let extracted = 0;
+  let totalExtracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // 批量处理策略
-  const batchSize = 10;
-  let allRemaining = [];
-  
-  // 收集所有需要处理的练习
-  for (const level of [8, 3, 4, 5, 7]) {
+  // 收集未完成练习
+  let pendingTasks = [];
+  for (const level of [3, 4, 5, 7, 8]) {
     for (let i = 1; i <= levelCounts[level]; i++) {
       const key = `${level}-${i}`;
       const currentDesc = descriptions[key];
@@ -78,61 +75,88 @@ async function comprehensiveExtractionEngine() {
           currentDesc.includes('精进台球技能练习') ||
           currentDesc.includes('高级台球技巧训练') ||
           currentDesc.length < 20) {
-        allRemaining.push({ level, exerciseNum: i, key });
+        pendingTasks.push({ level, exerciseNum: i, key });
       }
     }
   }
   
-  console.log(`发现${allRemaining.length}个待处理练习`);
+  console.log(`待处理任务总数: ${pendingTasks.length}个`);
   
-  // 分批处理
-  for (let i = 0; i < allRemaining.length; i += batchSize) {
-    const batch = allRemaining.slice(i, i + batchSize);
-    console.log(`处理批次 ${Math.floor(i/batchSize) + 1}/${Math.ceil(allRemaining.length/batchSize)}`);
+  // 超级循环处理
+  for (let round = 1; round <= 500; round++) {
+    let roundExtracted = 0;
     
-    const promises = batch.map(async ({ level, exerciseNum, key }) => {
-      const result = await extractDescription(level, exerciseNum);
-      return { key, result };
-    });
+    // 打乱任务顺序
+    pendingTasks.sort(() => Math.random() - 0.5);
     
-    const results = await Promise.all(promises);
-    
-    for (const { key, result } of results) {
-      if (result) {
-        descriptions[key] = result;
-        console.log(`${key}: ${result}`);
-        extracted++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+    for (const { level, exerciseNum, key } of pendingTasks) {
+      const currentDesc = descriptions[key];
+      
+      if (!currentDesc || 
+          currentDesc.includes('如图示摆放球型，完成') || 
+          currentDesc.includes('精进台球技能练习') ||
+          currentDesc.includes('高级台球技巧训练') ||
+          currentDesc.length < 20) {
+        
+        const result = await extractDescription(level, exerciseNum);
+        if (result) {
+          descriptions[key] = result;
+          console.log(`综合${round} ${key}: ${result}`);
+          totalExtracted++;
+          roundExtracted++;
+          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        }
       }
     }
     
-    // 进度检查
-    let totalAuth = 0, totalEx = 0;
-    [3,4,5,6,7,8].forEach(level => {
-      let authentic = 0;
-      for (let j = 1; j <= levelCounts[level]; j++) {
-        const desc = descriptions[`${level}-${j}`];
-        if (desc && 
-            !desc.includes('如图示摆放球型，完成') && 
-            !desc.includes('精进台球技能练习') &&
-            !desc.includes('高级台球技巧训练') &&
-            desc.length > 15) {
-          authentic++;
-        }
-      }
-      totalAuth += authentic;
-      totalEx += levelCounts[level];
+    // 更新待处理任务列表
+    pendingTasks = pendingTasks.filter(({ key }) => {
+      const desc = descriptions[key];
+      return !desc || 
+             desc.includes('如图示摆放球型，完成') || 
+             desc.includes('精进台球技能练习') ||
+             desc.includes('高级台球技巧训练') ||
+             desc.length < 20;
     });
     
-    console.log(`批次完成 | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+    if (round % 5 === 0) {
+      let totalAuth = 0, totalEx = 0;
+      [3,4,5,6,7,8].forEach(level => {
+        let authentic = 0;
+        for (let i = 1; i <= levelCounts[level]; i++) {
+          const desc = descriptions[`${level}-${i}`];
+          if (desc && 
+              !desc.includes('如图示摆放球型，完成') && 
+              !desc.includes('精进台球技能练习') &&
+              !desc.includes('高级台球技巧训练') &&
+              desc.length > 15) {
+            authentic++;
+          }
+        }
+        totalAuth += authentic;
+        totalEx += levelCounts[level];
+      });
+      
+      console.log(`综合${round}: +${roundExtracted} | 总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%) | 剩余: ${pendingTasks.length}`);
+      
+      if (totalAuth === totalEx) {
+        console.log(`全部340个练习完成！综合引擎第${round}轮完成`);
+        break;
+      }
+    }
     
-    if (totalAuth === totalEx) {
-      console.log('全部340个练习完成');
+    if (pendingTasks.length === 0) {
+      console.log('所有任务已完成');
+      break;
+    }
+    
+    if (roundExtracted === 0 && round > 30) {
+      console.log('连续30轮无进展');
       break;
     }
   }
   
-  console.log(`综合引擎完成: ${extracted} 个描述`);
+  console.log(`综合提取引擎完成: 总共提取${totalExtracted}个描述`);
 }
 
 comprehensiveExtractionEngine().catch(console.error);

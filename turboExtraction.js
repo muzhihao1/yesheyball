@@ -9,7 +9,7 @@ const openai = new OpenAI({
 async function extractDescription(level, exerciseNum) {
   try {
     const folderNames = {
-      3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室',
+      3: '3、渐入佳境', 4: '4、炉火纯青', 5: '5、登堂入室',
       6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
     };
     
@@ -39,7 +39,7 @@ async function extractDescription(level, exerciseNum) {
     });
 
     let content = response.choices[0].message.content;
-    if (content && !content.includes('无法')) {
+    if (content && !content.includes('无法') && !content.includes("I'm sorry") && !content.includes("I can't")) {
       content = content.replace(/^题目说明[：:]\s*/g, '')
                      .replace(/过关要求.*$/gm, '')
                      .replace(/连续完成.*$/gm, '')
@@ -58,22 +58,29 @@ async function turboExtraction() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('涡轮提取启动...');
+  console.log('Turbo提取引擎启动...');
   
   let totalExtracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // 高速循环
-  for (let turbo = 1; turbo <= 200; turbo++) {
+  // 高频循环提取
+  for (let turbo = 1; turbo <= 300; turbo++) {
     let turboExtracted = 0;
     
-    console.log(`涡轮${turbo}`);
+    // 超级快速轮换策略
+    const patterns = [
+      [8, 3, 7, 4, 5], [3, 8, 4, 7, 5], [7, 5, 8, 3, 4],
+      [4, 8, 5, 3, 7], [5, 7, 3, 8, 4], [8, 4, 3, 5, 7]
+    ];
     
-    // 优化处理顺序
-    const sequence = turbo % 2 === 0 ? [8, 3, 4, 5, 7] : [3, 8, 5, 7, 4];
+    const pattern = patterns[turbo % patterns.length];
     
-    for (const level of sequence) {
-      for (let i = 1; i <= levelCounts[level]; i++) {
+    for (const level of pattern) {
+      // 随机打乱练习顺序
+      const exercises = Array.from({length: levelCounts[level]}, (_, i) => i + 1);
+      exercises.sort(() => Math.random() - 0.5);
+      
+      for (const i of exercises) {
         const key = `${level}-${i}`;
         const currentDesc = descriptions[key];
         
@@ -86,7 +93,7 @@ async function turboExtraction() {
           const result = await extractDescription(level, i);
           if (result) {
             descriptions[key] = result;
-            console.log(`[${turbo}] ${key}: ${result}`);
+            console.log(`Turbo${turbo} ${key}: ${result}`);
             totalExtracted++;
             turboExtracted++;
             fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
@@ -95,8 +102,8 @@ async function turboExtraction() {
       }
     }
     
-    // 进度检查
-    if (turbo % 10 === 0) {
+    // 每3轮检查进度
+    if (turbo % 3 === 0) {
       let totalAuth = 0, totalEx = 0;
       [3,4,5,6,7,8].forEach(level => {
         let authentic = 0;
@@ -114,16 +121,16 @@ async function turboExtraction() {
         totalEx += levelCounts[level];
       });
       
-      console.log(`涡轮${turbo}: +${turboExtracted} | 总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+      console.log(`Turbo${turbo}: +${turboExtracted} | 总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
       
       if (totalAuth === totalEx) {
-        console.log(`全部340个练习完成！涡轮${turbo}轮，总提取${totalExtracted}个`);
-        break;
+        console.log(`全部340个练习完成！Turbo${turbo}轮完成`);
+        return;
       }
     }
   }
   
-  console.log(`涡轮提取完成: ${totalExtracted}个描述`);
+  console.log(`Turbo提取完成: ${totalExtracted}个描述`);
 }
 
 turboExtraction().catch(console.error);
