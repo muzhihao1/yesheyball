@@ -58,14 +58,16 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - simplified for better centering
+  // Function to get cropping style - balanced cropping for center alignment
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     return {
-      clipPath: 'inset(19% 6% 3% 52%)', // crop to show table only
+      clipPath: 'inset(19% 20% 3% 20%)', // crop evenly from left and right for center alignment
       width: '100%',
       height: 'auto',
-      maxWidth: '300px',
-      objectFit: 'contain' as const
+      maxWidth: '280px',
+      objectFit: 'contain' as const,
+      display: 'block',
+      margin: '0 auto'
     };
   };
 
@@ -592,20 +594,20 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 完全居中，防止溢出 */}
-                <div className="flex flex-col items-center space-y-4 py-6">
-                  <div className="w-full max-w-sm mx-auto flex justify-center">
-                    <div className="relative overflow-hidden rounded-lg shadow-lg bg-white">
+                {/* 练习图片 - 居中对齐 */}
+                <div className="py-6">
+                  <div className="flex justify-center">
+                    <div className="relative overflow-hidden rounded-lg shadow-lg bg-white flex justify-center items-center">
                       <img 
                         src={selectedExercise?.imageUrl} 
                         alt={selectedExercise?.title}
-                        className="block"
+                        className="block mx-auto"
                         style={getCroppingStyle(selectedExercise!)}
                         onError={(e) => {
                           if (e.currentTarget.parentElement) {
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement.innerHTML = `
-                              <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
+                              <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
                                 <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
                                 <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
                                 <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
@@ -622,7 +624,7 @@ export default function Levels() {
                     </div>
                   </div>
                   
-                  <div className="text-center text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg">
+                  <div className="text-center text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg mt-4 mx-auto w-fit">
                     {selectedLevel?.name}阶段练习第{selectedExercise?.exerciseNumber}题
                   </div>
                 </div>
