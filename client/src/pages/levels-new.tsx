@@ -368,43 +368,60 @@ export default function Levels() {
                           {/* Exercise Circle */}
                           <div className="relative z-10">
                             {isMilestone ? (
-                              // Special milestone design for every 5th exercise
+                              // Trophy milestone design for every 5th exercise
                               <div className="relative">
+                                {/* Trophy Base */}
                                 <div 
-                                  className={`w-24 h-24 flex items-center justify-center cursor-pointer transition-all duration-300 ${
+                                  className={`w-24 h-28 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
                                     !isUnlocked 
-                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-lg' 
-                                      : exercise.completed 
-                                        ? `${levelColors.node} text-white shadow-2xl` 
-                                        : `bg-white border-4 ${levelColors.border} text-gray-700 hover:scale-105 shadow-xl hover:shadow-2xl`
+                                      ? 'cursor-not-allowed' 
+                                      : 'hover:scale-105'
                                   }`}
                                   onClick={() => isUnlocked && handleExerciseClick(exercise)}
                                   style={{
-                                    borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
                                     filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
                                   }}
                                 >
-                                  {!isUnlocked ? (
-                                    <Lock className="w-8 h-8" />
-                                  ) : exercise.completed ? (
-                                    <span className="text-2xl font-bold text-white">{groupNumber}</span>
-                                  ) : (
-                                    <span className="text-2xl font-bold">{groupNumber}</span>
-                                  )}
+                                  {/* Trophy Cup */}
+                                  <div className={`w-16 h-16 rounded-t-full flex items-center justify-center ${
+                                    !isUnlocked 
+                                      ? 'bg-gray-300 text-gray-500' 
+                                      : exercise.completed 
+                                        ? `${levelColors.node} text-white shadow-xl` 
+                                        : `bg-white border-4 ${levelColors.border} text-gray-700 shadow-xl`
+                                  }`}>
+                                    {!isUnlocked ? (
+                                      <Lock className="w-6 h-6" />
+                                    ) : (
+                                      <span className="text-2xl font-bold">{groupNumber}</span>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Trophy Stem */}
+                                  <div className={`w-4 h-4 ${
+                                    !isUnlocked 
+                                      ? 'bg-gray-300' 
+                                      : exercise.completed 
+                                        ? levelColors.node 
+                                        : `bg-white border-2 ${levelColors.border}`
+                                  }`}></div>
+                                  
+                                  {/* Trophy Base */}
+                                  <div className={`w-12 h-2 rounded ${
+                                    !isUnlocked 
+                                      ? 'bg-gray-300' 
+                                      : exercise.completed 
+                                        ? levelColors.node 
+                                        : `bg-white border-2 ${levelColors.border}`
+                                  }`}></div>
                                 </div>
                                 
-                                {/* Decorative elements for milestone */}
-                                <div className="absolute -left-4 top-1/2 transform -translate-y-1/2">
-                                  <div className={`w-3 h-3 ${exercise.completed ? levelColors.node : 'bg-gray-300'} rounded-full`}></div>
+                                {/* Decorative elements */}
+                                <div className="absolute -left-3 top-4">
+                                  <div className={`w-2 h-6 rounded-full ${exercise.completed ? levelColors.node : 'bg-gray-300'}`}></div>
                                 </div>
-                                <div className="absolute -right-4 top-1/2 transform -translate-y-1/2">
-                                  <div className={`w-3 h-3 ${exercise.completed ? levelColors.node : 'bg-gray-300'} rounded-full`}></div>
-                                </div>
-                                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                                  <div className={`w-3 h-3 ${exercise.completed ? levelColors.node : 'bg-gray-300'} rounded-full`}></div>
-                                </div>
-                                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2">
-                                  <div className={`w-3 h-3 ${exercise.completed ? levelColors.node : 'bg-gray-300'} rounded-full`}></div>
+                                <div className="absolute -right-3 top-4">
+                                  <div className={`w-2 h-6 rounded-full ${exercise.completed ? levelColors.node : 'bg-gray-300'}`}></div>
                                 </div>
                               </div>
                             ) : (
@@ -427,7 +444,7 @@ export default function Levels() {
                                 ) : exercise.completed ? (
                                   <Star className="w-10 h-10 fill-white" />
                                 ) : (
-                                  <span className="text-xl font-bold">{exercise.exerciseNumber}</span>
+                                  <div className={`w-4 h-4 rounded-full ${levelColors.border.replace('border-', 'bg-')}`}></div>
                                 )}
                               </div>
                             )}
