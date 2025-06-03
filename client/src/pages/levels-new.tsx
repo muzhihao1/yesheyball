@@ -58,11 +58,12 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - 1200px宽度的超大桌子
+  // Function to get responsive cropping style
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
+    // Use CSS clamp for responsive sizing
     return {
       clipPath: 'inset(19% 6% 3% 52%)', // 裁剪显示桌子
-      width: '1200px',
+      width: 'min(85vw, 1000px)', // Responsive width that fits mobile
       height: 'auto',
       objectFit: 'contain' as const,
       display: 'block',
@@ -552,21 +553,21 @@ export default function Levels() {
 
       {/* Exercise Dialog */}
       <Dialog open={showExerciseDialog} onOpenChange={setShowExerciseDialog}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto w-[95vw]">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-6xl max-h-[95vh] overflow-y-auto w-[95vw]">
           {selectedExercise && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
+                <DialogTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
                       {selectedExercise.exerciseNumber}
                     </div>
-                    <span className="text-xl">{selectedExercise.title}</span>
+                    <span className="text-lg sm:text-xl truncate">{selectedExercise.title}</span>
                     {selectedExercise.completed && (
-                      <Badge className="bg-green-500 text-white">已完成</Badge>
+                      <Badge className="bg-green-500 text-white text-xs">已完成</Badge>
                     )}
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-xs sm:text-sm text-gray-500">
                     等级 {selectedExercise.level} - {selectedLevel?.name}
                   </div>
                 </DialogTitle>
@@ -594,10 +595,10 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 移除所有容器限制，让桌子真正放大 */}
-                <div className="py-6 w-full">
-                  <div className="rounded-lg shadow-lg bg-white p-4 w-full">
-                    <div className="w-full flex justify-center items-center">
+                {/* 练习图片 - 响应式设计 */}
+                <div className="py-4 sm:py-6 w-full">
+                  <div className="rounded-lg shadow-lg bg-white p-2 sm:p-4 w-full">
+                    <div className="w-full flex justify-center items-center overflow-x-auto">
                       <img 
                         src={selectedExercise?.imageUrl} 
                         alt={selectedExercise?.title}
@@ -607,15 +608,15 @@ export default function Levels() {
                           if (e.currentTarget.parentElement) {
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement.innerHTML = `
-                              <div class="w-[500px] h-[650px] bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
-                                <div class="absolute top-3 left-3 w-5 h-5 bg-black rounded-full"></div>
-                                <div class="absolute top-3 right-3 w-5 h-5 bg-black rounded-full"></div>
-                                <div class="absolute bottom-3 left-3 w-5 h-5 bg-black rounded-full"></div>
-                                <div class="absolute bottom-3 right-3 w-5 h-5 bg-black rounded-full"></div>
-                                <div class="absolute top-1/2 left-3 w-5 h-5 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="absolute top-1/2 right-3 w-5 h-5 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="w-6 h-6 bg-white rounded-full"></div>
-                                <div class="absolute top-6 right-6 w-6 h-6 bg-black rounded-full border-2 border-red-500"></div>
+                              <div class="w-[300px] sm:w-[400px] md:w-[500px] h-[350px] sm:h-[450px] md:h-[550px] bg-green-600 border-4 sm:border-6 md:border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
+                                <div class="absolute top-2 left-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full"></div>
+                                <div class="absolute top-2 right-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 left-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 right-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full"></div>
+                                <div class="absolute top-1/2 left-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="absolute top-1/2 right-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-white rounded-full"></div>
+                                <div class="absolute top-4 right-4 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-black rounded-full border-2 border-red-500"></div>
                               </div>
                             `;
                           }
@@ -624,7 +625,7 @@ export default function Levels() {
                     </div>
                   </div>
                   
-                  <div className="text-center text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg mt-4 mx-auto w-fit">
+                  <div className="text-center text-xs sm:text-sm text-gray-600 bg-gray-50 px-3 sm:px-4 py-2 rounded-lg mt-3 sm:mt-4 mx-auto w-fit">
                     {selectedLevel?.name}阶段练习第{selectedExercise?.exerciseNumber}题
                   </div>
                 </div>
