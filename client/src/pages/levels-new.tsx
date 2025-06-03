@@ -361,19 +361,15 @@ export default function Levels() {
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
                     
-                    // Position logic for Duolingo-style arrangement
+                    // Diagonal zigzag arrangement
                     const getPositionClasses = () => {
                       if (isMilestone) {
                         return "flex justify-center mb-12"; // Center the milestone
                       }
                       
-                      // First 4 exercises in zigzag pattern
-                      if (positionInGroup === 0) return "flex justify-center mb-8"; // Center
-                      if (positionInGroup === 1) return "flex justify-start pl-8 mb-8"; // Left
-                      if (positionInGroup === 2) return "flex justify-end pr-8 mb-8"; // Right
-                      if (positionInGroup === 3) return "flex justify-center mb-8"; // Center
-                      
-                      return "flex justify-center mb-8";
+                      // Diagonal zigzag pattern: left -> right -> left -> right
+                      const isLeft = exerciseIndex % 2 === 0;
+                      return isLeft ? "flex justify-start pl-16 mb-8" : "flex justify-end pr-16 mb-8";
                     };
                     
                     return (
