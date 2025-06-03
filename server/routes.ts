@@ -8,6 +8,7 @@ import { insertDiaryEntrySchema, insertUserTaskSchema } from "@shared/schema";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer";
 import { adaptiveLearning } from "./adaptiveLearning";
+import { requirementCorrector } from "./manualCorrection";
 import { z } from "zod";
 import path from "path";
 import fs from "fs";
@@ -343,6 +344,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Complexity analysis error:", error);
       res.status(500).json({ message: "Failed to analyze exercise complexity" });
+    }
+  });
+
+  // Manual correction endpoint for exercise requirements
+  app.post("/api/correct-requirement", async (req, res) => {
+    try {
+      const { level, exerciseNumber, requirement } = req.body;
+      
+      if (!level || !exerciseNumber || !requirement) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const success = requirementCorrector.updateExerciseRequirement(level, exerciseNumber, requirement);
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: `Updated ${level}-${exerciseNumber}: ${requirement}` 
+        });
+      } else {
+        res.status(500).json({ message: "Failed to update requirement" });
+      }
+    } catch (error) {
+      console.error("Requirement correction error:", error);
+      res.status(500).json({ message: "Failed to correct requirement" });
+    }
+  });
+
+  // Validate current requirements
+  app.get("/api/validate-requirements", async (req, res) => {
+    try {
+      const validation = requirementCorrector.validateRequirements();
+      res.json(validation);
+    } catch (error) {
+      console.error("Validation error:", error);
+      res.status(500).json({ message: "Failed to validate requirements" });
     }
   });
 
