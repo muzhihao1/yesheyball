@@ -158,22 +158,24 @@ export default function Levels() {
     }
   ];
 
-  const getCategoryColor = (category: string) => {
-    switch(category) {
-      case "启明星": return "from-blue-500 via-blue-600 to-indigo-600";
-      case "超新星": return "from-purple-500 via-violet-600 to-purple-700";
-      case "智子星": return "from-orange-500 via-red-500 to-red-600";
-      default: return "from-gray-500 to-gray-600";
-    }
+  const getLevelColors = (level: number) => {
+    const colorSchemes = {
+      1: { bg: "from-emerald-400 to-green-500", node: "bg-emerald-500", border: "border-emerald-400" },
+      2: { bg: "from-blue-400 to-blue-500", node: "bg-blue-500", border: "border-blue-400" },
+      3: { bg: "from-purple-400 to-purple-500", node: "bg-purple-500", border: "border-purple-400" },
+      4: { bg: "from-orange-400 to-orange-500", node: "bg-orange-500", border: "border-orange-400" },
+      5: { bg: "from-pink-400 to-pink-500", node: "bg-pink-500", border: "border-pink-400" },
+      6: { bg: "from-indigo-400 to-indigo-500", node: "bg-indigo-500", border: "border-indigo-400" },
+      7: { bg: "from-red-400 to-red-500", node: "bg-red-500", border: "border-red-400" },
+      8: { bg: "from-amber-400 to-yellow-500", node: "bg-amber-500", border: "border-amber-400" },
+    };
+    return colorSchemes[level as keyof typeof colorSchemes] || colorSchemes[1];
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch(category) {
-      case "启明星": return <Star className="w-6 h-6" />;
-      case "超新星": return <Zap className="w-6 h-6" />;
-      case "智子星": return <Crown className="w-6 h-6" />;
-      default: return <Trophy className="w-6 h-6" />;
-    }
+  const getCategoryIcon = (level: number) => {
+    if (level <= 3) return <Star className="w-5 h-5" />;
+    if (level <= 6) return <Zap className="w-5 h-5" />;
+    return <Crown className="w-5 h-5" />;
   };
 
   const getExerciseRequirement = (level: number, exerciseNumber: number): string => {
@@ -300,153 +302,136 @@ export default function Levels() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-green-50 to-purple-50">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="relative">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-red-600 bg-clip-text text-transparent mb-4">
-            台球大师之路
-          </h1>
-          <div className="absolute -top-2 -right-8 text-2xl">🎱</div>
-        </div>
-        <p className="text-gray-700 text-lg mb-6">通过耶氏台球学院系列练习，系统化提升中式八球技术水平</p>
-        
-        <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-blue-100 rounded-full px-6 py-3 shadow-md">
-          <Trophy className="w-5 h-5 mr-2 text-yellow-600" />
-          <span className="text-gray-800 font-semibold">
-            当前等级: {user.level} - {levelStages.find(s => s.level === user.level)?.name}
-          </span>
+      <div className="pt-4 pb-6 text-center">
+        <div className="flex items-center justify-center space-x-4 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+            {user.username.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex items-center space-x-2 bg-white rounded-full px-4 py-2 shadow-md">
+            <Star className="w-4 h-4 text-orange-400" />
+            <span className="font-bold text-gray-700">{user.exp}</span>
+          </div>
+          <div className="flex items-center space-x-2 bg-white rounded-full px-4 py-2 shadow-md">
+            <Trophy className="w-4 h-4 text-yellow-500" />
+            <span className="font-bold text-gray-700">等级 {user.level}</span>
+          </div>
         </div>
       </div>
 
-      {/* 多邻国风格的垂直滚动关卡地图 */}
-      <div className="max-w-md mx-auto bg-gradient-to-b from-green-50 to-blue-50 rounded-xl p-6">
-        {/* 用户进度显示 */}
-        <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 shadow-lg border border-gray-100">
-          <div className="flex items-center space-x-3">
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-              {user.username.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <div className="font-bold text-gray-800 text-lg">{user.username}</div>
-              <div className="text-sm text-gray-600 flex items-center">
-                <Target className="w-4 h-4 mr-1" />
-                等级 {user.level} - {levelStages.find(s => s.level === user.level)?.name}
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-xl font-bold text-orange-500">{user.exp}</div>
-            <div className="text-xs text-gray-500 flex items-center justify-end">
-              <Star className="w-3 h-3 mr-1" />
-              经验值
-            </div>
-          </div>
-        </div>
-
-        {/* 垂直滚动的关卡路径 */}
-        <div className="space-y-8">
-          {levelStages.map((stage, stageIndex) => (
-            <div key={stage.level} className="relative">
-              {/* 等级标题卡片 */}
-              <div className={`bg-gradient-to-r ${getCategoryColor(stage.category)} rounded-lg p-4 mb-6 text-white shadow-lg`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl">{getCategoryIcon(stage.category)}</span>
+      {/* Duolingo-style Level Map */}
+      <div className="max-w-sm mx-auto px-4 pb-8">
+        <div className="relative">
+          {levelStages.map((stage, stageIndex) => {
+            const levelColors = getLevelColors(stage.level);
+            const exercises = generateExercisesForLevel(stage.level);
+            
+            return (
+              <div key={stage.level} className="relative mb-16">
+                {/* Level Header */}
+                <div className={`bg-gradient-to-r ${levelColors.bg} rounded-2xl p-4 mb-8 text-white shadow-lg mx-4`}>
+                  <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-bold">等级 {stage.level}: {stage.name}</div>
-                      <div className="text-xs opacity-90">{stage.category}阶段</div>
+                      <div className="font-bold text-lg">{stage.name}</div>
+                      <div className="text-sm opacity-90">等级 {stage.level}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm opacity-90">进度</div>
+                      <div className="font-bold">{stage.completedExercises}/{stage.totalExercises}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs opacity-90">进度</div>
-                    <div className="font-bold">{stage.completedExercises}/{stage.totalExercises}</div>
+                  <div className="mt-3 bg-white/20 rounded-full h-2">
+                    <div 
+                      className="bg-white rounded-full h-2 transition-all duration-500"
+                      style={{ width: `${stage.progress}%` }}
+                    />
                   </div>
                 </div>
-                <Progress value={stage.progress} className="mt-2 h-1 bg-white/20" />
-              </div>
 
-              {/* 习题关卡点 - 垂直Z字形排列 */}
-              <div className="space-y-4 pl-4">
-                {generateExercisesForLevel(stage.level).map((exercise, exerciseIndex) => {
-                  const isLeft = exerciseIndex % 2 === 0;
-                  const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || generateExercisesForLevel(stage.level)[exerciseIndex - 1]?.completed);
-                  
-                  return (
-                    <div 
-                      key={exercise.id} 
-                      className={`flex ${isLeft ? 'justify-start' : 'justify-end'} relative`}
-                    >
-                      {/* 连接线 */}
-                      {exerciseIndex > 0 && (
-                        <div className={`absolute top-0 w-8 h-4 border-gray-300 ${
-                          isLeft ? 'right-12 border-r-2 border-b-2' : 'left-12 border-l-2 border-b-2'
-                        } transform -translate-y-4`} />
-                      )}
-                      
-                      {/* 关卡圆圈 */}
-                      <div 
-                        className={`relative w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 shadow-lg ${
-                          !isUnlocked 
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                            : exercise.completed 
-                              ? 'bg-gradient-to-br from-green-400 to-green-600 text-white transform scale-105' 
-                              : 'bg-gradient-to-br from-white to-green-50 border-4 border-green-500 text-green-600 hover:scale-110 hover:shadow-xl'
-                        }`}
-                        onClick={() => isUnlocked && handleExerciseClick(exercise)}
-                      >
-                        {!isUnlocked ? (
-                          <Lock className="w-6 h-6" />
-                        ) : exercise.completed ? (
-                          <Star className="w-8 h-8 fill-white" />
-                        ) : (
-                          <span className="text-lg font-bold">{exercise.exerciseNumber}</span>
-                        )}
-                        
-                        {/* 星星评分 */}
-                        {exercise.completed && exercise.stars > 0 && (
-                          <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full px-1.5 py-0.5 text-xs font-bold text-yellow-900 min-w-[20px] text-center">
-                            {exercise.stars}
+                {/* Exercise Nodes */}
+                <div className="relative">
+                  {exercises.map((exercise, exerciseIndex) => {
+                    const isLeft = exerciseIndex % 2 === 0;
+                    const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || exercises[exerciseIndex - 1]?.completed);
+                    
+                    return (
+                      <div key={exercise.id} className="relative mb-6">
+                        {/* Connecting Path */}
+                        {exerciseIndex > 0 && (
+                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6">
+                            <div className={`w-1 h-6 ${isUnlocked ? levelColors.node : 'bg-gray-300'}`} />
                           </div>
                         )}
+                        
+                        {/* Exercise Node Container */}
+                        <div className={`flex ${isLeft ? 'justify-start pl-8' : 'justify-end pr-8'} items-center`}>
+                          {/* Exercise Circle */}
+                          <div className="relative">
+                            <div 
+                              className={`w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 shadow-lg ${
+                                !isUnlocked 
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                  : exercise.completed 
+                                    ? `${levelColors.node} text-white scale-105 shadow-xl` 
+                                    : `bg-white ${levelColors.border} border-4 text-gray-600 hover:scale-110 hover:shadow-xl`
+                              }`}
+                              onClick={() => isUnlocked && handleExerciseClick(exercise)}
+                            >
+                              {!isUnlocked ? (
+                                <Lock className="w-6 h-6" />
+                              ) : exercise.completed ? (
+                                <Star className="w-8 h-8 fill-white" />
+                              ) : (
+                                <span className="text-lg font-bold">{exercise.exerciseNumber}</span>
+                              )}
+                            </div>
+                            
+                            {/* Stars Badge */}
+                            {exercise.completed && exercise.stars > 0 && (
+                              <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold text-yellow-900">
+                                {exercise.stars}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Exercise Label */}
+                          {isUnlocked && (
+                            <div className={`absolute ${isLeft ? 'left-24' : 'right-24'} bg-white rounded-lg px-3 py-2 shadow-md ${levelColors.border} border-l-4 max-w-32`}>
+                              <div className="text-sm font-medium text-gray-800 truncate">{exercise.title}</div>
+                              {exercise.completed && (
+                                <div className="text-xs text-green-600 flex items-center">
+                                  <Star className="w-3 h-3 mr-1" />
+                                  已完成
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      
-                      {/* 题目标签 */}
-                      <div className={`absolute ${isLeft ? 'left-20' : 'right-20'} top-2 bg-white rounded-lg px-3 py-1 shadow-sm ${
-                        !isUnlocked ? 'opacity-50' : ''
-                      }`}>
-                        <div className="text-sm font-medium text-gray-800">{exercise.title}</div>
-                        {exercise.completed && (
-                          <div className="text-xs text-green-600">已完成</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
 
-              {/* 等级考核关卡 */}
-              {canTakeExam(stage) && (
-                <div className="flex justify-center mt-8">
-                  <div className="relative">
-                    <div className="w-20 h-20 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center cursor-pointer shadow-xl transform hover:scale-110 transition-all duration-300">
-                      <span className="text-2xl">🏆</span>
-                    </div>
-                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap">
-                      等级考核
+                {/* Level Complete Badge */}
+                {stage.completed && (
+                  <div className="flex justify-center mt-8">
+                    <div className={`${levelColors.node} rounded-2xl px-6 py-3 text-white shadow-lg flex items-center space-x-2`}>
+                      <Trophy className="w-5 h-5" />
+                      <span className="font-bold">等级完成</span>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* 连接下一等级的线 */}
-              {stageIndex < levelStages.length - 1 && (
-                <div className="flex justify-center mt-8">
-                  <div className="w-0.5 h-12 bg-gray-300"></div>
-                </div>
-              )}
-            </div>
-          ))}
+                {/* Connection to Next Level */}
+                {stageIndex < levelStages.length - 1 && (
+                  <div className="flex justify-center mt-12">
+                    <div className={`w-1 h-8 ${levelStages[stageIndex + 1].unlocked ? getLevelColors(levelStages[stageIndex + 1].level).node : 'bg-gray-300'}`} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
