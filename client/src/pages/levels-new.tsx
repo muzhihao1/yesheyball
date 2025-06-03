@@ -620,50 +620,47 @@ export default function Levels() {
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-4">
-                {/* 题目说明和要求 - 水平排列 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                    <h3 className="font-bold text-blue-700 mb-2">题目说明：</h3>
-                    <p className="text-gray-700">{selectedExercise?.description}</p>
+              <div className="space-y-4 max-h-[80vh] overflow-y-auto">
+                {/* 题目说明和要求 - 紧凑排列 */}
+                <div className="space-y-3">
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg">
+                    <h3 className="font-bold text-blue-700 mb-1 text-sm">题目说明：</h3>
+                    <p className="text-gray-700 text-sm">{selectedExercise?.description}</p>
                   </div>
                   
-                  <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
-                    <h3 className="font-bold text-orange-700 mb-2">过关要求：</h3>
-                    <p className="text-gray-700">
+                  <div className="bg-orange-50 border-l-4 border-orange-500 p-3 rounded-r-lg">
+                    <h3 className="font-bold text-orange-700 mb-1 text-sm">过关要求：</h3>
+                    <p className="text-gray-700 text-sm">
                       {selectedExercise && getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
                     </p>
                   </div>
                 </div>
                 
-                {/* 练习图片 - 居中显示，调整尺寸 */}
-                <div className="flex justify-center py-4">
-                  <div className="w-fit">
-                    <img 
-                      src={selectedExercise?.imageUrl} 
-                      alt={selectedExercise?.title}
-                      className="block max-w-md w-full h-auto"
-                      style={getCroppingStyle(selectedExercise!)}
-                      onError={(e) => {
-                        if (e.currentTarget.parentElement) {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement.innerHTML = `
-                            <div class="w-64 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
-                              <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                              <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                              <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                              <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                              <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                              <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                              <div class="w-4 h-4 bg-white rounded-full"></div>
-                              <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
-                              <div class="absolute inset-0 opacity-20" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px);"></div>
-                            </div>
-                          `;
-                        }
-                      }}
-                    />
-                  </div>
+                {/* 练习图片 - 自适应尺寸 */}
+                <div className="flex justify-center">
+                  <img 
+                    src={selectedExercise?.imageUrl} 
+                    alt={selectedExercise?.title}
+                    className="w-full max-w-sm h-auto rounded-lg shadow-sm"
+                    style={getCroppingStyle(selectedExercise!)}
+                    onError={(e) => {
+                      if (e.currentTarget.parentElement) {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement.innerHTML = `
+                          <div class="w-full max-w-sm h-64 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
+                            <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                            <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                            <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                            <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                            <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                            <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                            <div class="w-4 h-4 bg-white rounded-full"></div>
+                            <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
+                          </div>
+                        `;
+                      }
+                    }}
+                  />
                 </div>
                 
                 <div className="text-center text-sm text-gray-600 bg-gray-50 p-2 rounded">
