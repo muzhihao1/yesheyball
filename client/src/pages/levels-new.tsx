@@ -102,8 +102,11 @@ export default function Levels() {
     // Red frame: left ~52%, top ~19%, right ~98%, bottom ~97%
     return {
       clipPath: 'inset(19% 2% 3% 52%)', // top right bottom left - matches red frame boundaries
-      transform: 'scale(2.1)', // scale to fit container while showing complete table
-      transformOrigin: 'center center'
+      transform: 'scale(1.0)', // no scaling to ensure full image fits in container
+      transformOrigin: 'center center',
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain' as const
     };
   };
 
@@ -661,12 +664,12 @@ export default function Levels() {
                   
                   {/* 右侧：练习图片 */}
                   <div className="space-y-4">
-                    <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-white">
-                      <div className="relative w-full h-96 overflow-hidden">
+                    <div className="border-2 border-gray-200 rounded-lg bg-white">
+                      <div className="relative w-full h-96 flex items-center justify-center">
                         <img 
                           src={selectedExercise.imageUrl} 
                           alt={selectedExercise.title}
-                          className="w-full h-auto object-contain"
+                          className="max-w-full max-h-full object-contain"
                           style={getCroppingStyle(selectedExercise)}
                           onError={(e) => {
                           if (e.currentTarget.parentElement) {
