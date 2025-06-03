@@ -58,14 +58,14 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - 简单有效的桌子显示
+  // Function to get cropping style - 显示完整桌子
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     return {
-      width: '400px',
-      height: '300px',
-      objectFit: 'none' as const,
-      objectPosition: '-208px -57px', // 精确定位到桌子部分
-      transform: 'scale(1)'
+      clipPath: 'inset(19% 6% 3% 52%)', // 保持原始裁剪坐标
+      width: '300px',
+      height: 'auto',
+      objectFit: 'contain' as const,
+      display: 'block'
     };
   };
 
@@ -592,28 +592,28 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 桌子窗口显示 */}
+                {/* 练习图片 - 居中显示裁剪后的桌子 */}
                 <div className="py-6">
                   <div className="flex justify-center items-center">
-                    <div className="w-[168px] h-[234px] overflow-hidden rounded-lg shadow-lg bg-white">
+                    <div className="inline-block rounded-lg shadow-lg bg-white overflow-hidden">
                       <img 
                         src={selectedExercise?.imageUrl} 
                         alt={selectedExercise?.title}
-                        className="block"
+                        className="block mx-auto"
                         style={getCroppingStyle(selectedExercise!)}
                         onError={(e) => {
                           if (e.currentTarget.parentElement) {
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement.innerHTML = `
-                              <div class="w-full h-full bg-green-600 border-4 border-amber-800 rounded flex items-center justify-center relative">
-                                <div class="absolute top-1 left-1 w-2 h-2 bg-black rounded-full"></div>
-                                <div class="absolute top-1 right-1 w-2 h-2 bg-black rounded-full"></div>
-                                <div class="absolute bottom-1 left-1 w-2 h-2 bg-black rounded-full"></div>
-                                <div class="absolute bottom-1 right-1 w-2 h-2 bg-black rounded-full"></div>
-                                <div class="absolute top-1/2 left-1 w-2 h-2 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="absolute top-1/2 right-1 w-2 h-2 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="w-3 h-3 bg-white rounded-full"></div>
-                                <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full border border-red-500"></div>
+                              <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
+                                <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="w-4 h-4 bg-white rounded-full"></div>
+                                <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
                               </div>
                             `;
                           }
