@@ -330,8 +330,8 @@ export default function Levels() {
     setSelectedExercise(exercise);
     setShowExerciseDialog(true);
     
-    // Analyze the first image to get universal cropping parameters
-    if (Object.keys(tableBounds).length === 0 && !analyzingImage) {
+    // Always re-analyze to get better cropping parameters with improved prompt
+    if (!analyzingImage) {
       await analyzeTableBounds(exercise);
     }
   };
