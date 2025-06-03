@@ -43,16 +43,15 @@ async function extractDescription(exerciseNum) {
   }
 }
 
-async function completeRemainingLevel2() {
+async function completeLastLevel2() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  const remaining = [35, 36, 37, 38, 39, 40];
+  const remaining = [37, 38, 39, 40];
   let updated = 0;
   
-  console.log(`Processing final ${remaining.length} Level 2 exercises...`);
+  console.log(`Processing last ${remaining.length} Level 2 exercises...`);
   
-  // Process final exercises
   for (const exerciseNum of remaining) {
     const key = `2-${exerciseNum}`;
     
@@ -65,12 +64,11 @@ async function completeRemainingLevel2() {
       fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
     }
     
-    await new Promise(resolve => setTimeout(resolve, 400));
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
   
-  console.log(`Final completion: ${updated} updates`);
+  console.log(`Last batch: ${updated} updates`);
   
-  // Final count
   let authentic = 0;
   for (let i = 1; i <= 40; i++) {
     const desc = descriptions[`2-${i}`];
@@ -79,13 +77,13 @@ async function completeRemainingLevel2() {
     }
   }
   
-  console.log(`Level 2 FINAL: ${authentic}/40 authentic descriptions (${(authentic/40*100).toFixed(1)}%)`);
+  console.log(`LEVEL 2 FINAL: ${authentic}/40 authentic descriptions (${(authentic/40*100).toFixed(1)}%)`);
   
   if (authentic === 40) {
-    console.log('🎉 Level 2 description extraction is COMPLETE!');
+    console.log('Level 2 description extraction complete!');
   } else {
     console.log(`${40 - authentic} exercises still need extraction`);
   }
 }
 
-completeRemainingLevel2().catch(console.error);
+completeLastLevel2().catch(console.error);
