@@ -58,32 +58,12 @@ async function acceleratedBatchProcessing() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('加速批处理153题...');
+  console.log('加速批量处理...');
   
-  let processed = 0;
+  let extracted = 0;
   
-  // Process Level 6 from exercise 34
-  for (let i = 34; i <= 60; i++) {
-    const key = `6-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const extracted = await extractDescription(6, i);
-      if (extracted) {
-        descriptions[key] = extracted;
-        console.log(`${key}: ${extracted}`);
-        processed++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
-  
-  // Process Level 7 from exercise 4
-  for (let i = 4; i <= 55; i++) {
+  // Complete Level 7 from exercise 27
+  for (let i = 27; i <= 55; i++) {
     const key = `7-${i}`;
     const currentDesc = descriptions[key];
     
@@ -92,17 +72,17 @@ async function acceleratedBatchProcessing() {
         currentDesc.includes('精进台球技能练习') ||
         currentDesc.length < 20) {
       
-      const extracted = await extractDescription(7, i);
-      if (extracted) {
-        descriptions[key] = extracted;
-        console.log(`${key}: ${extracted}`);
-        processed++;
+      const result = await extractDescription(7, i);
+      if (result) {
+        descriptions[key] = result;
+        console.log(`${key}: ${result}`);
+        extracted++;
         fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
       }
     }
   }
   
-  // Process Level 8 from exercise 8
+  // Complete Level 8 from exercise 8
   for (let i = 8; i <= 55; i++) {
     const key = `8-${i}`;
     const currentDesc = descriptions[key];
@@ -112,11 +92,11 @@ async function acceleratedBatchProcessing() {
         currentDesc.includes('精进台球技能练习') ||
         currentDesc.length < 20) {
       
-      const extracted = await extractDescription(8, i);
-      if (extracted) {
-        descriptions[key] = extracted;
-        console.log(`${key}: ${extracted}`);
-        processed++;
+      const result = await extractDescription(8, i);
+      if (result) {
+        descriptions[key] = result;
+        console.log(`${key}: ${result}`);
+        extracted++;
         fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
       }
     }
@@ -132,11 +112,11 @@ async function acceleratedBatchProcessing() {
         currentDesc.includes('精进台球技能练习') ||
         currentDesc.length < 20) {
       
-      const extracted = await extractDescription(5, i);
-      if (extracted) {
-        descriptions[key] = extracted;
-        console.log(`${key}: ${extracted}`);
-        processed++;
+      const result = await extractDescription(5, i);
+      if (result) {
+        descriptions[key] = result;
+        console.log(`${key}: ${result}`);
+        extracted++;
         fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
       }
     }
@@ -154,24 +134,24 @@ async function acceleratedBatchProcessing() {
           currentDesc.includes('高级台球技巧训练') ||
           currentDesc.length < 20) {
         
-        const extracted = await extractDescription(level, i);
-        if (extracted) {
-          descriptions[key] = extracted;
-          console.log(`${key}: ${extracted}`);
-          processed++;
+        const result = await extractDescription(level, i);
+        if (result) {
+          descriptions[key] = result;
+          console.log(`${key}: ${result}`);
+          extracted++;
           fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
         }
       }
     }
   }
   
-  console.log(`加速批处理完成: ${processed} 个描述`);
+  console.log(`加速批量处理: ${extracted} 个描述`);
   
-  // Generate status
+  // Final status
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   let totalAuth = 0, totalEx = 0;
   
-  console.log('\n=== 加速批处理状态 ===');
+  console.log('\n=== 加速批量处理状态 ===');
   [3,4,5,6,7,8].forEach(level => {
     let authentic = 0;
     for (let i = 1; i <= levelCounts[level]; i++) {
@@ -188,13 +168,18 @@ async function acceleratedBatchProcessing() {
     totalEx += levelCounts[level];
     
     const pct = (authentic/levelCounts[level]*100).toFixed(1);
-    const status = authentic === levelCounts[level] ? ' ✓' : '';
+    const status = authentic === levelCounts[level] ? ' ✅ 完成' : '';
     console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)${status}`);
   });
   
-  console.log(`\n总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+  console.log(`\n项目状态: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
   console.log(`已提取 ${totalAuth} 个真实描述`);
-  console.log(`剩余 ${totalEx - totalAuth} 个待处理`);
+  
+  if (totalAuth === totalEx) {
+    console.log('\n🎉 全部340个练习描述提取完成！');
+  } else {
+    console.log(`剩余 ${totalEx - totalAuth} 个需要完成`);
+  }
 }
 
 acceleratedBatchProcessing().catch(console.error);
