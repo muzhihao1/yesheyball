@@ -96,13 +96,13 @@ export default function Levels() {
     }
   };
 
-  // Function to get cropping style - using exact coordinates from reference image
+  // Function to get cropping style - using coordinates from red frame annotation
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
-    // Coordinates based on your perfect reference image showing complete table with brown borders
-    // This matches exactly what the cropped result should look like
+    // Coordinates based on red frame annotation showing exact table boundaries
+    // Red frame: left ~52%, top ~19%, right ~98%, bottom ~97%
     return {
-      clipPath: 'inset(3% 0% 12% 30%)', // top right bottom left - captures complete brown border frame
-      transform: 'scale(3.2) translateX(10%)', // scale and position to match reference layout
+      clipPath: 'inset(19% 2% 3% 52%)', // top right bottom left - matches red frame boundaries
+      transform: 'scale(2.1)', // scale to fit container while showing complete table
       transformOrigin: 'center center'
     };
   };
