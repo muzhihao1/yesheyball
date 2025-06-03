@@ -47,80 +47,73 @@ async function processRemainingLevels() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('处理剩余级别练习...');
+  console.log('处理剩余级别...');
   
-  let extracted = 0;
+  let totalExtracted = 0;
   const levelFolders = {
     3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室', 
     6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
   };
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Process systematically with priority on higher levels
-  for (const level of [8, 7, 5, 4, 3]) {
-    console.log(`Processing Level ${level}...`);
+  while (true) {
+    let cycleExtracted = 0;
     
-    for (let i = 1; i <= levelCounts[level]; i++) {
-      const key = `${level}-${i}`;
-      const currentDesc = descriptions[key];
-      
-      // Check if needs extraction
-      if (!currentDesc || 
-          currentDesc.includes('如图示摆放球型，完成') || 
-          currentDesc.includes('精进台球技能练习') ||
-          currentDesc.includes('高级台球技巧训练') ||
-          currentDesc.length < 20) {
+    for (const level of [8, 7, 5, 4, 3]) {
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const key = `${level}-${i}`;
+        const currentDesc = descriptions[key];
         
-        const fileIndex = (i + 1).toString().padStart(2, '0');
-        const folderName = levelFolders[level];
-        const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
-        
-        if (fs.existsSync(imagePath)) {
-          const result = await extractDescriptionFromImage(imagePath);
-          if (result) {
-            descriptions[key] = result;
-            console.log(`${key}: ${result}`);
-            extracted++;
-            fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        if (!currentDesc || 
+            currentDesc.includes('如图示摆放球型，完成') || 
+            currentDesc.includes('精进台球技能练习') ||
+            currentDesc.includes('高级台球技巧训练') ||
+            currentDesc.length < 20) {
+          
+          const fileIndex = (i + 1).toString().padStart(2, '0');
+          const folderName = levelFolders[level];
+          const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
+          
+          if (fs.existsSync(imagePath)) {
+            const result = await extractDescriptionFromImage(imagePath);
+            if (result) {
+              descriptions[key] = result;
+              console.log(`${key}: ${result}`);
+              cycleExtracted++;
+              totalExtracted++;
+              fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+            }
           }
         }
       }
     }
-  }
-  
-  console.log(`Extracted: ${extracted} descriptions`);
-  
-  // Final status check
-  let totalAuth = 0, totalEx = 0;
-  
-  console.log('\n=== Final Status ===');
-  [3,4,5,6,7,8].forEach(level => {
-    let authentic = 0;
-    for (let i = 1; i <= levelCounts[level]; i++) {
-      const desc = descriptions[`${level}-${i}`];
-      if (desc && 
-          !desc.includes('如图示摆放球型，完成') && 
-          !desc.includes('精进台球技能练习') &&
-          !desc.includes('高级台球技巧训练') &&
-          desc.length > 15) {
-        authentic++;
-      }
-    }
-    totalAuth += authentic;
-    totalEx += levelCounts[level];
     
-    const pct = (authentic/levelCounts[level]*100).toFixed(1);
-    const status = authentic === levelCounts[level] ? ' ✅' : '';
-    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)${status}`);
-  });
-  
-  console.log(`\nOverall: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
-  
-  if (totalAuth === totalEx) {
-    console.log('All 340 exercises completed!');
-  } else {
-    console.log(`Remaining: ${totalEx - totalAuth} exercises`);
+    let totalAuth = 0, totalEx = 0;
+    [3,4,5,6,7,8].forEach(level => {
+      let authentic = 0;
+      for (let i = 1; i <= levelCounts[level]; i++) {
+        const desc = descriptions[`${level}-${i}`];
+        if (desc && 
+            !desc.includes('如图示摆放球型，完成') && 
+            !desc.includes('精进台球技能练习') &&
+            !desc.includes('高级台球技巧训练') &&
+            desc.length > 15) {
+          authentic++;
+        }
+      }
+      totalAuth += authentic;
+      totalEx += levelCounts[level];
+    });
+    
+    console.log(`本轮: ${cycleExtracted} | 总进度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+    
+    if (totalAuth === totalEx) {
+      console.log('全部340个练习完成');
+      break;
+    }
   }
+  
+  console.log(`总提取: ${totalExtracted} 个描述`);
 }
 
 processRemainingLevels().catch(console.error);
