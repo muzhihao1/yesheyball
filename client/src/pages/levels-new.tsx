@@ -96,26 +96,13 @@ export default function Levels() {
     }
   };
 
-  // Function to get cropping style based on AI analysis
+  // Function to get cropping style - using optimized fixed coordinates for billiard table
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
-    // Use the first analyzed bounds for all exercises since they have the same layout
-    const allBounds = Object.values(tableBounds);
-    const bounds = allBounds.length > 0 ? allBounds[0] : null;
-    
-    if (!bounds) {
-      // Return original image without cropping if no bounds available
-      return {};
-    }
-
-    // Convert percentage bounds to CSS clip-path inset values
-    const insetTop = `${bounds.top}%`;
-    const insetRight = `${100 - bounds.right}%`;
-    const insetBottom = `${100 - bounds.bottom}%`;
-    const insetLeft = `${bounds.left}%`;
-
+    // Fixed coordinates based on billiard table layout analysis
+    // These coordinates use brown border as boundary to capture complete table frame
     return {
-      clipPath: `inset(${insetTop} ${insetRight} ${insetBottom} ${insetLeft})`,
-      transform: 'scale(1.8)', // Zoom to make table more visible after cropping
+      clipPath: 'inset(6% 2% 15% 32%)', // top right bottom left - brown border as outer boundary
+      transform: 'scale(2.8) translateX(5%)', // scale to show complete table with brown frame
       transformOrigin: 'center center'
     };
   };
