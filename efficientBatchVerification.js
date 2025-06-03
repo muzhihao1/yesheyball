@@ -2,44 +2,46 @@ import fs from 'fs';
 import path from 'path';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
 
-async function extractCleanDescription(imagePath) {
+async function extractCleanDescription(level, exerciseNum) {
+  const levelFolders = {
+    1: '1、初窥门径', 2: '2、小有所成', 3: '3、渐入佳境', 4: '4、炉火纯青',
+    5: '5、登堂入室', 6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
+  };
+
+  const fileIndex = (exerciseNum + 1).toString().padStart(2, '0');
+  const folderName = levelFolders[level];
+  const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
+
+  if (!fs.existsSync(imagePath)) return null;
+
   try {
     const imageData = fs.readFileSync(imagePath);
     const base64Image = imageData.toString('base64');
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "提取题目说明文字："
-            },
-            {
-              type: "image_url",
-              image_url: { url: `data:image/jpeg;base64,${base64Image}` }
-            }
-          ],
-        },
-      ],
-      max_tokens: 60,
+      messages: [{
+        role: "user",
+        content: [{
+          type: "text",
+          text: "提取题目说明"
+        }, {
+          type: "image_url",
+          image_url: { url: `data:image/jpeg;base64,${base64Image}` }
+        }]
+      }],
+      max_tokens: 50,
       temperature: 0
     });
 
     let content = response.choices[0].message.content;
-    if (content && !content.includes('无法') && !content.includes('抱歉')) {
-      // 清理提取的内容
-      content = content.replace(/^题目说明[:：]\s*/, '');
-      content = content.replace(/```markdown/g, '');
-      content = content.replace(/```/g, '');
-      content = content.replace(/\n/g, '');
-      return content.trim();
+    if (content && !content.includes('无法')) {
+      content = content.replace(/^题目说明[：:]\s*/g, '').replace(/过关要求.*$/gm, '').replace(/[；。\n]+$/, '').trim();
+      return content.length > 8 ? content : null;
     }
     return null;
   } catch (error) {
@@ -50,50 +52,56 @@ async function extractCleanDescription(imagePath) {
 async function processInSmallBatches() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
-
-  console.log('分批处理等级1习题验证...');
-
-  // 分5批处理，每批7个
-  const batches = [
-    [1, 2, 3, 4, 5, 6, 7],
-    [8, 9, 10, 11, 12, 13, 14],
-    [15, 16, 17, 18, 19, 20, 21],
-    [22, 23, 24, 25, 26, 27, 28],
-    [29, 30, 31, 32, 33, 34, 35]
-  ];
-
-  for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-    const batch = batches[batchIndex];
-    console.log(`处理第${batchIndex + 1}批: 习题${batch[0]}-${batch[batch.length - 1]}`);
-
-    for (const exerciseNum of batch) {
-      const key = `1-${exerciseNum}`;
-      const fileIndex = (exerciseNum + 1).toString().padStart(2, '0');
-      const imagePath = path.join(
-        process.cwd(), 
-        'assessments', 
-        '1、初窥门径', 
-        `1、初窥门径_${fileIndex}.jpg`
-      );
-
-      if (fs.existsSync(imagePath)) {
-        const extracted = await extractCleanDescription(imagePath);
+  
+  const levelCounts = { 1: 35, 2: 40, 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
+  let totalUpdated = 0;
+  
+  console.log('小批量高效验证...');
+  
+  // Focus on Level 4-8 with limited scope
+  const targetLevels = [4, 5, 6, 7, 8];
+  
+  for (const level of targetLevels) {
+    console.log(`\n处理 Level ${level} (前6题)...`);
+    let levelUpdated = 0;
+    
+    for (let i = 1; i <= 6; i++) {
+      const key = `${level}-${i}`;
+      const currentDesc = descriptions[key];
+      
+      if (!currentDesc || currentDesc.includes('如图示摆放球型，完成') || currentDesc.length < 20) {
+        const extracted = await extractCleanDescription(level, i);
         
         if (extracted) {
           descriptions[key] = extracted;
           console.log(`${key}: ${extracted}`);
+          levelUpdated++;
+          totalUpdated++;
         }
         
-        await new Promise(resolve => setTimeout(resolve, 400));
+        await new Promise(resolve => setTimeout(resolve, 350));
       }
     }
-
-    // 每批保存一次
-    fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-    console.log(`第${batchIndex + 1}批完成`);
+    
+    if (levelUpdated > 0) {
+      fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+    }
   }
-
-  console.log('所有批次处理完成');
+  
+  console.log(`\n小批量完成: ${totalUpdated} 题更新`);
+  
+  // Show progress
+  targetLevels.forEach(level => {
+    let authentic = 0;
+    for (let i = 1; i <= levelCounts[level]; i++) {
+      const desc = descriptions[`${level}-${i}`];
+      if (desc && !desc.includes('如图示摆放球型，完成') && desc.length > 15) {
+        authentic++;
+      }
+    }
+    const percentage = (authentic/levelCounts[level]*100).toFixed(1);
+    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${percentage}%)`);
+  });
 }
 
 processInSmallBatches().catch(console.error);
