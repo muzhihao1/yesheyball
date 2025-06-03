@@ -57,93 +57,18 @@ async function completeAll() {
   
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // Process Level 7 remaining from 40
-  for (let i = 40; i <= 55; i++) {
-    const key = `7-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const fileIndex = (i + 1).toString().padStart(2, '0');
-      const folderName = levelFolders[7];
-      const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
-      
-      if (fs.existsSync(imagePath)) {
-        const result = await extractRequirement(imagePath);
-        if (result) {
-          descriptions[key] = result;
-          console.log(`${key}: ${result}`);
-          extracted++;
-          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-        }
-      }
-    }
-  }
-  
-  // Process Level 8 remaining from 8
-  for (let i = 8; i <= 55; i++) {
-    const key = `8-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const fileIndex = (i + 1).toString().padStart(2, '0');
-      const folderName = levelFolders[8];
-      const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
-      
-      if (fs.existsSync(imagePath)) {
-        const result = await extractRequirement(imagePath);
-        if (result) {
-          descriptions[key] = result;
-          console.log(`${key}: ${result}`);
-          extracted++;
-          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-        }
-      }
-    }
-  }
-  
-  // Process Level 5 remaining from 57
-  for (let i = 57; i <= 60; i++) {
-    const key = `5-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const fileIndex = (i + 1).toString().padStart(2, '0');
-      const folderName = levelFolders[5];
-      const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
-      
-      if (fs.existsSync(imagePath)) {
-        const result = await extractRequirement(imagePath);
-        if (result) {
-          descriptions[key] = result;
-          console.log(`${key}: ${result}`);
-          extracted++;
-          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-        }
-      }
-    }
-  }
-  
-  // Process Level 3 and 4 remaining from 42
-  for (const level of [3, 4]) {
+  // Complete all levels systematically
+  for (const level of [8, 7, 5, 4, 3]) {
+    console.log(`\n处理 Level ${level}...`);
     const maxEx = levelCounts[level];
-    for (let i = 42; i <= maxEx; i++) {
+    
+    for (let i = 1; i <= maxEx; i++) {
       const key = `${level}-${i}`;
       const currentDesc = descriptions[key];
       
       if (!currentDesc || 
           currentDesc.includes('如图示摆放球型，完成') || 
+          currentDesc.includes('精进台球技能练习') ||
           currentDesc.includes('高级台球技巧训练') ||
           currentDesc.length < 20) {
         
@@ -155,7 +80,7 @@ async function completeAll() {
           const result = await extractRequirement(imagePath);
           if (result) {
             descriptions[key] = result;
-            console.log(`${key}: ${result}`);
+            console.log(`✓ ${key}: ${result}`);
             extracted++;
             fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
           }
@@ -164,12 +89,12 @@ async function completeAll() {
     }
   }
   
-  console.log(`完成所有剩余: ${extracted} 个描述`);
+  console.log(`\n总共提取: ${extracted} 个描述`);
   
   // Final comprehensive status
   let totalAuth = 0, totalEx = 0;
   
-  console.log('\n=== 最终完成状态 ===');
+  console.log('\n=== 最终状态 ===');
   [3,4,5,6,7,8].forEach(level => {
     let authentic = 0;
     for (let i = 1; i <= levelCounts[level]; i++) {
