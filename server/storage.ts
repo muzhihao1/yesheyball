@@ -62,13 +62,13 @@ export class MemStorage implements IStorage {
     const defaultUser: User = {
       id: this.currentUserId++,
       username: "liangqi",
-      level: 2,
-      exp: 180,
-      streak: 5,
-      totalDays: 23,
-      completedTasks: 67,
-      totalTime: 2520, // 42 hours in minutes
-      achievements: ["新手上路", "连续打卡", "精准射手"],
+      level: 9,
+      exp: 9000,
+      streak: 100,
+      totalDays: 365,
+      completedTasks: 411,
+      totalTime: 15000, // 250 hours in minutes
+      achievements: ["新手上路", "连续打卡", "精准射手", "大师级", "完美主义者", "专业选手"],
       createdAt: new Date(),
       lastActiveAt: new Date(),
     };
