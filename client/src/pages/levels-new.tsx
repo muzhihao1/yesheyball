@@ -361,15 +361,19 @@ export default function Levels() {
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
                     
-                    // Calculate position for straight vertical arrangement with group direction
-                    const groupIndex = Math.floor(exerciseIndex / 5);
-                    const isOddGroup = groupIndex % 2 === 1;
-                    let paddingLeft = 48; // Default center position
+                    // Z-shaped (zigzag) arrangement pattern
+                    let paddingLeft = 48; // Default center position for milestones
                     
                     if (!isMilestone) {
-                      // Even groups (0, 2, 4...): align left
-                      // Odd groups (1, 3, 5...): align right  
-                      paddingLeft = isOddGroup ? 96 : 24;
+                      // Create Z pattern: left -> center -> right -> center -> repeat
+                      const zigzagPosition = exerciseIndex % 4;
+                      switch (zigzagPosition) {
+                        case 0: paddingLeft = 16; break;  // Far left
+                        case 1: paddingLeft = 48; break;  // Center
+                        case 2: paddingLeft = 80; break;  // Far right  
+                        case 3: paddingLeft = 48; break;  // Center
+                        default: paddingLeft = 48; break;
+                      }
                     }
                     
                     return (
