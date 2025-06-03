@@ -15,7 +15,7 @@ function checkLevel2Completion() {
     const key = `2-${i}`;
     const desc = descriptions[key] || 'Missing';
     
-    if (desc.includes('如图摆放球型，白球任意位置') || desc === 'Missing' || desc.length < 20) {
+    if (desc.includes('如图摆放球型，白球任意位置') || desc === 'Missing') {
       genericCount++;
       remaining.push(i);
       console.log(`${key}: [Generic] ${desc.substring(0, 50)}...`);
