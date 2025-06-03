@@ -54,16 +54,16 @@ async function extractDescription(level, exerciseNum) {
   }
 }
 
-async function continueAllLevelsExtraction() {
+async function finalCompletionEngine() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('继续所有Level提取...');
+  console.log('最终完成引擎启动...');
   
   let extracted = 0;
   
-  // Continue Level 6 from exercise 10
-  for (let i = 10; i <= 60; i++) {
+  // Process Level 6 from exercise 12
+  for (let i = 12; i <= 60; i++) {
     const key = `6-${i}`;
     const currentDesc = descriptions[key];
     
@@ -82,7 +82,7 @@ async function continueAllLevelsExtraction() {
     }
   }
   
-  // Continue Level 7 from exercise 4
+  // Process Level 7 from exercise 4
   for (let i = 4; i <= 55; i++) {
     const key = `7-${i}`;
     const currentDesc = descriptions[key];
@@ -102,7 +102,7 @@ async function continueAllLevelsExtraction() {
     }
   }
   
-  // Continue Level 8 from exercise 8
+  // Process Level 8 from exercise 8
   for (let i = 8; i <= 55; i++) {
     const key = `8-${i}`;
     const currentDesc = descriptions[key];
@@ -165,13 +165,13 @@ async function continueAllLevelsExtraction() {
     }
   }
   
-  console.log(`继续提取: ${extracted} 个描述`);
+  console.log(`最终引擎: ${extracted} 个描述完成`);
   
-  // Generate current status
+  // Generate completion status
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   let totalAuth = 0, totalEx = 0;
   
-  console.log('\n=== 当前进度 ===');
+  console.log('\n=== 最终引擎报告 ===');
   [3,4,5,6,7,8].forEach(level => {
     let authentic = 0;
     for (let i = 1; i <= levelCounts[level]; i++) {
@@ -188,11 +188,13 @@ async function continueAllLevelsExtraction() {
     totalEx += levelCounts[level];
     
     const pct = (authentic/levelCounts[level]*100).toFixed(1);
-    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)`);
+    const status = authentic === levelCounts[level] ? ' ✓' : '';
+    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)${status}`);
   });
   
-  console.log(`\n总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+  console.log(`\n完成度: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+  console.log(`已替换 ${totalAuth} 个通用模板为真实描述`);
   console.log(`剩余: ${totalEx - totalAuth} 题`);
 }
 
-continueAllLevelsExtraction().catch(console.error);
+finalCompletionEngine().catch(console.error);
