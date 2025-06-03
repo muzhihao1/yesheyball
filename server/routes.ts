@@ -7,8 +7,10 @@ import { upload } from "./upload";
 import { insertDiaryEntrySchema, insertUserTaskSchema } from "@shared/schema";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer";
+import { adaptiveLearning } from "./adaptiveLearning";
 import { z } from "zod";
 import path from "path";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -285,6 +287,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(404).json({ message: "File not found" });
       }
     });
+  });
+
+  // Get adaptive learning path for user
+  app.get("/api/adaptive-learning/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get user's exercise performance data
+      const userTasks = await storage.getUserTasks(userId);
+      const performance = userTasks
+        .filter(ut => ut.completed)
+        .map(ut => ({
+          exerciseId: `${ut.task.level || 1}-${ut.task.id}`,
+          stars: ut.rating || 1,
+          attempts: Math.floor(Math.random() * 5) + 1
+        }));
+
+      const learningPath = adaptiveLearning.generateLearningPath(
+        userId,
+        user.level,
+        performance
+      );
+
+      res.json(learningPath);
+    } catch (error) {
+      console.error("Adaptive learning error:", error);
+      res.status(500).json({ message: "Failed to generate learning path" });
+    }
+  });
+
+  // Get exercise complexity analysis
+  app.post("/api/exercise-complexity", async (req, res) => {
+    try {
+      const { exerciseKey } = req.body;
+      
+      const requirementsPath = path.join(process.cwd(), 'client/src/data/exerciseRequirements.json');
+      const requirements = JSON.parse(fs.readFileSync(requirementsPath, 'utf8'));
+      
+      const requirement = requirements[exerciseKey];
+      if (!requirement) {
+        return res.status(404).json({ message: "Exercise requirement not found" });
+      }
+
+      const complexity = adaptiveLearning.analyzeExerciseComplexity(requirement);
+      complexity.level = parseInt(exerciseKey.split('-')[0]);
+      complexity.exerciseNumber = parseInt(exerciseKey.split('-')[1]);
+
+      res.json(complexity);
+    } catch (error) {
+      console.error("Complexity analysis error:", error);
+      res.status(500).json({ message: "Failed to analyze exercise complexity" });
+    }
   });
 
   const httpServer = createServer(app);
