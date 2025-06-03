@@ -361,73 +361,22 @@ export default function Levels() {
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
                     
-                    // Diagonal staircase arrangement
-                    const getPositionClasses = () => {
-                      if (isMilestone) {
-                        return "flex justify-center mb-12"; // Center the milestone
-                      }
-                      
-                      // Create diagonal staircase pattern within each group
-                      const groupIndex = Math.floor(exerciseIndex / 5);
-                      const isOddGroup = groupIndex % 2 === 1;
-                      
-                      // For even groups (0, 2, 4...): left to right diagonal
-                      // For odd groups (1, 3, 5...): right to left diagonal
-                      let paddingLeft, paddingRight;
-                      
-                      if (isOddGroup) {
-                        // Right to left diagonal
-                        switch (positionInGroup) {
-                          case 0: paddingLeft = 64; paddingRight = 8; break;  // Far right
-                          case 1: paddingLeft = 48; paddingRight = 24; break; // Medium right
-                          case 2: paddingLeft = 32; paddingRight = 40; break; // Center
-                          case 3: paddingLeft = 16; paddingRight = 56; break; // Medium left
-                          default: paddingLeft = 32; paddingRight = 40; break;
-                        }
-                      } else {
-                        // Left to right diagonal
-                        switch (positionInGroup) {
-                          case 0: paddingLeft = 8; paddingRight = 64; break;  // Far left
-                          case 1: paddingLeft = 24; paddingRight = 48; break; // Medium left
-                          case 2: paddingLeft = 40; paddingRight = 32; break; // Center
-                          case 3: paddingLeft = 56; paddingRight = 16; break; // Medium right
-                          default: paddingLeft = 40; paddingRight = 32; break;
-                        }
-                      }
-                      
-                      return `flex justify-start mb-8`;
-                    };
-                    
-                    // Calculate padding for diagonal effect
+                    // Calculate position for straight vertical arrangement with group direction
                     const groupIndex = Math.floor(exerciseIndex / 5);
                     const isOddGroup = groupIndex % 2 === 1;
-                    let paddingLeft = 32;
+                    let paddingLeft = 48; // Default center position
                     
                     if (!isMilestone) {
-                      if (isOddGroup) {
-                        // Right to left diagonal
-                        switch (positionInGroup) {
-                          case 0: paddingLeft = 80; break;  // Far right
-                          case 1: paddingLeft = 60; break;  // Medium right
-                          case 2: paddingLeft = 40; break;  // Center
-                          case 3: paddingLeft = 20; break;  // Medium left
-                        }
-                      } else {
-                        // Left to right diagonal
-                        switch (positionInGroup) {
-                          case 0: paddingLeft = 20; break;  // Far left
-                          case 1: paddingLeft = 40; break;  // Medium left
-                          case 2: paddingLeft = 60; break;  // Center
-                          case 3: paddingLeft = 80; break;  // Medium right
-                        }
-                      }
+                      // Even groups (0, 2, 4...): align left
+                      // Odd groups (1, 3, 5...): align right  
+                      paddingLeft = isOddGroup ? 96 : 24;
                     }
                     
                     return (
                       <div key={exercise.id}>
                         {/* Exercise Row */}
                         <div 
-                          className={`${getPositionClasses()} items-center relative`}
+                          className={`flex items-center relative mb-8 ${isMilestone ? 'justify-center mb-12' : 'justify-start'}`}
                           style={!isMilestone ? { paddingLeft: `${paddingLeft}px` } : {}}
                         >
                           {/* Exercise Circle */}
