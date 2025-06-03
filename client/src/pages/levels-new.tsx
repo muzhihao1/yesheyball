@@ -58,18 +58,14 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - using coordinates from red frame annotation
+  // Function to get cropping style - simplified for better centering
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
-    // Coordinates based on red frame annotation showing exact table boundaries
-    // Adjusted to show brown border on right while cropping blue area
     return {
-      clipPath: 'inset(19% 6% 3% 52%)', // top right bottom left - show brown border on right
-      transform: 'scale(1.5)', // enlarge table size
-      transformOrigin: 'center center',
-      width: 'auto',
+      clipPath: 'inset(19% 6% 3% 52%)', // crop to show table only
+      width: '100%',
       height: 'auto',
-      maxWidth: 'none',
-      maxHeight: '500px'
+      maxWidth: '300px',
+      objectFit: 'contain' as const
     };
   };
 
@@ -596,36 +592,38 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 完全居中 */}
-                <div className="flex justify-center items-center py-4">
-                  <div className="flex flex-col items-center space-y-3">
-                    <img 
-                      src={selectedExercise?.imageUrl} 
-                      alt={selectedExercise?.title}
-                      className="max-w-xs w-full h-auto rounded-lg shadow-lg"
-                      style={getCroppingStyle(selectedExercise!)}
-                      onError={(e) => {
-                        if (e.currentTarget.parentElement) {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement.innerHTML = `
-                            <div class="w-80 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
-                              <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                              <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                              <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
-                              <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
-                              <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                              <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
-                              <div class="w-4 h-4 bg-white rounded-full"></div>
-                              <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
-                            </div>
-                          `;
-                        }
-                      }}
-                    />
-                    
-                    <div className="text-center text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg">
-                      {selectedLevel?.name}阶段练习第{selectedExercise?.exerciseNumber}题
+                {/* 练习图片 - 完全居中，防止溢出 */}
+                <div className="flex flex-col items-center space-y-4 py-6">
+                  <div className="w-full max-w-sm mx-auto flex justify-center">
+                    <div className="relative overflow-hidden rounded-lg shadow-lg bg-white">
+                      <img 
+                        src={selectedExercise?.imageUrl} 
+                        alt={selectedExercise?.title}
+                        className="block"
+                        style={getCroppingStyle(selectedExercise!)}
+                        onError={(e) => {
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement.innerHTML = `
+                              <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative">
+                                <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="w-4 h-4 bg-white rounded-full"></div>
+                                <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
+                              </div>
+                            `;
+                          }
+                        }}
+                      />
                     </div>
+                  </div>
+                  
+                  <div className="text-center text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg">
+                    {selectedLevel?.name}阶段练习第{selectedExercise?.exerciseNumber}题
                   </div>
                 </div>
                 
