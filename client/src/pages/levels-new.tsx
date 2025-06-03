@@ -602,8 +602,8 @@ export default function Levels() {
                           alt={selectedExercise.title}
                           className="absolute top-0 left-0 w-full h-auto"
                           style={{
-                            clipPath: 'inset(17% 2% 22% 55%)', // top right bottom left - crops to just the green table
-                            transform: 'scale(1.5) translateX(-12%) translateY(-3%)', // zoom and position the table
+                            clipPath: 'inset(18% 4% 23% 57%)', // top right bottom left - crops to just the green table
+                            transform: 'scale(1.4) translateX(-10%) translateY(-2%)', // zoom and position the table
                             transformOrigin: 'center center'
                           }}
                           onError={(e) => {
