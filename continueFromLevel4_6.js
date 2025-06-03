@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 async function extractRequirement(imagePath) {
@@ -13,35 +13,29 @@ async function extractRequirement(imagePath) {
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "你是台球习题专家。请仔细查看图片中的中文文字，找到'过关要求'这几个字后面的具体要求内容。只返回过关要求的准确文字，不要添加任何解释或格式。"
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "提取这张台球习题图片中'过关要求'后面的准确中文要求。"
-            },
-            {
-              type: "image_url",
-              image_url: { url: `data:image/jpeg;base64,${base64Image}` }
-            }
-          ],
-        },
-      ],
+      messages: [{
+        role: "user",
+        content: [{
+          type: "text",
+          text: "提取题目说明"
+        }, {
+          type: "image_url",
+          image_url: { url: `data:image/jpeg;base64,${base64Image}` }
+        }]
+      }],
       max_tokens: 50,
       temperature: 0
     });
 
-    const content = response.choices[0].message.content;
-    if (content && !content.includes('无法') && !content.includes('抱歉')) {
-      return content
-        .replace(/^过关要求[:：]\s*/, '')
-        .replace(/[；;。，,\s]+$/, '')
-        .trim();
+    let content = response.choices[0].message.content;
+    if (content && !content.includes('无法')) {
+      content = content.replace(/^题目说明[：:]\s*/g, '')
+                     .replace(/过关要求.*$/gm, '')
+                     .replace(/连续完成.*$/gm, '')
+                     .replace(/不超过.*$/gm, '')
+                     .replace(/[；。\n]+$/, '')
+                     .trim();
+      return content.length > 8 ? content : null;
     }
     return null;
   } catch (error) {
@@ -50,76 +44,160 @@ async function extractRequirement(imagePath) {
 }
 
 async function continueFromLevel4_6() {
-  const requirementsPath = 'client/src/data/exerciseRequirements.json';
-  let requirements = JSON.parse(fs.readFileSync(requirementsPath, 'utf8'));
+  const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
+  let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log(`从等级4第6题继续验证`);
-
-  // 完成等级4剩余习题
-  for (let i = 6; i <= 60; i++) {
-    const key = `4-${i}`;
-    if (requirements[key]) continue;
-
-    const fileIndex = (i + 1).toString().padStart(2, '0');
-    const imagePath = path.join(
-      process.cwd(), 
-      'assessments', 
-      '4、炉火纯青', 
-      `4、炉火纯青_${fileIndex}.jpg`
-    );
-
-    if (fs.existsSync(imagePath)) {
-      console.log(`4-${i}`);
+  console.log('继续从Level 4-6...');
+  
+  let extracted = 0;
+  const levelFolders = {
+    3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室', 
+    6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
+  };
+  
+  const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
+  
+  // Process Level 7 remaining from 46
+  for (let i = 46; i <= 55; i++) {
+    const key = `7-${i}`;
+    const currentDesc = descriptions[key];
+    
+    if (!currentDesc || 
+        currentDesc.includes('如图示摆放球型，完成') || 
+        currentDesc.includes('精进台球技能练习') ||
+        currentDesc.length < 20) {
       
-      const requirement = await extractRequirement(imagePath);
+      const fileIndex = (i + 1).toString().padStart(2, '0');
+      const folderName = levelFolders[7];
+      const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
       
-      if (requirement) {
-        requirements[key] = requirement;
-        console.log(`  ✓ ${requirement}`);
-        
-        fs.writeFileSync(requirementsPath, JSON.stringify(requirements, null, 2), 'utf8');
-        const current = Object.keys(requirements).length;
-        console.log(`  ${current}/415\n`);
+      if (fs.existsSync(imagePath)) {
+        const result = await extractRequirement(imagePath);
+        if (result) {
+          descriptions[key] = result;
+          console.log(`${key}: ${result}`);
+          extracted++;
+          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        }
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 120));
     }
   }
-
-  // 开始等级5验证
-  for (let i = 1; i <= 60; i++) {
+  
+  // Process Level 8 remaining from 8
+  for (let i = 8; i <= 55; i++) {
+    const key = `8-${i}`;
+    const currentDesc = descriptions[key];
+    
+    if (!currentDesc || 
+        currentDesc.includes('如图示摆放球型，完成') || 
+        currentDesc.includes('精进台球技能练习') ||
+        currentDesc.length < 20) {
+      
+      const fileIndex = (i + 1).toString().padStart(2, '0');
+      const folderName = levelFolders[8];
+      const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
+      
+      if (fs.existsSync(imagePath)) {
+        const result = await extractRequirement(imagePath);
+        if (result) {
+          descriptions[key] = result;
+          console.log(`${key}: ${result}`);
+          extracted++;
+          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        }
+      }
+    }
+  }
+  
+  // Process Level 5 remaining from 57
+  for (let i = 57; i <= 60; i++) {
     const key = `5-${i}`;
-    if (requirements[key]) continue;
-
-    const fileIndex = (i + 1).toString().padStart(2, '0');
-    const imagePath = path.join(
-      process.cwd(), 
-      'assessments', 
-      '5、登堂入室', 
-      `5、登堂入室_${fileIndex}.jpg`
-    );
-
-    if (fs.existsSync(imagePath)) {
-      console.log(`5-${i}`);
+    const currentDesc = descriptions[key];
+    
+    if (!currentDesc || 
+        currentDesc.includes('如图示摆放球型，完成') || 
+        currentDesc.includes('精进台球技能练习') ||
+        currentDesc.length < 20) {
       
-      const requirement = await extractRequirement(imagePath);
+      const fileIndex = (i + 1).toString().padStart(2, '0');
+      const folderName = levelFolders[5];
+      const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
       
-      if (requirement) {
-        requirements[key] = requirement;
-        console.log(`  ✓ ${requirement}`);
-        
-        fs.writeFileSync(requirementsPath, JSON.stringify(requirements, null, 2), 'utf8');
-        const current = Object.keys(requirements).length;
-        console.log(`  ${current}/415\n`);
+      if (fs.existsSync(imagePath)) {
+        const result = await extractRequirement(imagePath);
+        if (result) {
+          descriptions[key] = result;
+          console.log(`${key}: ${result}`);
+          extracted++;
+          fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+        }
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 120));
     }
   }
-
-  const finalCount = Object.keys(requirements).length;
-  console.log(`验证进度: ${finalCount}/415 (${Math.round(finalCount/415*100)}%)`);
-  console.log(`剩余: ${415 - finalCount} 个习题`);
+  
+  // Process Level 3 and 4 remaining from 42
+  for (const level of [3, 4]) {
+    const maxEx = levelCounts[level];
+    for (let i = 42; i <= maxEx; i++) {
+      const key = `${level}-${i}`;
+      const currentDesc = descriptions[key];
+      
+      if (!currentDesc || 
+          currentDesc.includes('如图示摆放球型，完成') || 
+          currentDesc.includes('高级台球技巧训练') ||
+          currentDesc.length < 20) {
+        
+        const fileIndex = (i + 1).toString().padStart(2, '0');
+        const folderName = levelFolders[level];
+        const imagePath = path.join(process.cwd(), 'assessments', folderName, `${folderName}_${fileIndex}.jpg`);
+        
+        if (fs.existsSync(imagePath)) {
+          const result = await extractRequirement(imagePath);
+          if (result) {
+            descriptions[key] = result;
+            console.log(`${key}: ${result}`);
+            extracted++;
+            fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+          }
+        }
+      }
+    }
+  }
+  
+  console.log(`继续从Level 4-6: ${extracted} 个描述`);
+  
+  // Final comprehensive status
+  let totalAuth = 0, totalEx = 0;
+  
+  console.log('\n=== 最终状态 ===');
+  [3,4,5,6,7,8].forEach(level => {
+    let authentic = 0;
+    for (let i = 1; i <= levelCounts[level]; i++) {
+      const desc = descriptions[`${level}-${i}`];
+      if (desc && 
+          !desc.includes('如图示摆放球型，完成') && 
+          !desc.includes('精进台球技能练习') &&
+          !desc.includes('高级台球技巧训练') &&
+          desc.length > 15) {
+        authentic++;
+      }
+    }
+    totalAuth += authentic;
+    totalEx += levelCounts[level];
+    
+    const pct = (authentic/levelCounts[level]*100).toFixed(1);
+    const status = authentic === levelCounts[level] ? ' ✅ 完成' : '';
+    console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)${status}`);
+  });
+  
+  console.log(`\n总体状态: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+  console.log(`已完成提取 ${totalAuth} 个真实描述`);
+  
+  if (totalAuth === totalEx) {
+    console.log('\n🎉 全部340个练习描述提取完成！');
+  } else {
+    console.log(`还有 ${totalEx - totalAuth} 个练习需要完成`);
+  }
 }
 
 continueFromLevel4_6().catch(console.error);
