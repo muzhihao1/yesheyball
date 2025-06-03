@@ -12,6 +12,15 @@ import { Star, Trophy, Target, Zap, Crown, Lock } from "lucide-react";
 import exerciseRequirementsData from "@/data/exerciseRequirements.json";
 import exerciseDescriptionsData from "@/data/exerciseDescriptions.json";
 
+interface TableBounds {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
 interface LevelStage {
   level: number;
   name: string;
@@ -40,6 +49,8 @@ export default function Levels() {
   const [selectedLevel, setSelectedLevel] = useState<LevelStage | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
+  const [tableBounds, setTableBounds] = useState<Record<string, TableBounds>>({});
+  const [analyzingImage, setAnalyzingImage] = useState(false);
   const { toast } = useToast();
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
@@ -600,12 +611,7 @@ export default function Levels() {
                         <img 
                           src={selectedExercise.imageUrl} 
                           alt={selectedExercise.title}
-                          className="absolute top-0 left-0 w-full h-auto"
-                          style={{
-                            clipPath: 'inset(15% 5% 20% 45%)', // top right bottom left - shows table with brown borders
-                            transform: 'scale(2.5) translateX(2%) translateY(0%)', // moderate scale to fit complete table
-                            transformOrigin: 'center center'
-                          }}
+                          className="w-full h-auto object-contain"
                           onError={(e) => {
                           if (e.currentTarget.parentElement) {
                             e.currentTarget.style.display = 'none';

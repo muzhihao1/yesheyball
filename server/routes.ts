@@ -9,6 +9,7 @@ import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer";
 import { adaptiveLearning } from "./adaptiveLearning";
 import { requirementCorrector } from "./manualCorrection";
+import { analyzeTableBounds } from "./imageAnalysis";
 import { z } from "zod";
 import path from "path";
 import fs from "fs";
@@ -380,6 +381,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Validation error:", error);
       res.status(500).json({ message: "Failed to validate requirements" });
+    }
+  });
+
+  // Analyze table bounds in exercise image
+  app.post("/api/analyze-table-bounds", async (req, res) => {
+    try {
+      const { imageUrl } = req.body;
+      
+      if (!imageUrl) {
+        return res.status(400).json({ message: "Image URL is required" });
+      }
+
+      const bounds = await analyzeTableBounds(imageUrl);
+      res.json(bounds);
+    } catch (error) {
+      console.error("Table bounds analysis error:", error);
+      res.status(500).json({ message: "Failed to analyze table bounds" });
     }
   });
 
