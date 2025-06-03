@@ -150,7 +150,7 @@ export default function AdaptiveLearning() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {learningPath?.strengthAreas.length > 0 && (
+            {learningPath?.strengthAreas && learningPath.strengthAreas.length > 0 && (
               <div>
                 <h4 className="font-semibold text-green-700 mb-2">优势领域</h4>
                 <div className="space-y-1">
@@ -163,7 +163,7 @@ export default function AdaptiveLearning() {
               </div>
             )}
 
-            {learningPath?.improvementAreas.length > 0 && (
+            {learningPath?.improvementAreas && learningPath.improvementAreas.length > 0 && (
               <div>
                 <h4 className="font-semibold text-orange-700 mb-2">待提升领域</h4>
                 <div className="space-y-1">
