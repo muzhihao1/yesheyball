@@ -99,14 +99,15 @@ export default function Levels() {
   // Function to get cropping style - using coordinates from red frame annotation
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     // Coordinates based on red frame annotation showing exact table boundaries
-    // Red frame: left ~52%, top ~19%, right ~98%, bottom ~97%
+    // Adjusted to crop more of the right blue area
     return {
-      clipPath: 'inset(19% 2% 3% 52%)', // top right bottom left - matches red frame boundaries
+      clipPath: 'inset(19% 12% 3% 52%)', // top right bottom left - crop more from right edge
       transform: 'scale(1.0)', // no scaling to ensure full image fits in container
       transformOrigin: 'center center',
-      width: '100%',
-      height: '100%',
-      objectFit: 'contain' as const
+      width: 'auto',
+      height: 'auto',
+      maxWidth: '100%',
+      maxHeight: '400px'
     };
   };
 
@@ -664,12 +665,12 @@ export default function Levels() {
                   
                   {/* 右侧：练习图片 */}
                   <div className="space-y-4">
-                    <div className="border-2 border-gray-200 rounded-lg bg-white">
-                      <div className="relative w-full h-96 flex items-center justify-center">
+                    <div className="border-2 border-gray-200 rounded-lg bg-white inline-block">
+                      <div className="relative flex items-center justify-center">
                         <img 
                           src={selectedExercise.imageUrl} 
                           alt={selectedExercise.title}
-                          className="max-w-full max-h-full object-contain"
+                          className="block"
                           style={getCroppingStyle(selectedExercise)}
                           onError={(e) => {
                           if (e.currentTarget.parentElement) {
