@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const OpenAI = require('openai');
+import fs from 'fs';
+import path from 'path';
+import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
