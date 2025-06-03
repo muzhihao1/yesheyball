@@ -190,17 +190,17 @@ export default function Levels() {
     const levelName = stage.name;
     
     for (let i = 0; i < stage.totalExercises; i++) {
-      const exerciseNumber = (i + 1).toString().padStart(2, '0');
       const exerciseNum = i + 1;
+      const imageFileNumber = (exerciseNum + 1).toString().padStart(2, '0'); // 图片文件从02开始
       
       exercises.push({
-        id: `${level}-${exerciseNumber}`,
+        id: `${level}-${exerciseNum}`,
         level,
         exerciseNumber: exerciseNum,
         title: `第${exerciseNum}题`,
         description: `如图示摆放球型，将白球击入指定袋内`,
         requirement: getExerciseRequirement(level, exerciseNum),
-        imageUrl: `/assessments/${level}、${levelName}/${level}、${levelName}_${exerciseNumber}.jpg`,
+        imageUrl: `/assessments/${level}、${levelName}/${level}、${levelName}_${imageFileNumber}.jpg`,
         completed: i < stage.completedExercises,
         stars: i < stage.completedExercises ? Math.floor(Math.random() * 3) + 1 : 0
       });
