@@ -8,8 +8,8 @@ const openai = new OpenAI({
 
 async function extractDescription(level, exerciseNum) {
   const levelFolders = {
-    3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室', 
-    6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
+    5: '5、登堂入室', 6: '6、超群绝伦',
+    7: '7、登峰造极', 8: '8、出神入化'
   };
 
   const fileIndex = (exerciseNum + 1).toString().padStart(2, '0');
@@ -42,6 +42,7 @@ async function extractDescription(level, exerciseNum) {
     if (content && !content.includes('无法')) {
       content = content.replace(/^题目说明[：:]\s*/g, '')
                      .replace(/过关要求.*$/gm, '')
+                     .replace(/连续完成.*$/gm, '')
                      .replace(/[；。\n]+$/, '')
                      .trim();
       return content.length > 8 ? content : null;
@@ -52,17 +53,17 @@ async function extractDescription(level, exerciseNum) {
   }
 }
 
-async function processLevel3to8() {
+async function completeLevel5to8() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('处理Level 3-8...');
+  console.log('完成Level 5-8提取...');
   
-  let updated = 0;
+  let processed = 0;
   
-  // Focus on levels with most remaining work
-  for (const level of [5, 6, 7, 8, 3, 4]) {
-    const maxEx = level === 3 ? 50 : (level <= 6 ? 60 : 55);
+  for (const level of [5, 6, 7, 8]) {
+    const maxEx = level <= 6 ? 60 : 55;
+    console.log(`处理 Level ${level}`);
     
     for (let i = 1; i <= maxEx; i++) {
       const key = `${level}-${i}`;
@@ -71,59 +72,23 @@ async function processLevel3to8() {
       if (!currentDesc || 
           currentDesc.includes('如图示摆放球型，完成') || 
           currentDesc.includes('精进台球技能练习') ||
-          currentDesc.includes('高级台球技巧训练') ||
           currentDesc.length < 20) {
         
         const newDesc = await extractDescription(level, i);
         if (newDesc) {
           descriptions[key] = newDesc;
           console.log(`${key}: ${newDesc}`);
-          updated++;
+          processed++;
           fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
         }
       }
       
-      if (updated >= 150) break;
+      if (processed >= 50) break;
     }
-    if (updated >= 150) break;
+    if (processed >= 50) break;
   }
   
-  console.log(`处理完成: ${updated} 个描述更新`);
-  
-  // Generate final statistics
-  const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
-  let totalCompleted = 0, totalExercises = 0;
-  
-  console.log('\n=== 最终统计 ===');
-  [3,4,5,6,7,8].forEach(level => {
-    let completed = 0;
-    for (let i = 1; i <= levelCounts[level]; i++) {
-      const desc = descriptions[`${level}-${i}`];
-      if (desc && 
-          !desc.includes('如图示摆放球型，完成') && 
-          !desc.includes('精进台球技能练习') &&
-          !desc.includes('高级台球技巧训练') &&
-          desc.length > 15) {
-        completed++;
-      }
-    }
-    totalCompleted += completed;
-    totalExercises += levelCounts[level];
-    
-    const percentage = (completed/levelCounts[level]*100).toFixed(1);
-    const status = completed === levelCounts[level] ? ' ✓' : '';
-    console.log(`Level ${level}: ${completed}/${levelCounts[level]} (${percentage}%)${status}`);
-  });
-  
-  console.log(`\n总体完成度: ${totalCompleted}/${totalExercises} (${(totalCompleted/totalExercises*100).toFixed(1)}%)`);
-  console.log(`已成功替换 ${totalCompleted} 个通用模板为真实描述`);
-  
-  const remaining = totalExercises - totalCompleted;
-  if (remaining > 0) {
-    console.log(`剩余 ${remaining} 题待处理`);
-  } else {
-    console.log('所有级别已完成！');
-  }
+  console.log(`Level 5-8完成: ${processed} 个描述`);
 }
 
-processLevel3to8().catch(console.error);
+completeLevel5to8().catch(console.error);
