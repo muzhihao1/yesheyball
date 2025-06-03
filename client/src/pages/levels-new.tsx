@@ -471,7 +471,7 @@ export default function Levels() {
                   </div>
                 </DialogTitle>
                 <DialogDescription>
-                  通过王猛台球教学系列练习，系统化提升中式八球技术水平
+                  通过耶氏台球学院系列练习，系统化提升中式八球技术水平
                 </DialogDescription>
               </DialogHeader>
               
