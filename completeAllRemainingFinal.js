@@ -9,7 +9,7 @@ const openai = new OpenAI({
 async function extractDescription(level, exerciseNum) {
   try {
     const folderNames = {
-      3: '3、小试牛刀', 4: '4、炉火纯青', 5: '5、登堂入室',
+      3: '3、渐入佳境', 4: '4、炉火纯青', 5: '5、登堂入室',
       6: '6、超群绝伦', 7: '7、登峰造极', 8: '8、出神入化'
     };
     
@@ -39,7 +39,7 @@ async function extractDescription(level, exerciseNum) {
     });
 
     let content = response.choices[0].message.content;
-    if (content && !content.includes('无法')) {
+    if (content && !content.includes('无法') && !content.includes("I'm sorry") && !content.includes("I can't")) {
       content = content.replace(/^题目说明[：:]\s*/g, '')
                      .replace(/过关要求.*$/gm, '')
                      .replace(/连续完成.*$/gm, '')
@@ -58,19 +58,26 @@ async function completeAllRemainingFinal() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('完成所有剩余最终版启动...');
+  console.log('最终完成系统启动...');
   
   let totalExtracted = 0;
   const levelCounts = { 3: 50, 4: 60, 5: 60, 6: 60, 7: 55, 8: 55 };
   
-  // 持续循环直到全部完成
-  for (let cycle = 1; cycle <= 1000; cycle++) {
-    let cycleExtracted = 0;
+  // 持续提取直到全部完成
+  for (let finalRound = 1; finalRound <= 200; finalRound++) {
+    let roundExtracted = 0;
     
-    console.log(`循环${cycle}`);
+    console.log(`最终轮${finalRound}`);
     
-    // 处理所有未完成练习
-    for (const level of [8, 3, 4, 5, 7]) {
+    // 多种策略轮换
+    const strategies = [
+      [3, 4, 5, 7, 8], [8, 7, 5, 4, 3], [4, 8, 3, 7, 5], 
+      [5, 3, 8, 4, 7], [7, 5, 4, 8, 3], [8, 3, 7, 5, 4]
+    ];
+    
+    const strategy = strategies[finalRound % strategies.length];
+    
+    for (const level of strategy) {
       for (let i = 1; i <= levelCounts[level]; i++) {
         const key = `${level}-${i}`;
         const currentDesc = descriptions[key];
@@ -84,42 +91,68 @@ async function completeAllRemainingFinal() {
           const result = await extractDescription(level, i);
           if (result) {
             descriptions[key] = result;
-            console.log(`[${cycle}] ${key}: ${result}`);
+            console.log(`[${finalRound}] ${key}: ${result}`);
             totalExtracted++;
-            cycleExtracted++;
+            roundExtracted++;
             fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
           }
         }
       }
     }
     
-    // 检查完成状态
-    let totalAuth = 0, totalEx = 0;
-    [3,4,5,6,7,8].forEach(level => {
-      let authentic = 0;
-      for (let i = 1; i <= levelCounts[level]; i++) {
-        const desc = descriptions[`${level}-${i}`];
-        if (desc && 
-            !desc.includes('如图示摆放球型，完成') && 
-            !desc.includes('精进台球技能练习') &&
-            !desc.includes('高级台球技巧训练') &&
-            desc.length > 15) {
-          authentic++;
+    // 每5轮检查一次完成度
+    if (finalRound % 5 === 0) {
+      let totalAuth = 0, totalEx = 0;
+      [3,4,5,6,7,8].forEach(level => {
+        let authentic = 0;
+        for (let i = 1; i <= levelCounts[level]; i++) {
+          const desc = descriptions[`${level}-${i}`];
+          if (desc && 
+              !desc.includes('如图示摆放球型，完成') && 
+              !desc.includes('精进台球技能练习') &&
+              !desc.includes('高级台球技巧训练') &&
+              desc.length > 15) {
+            authentic++;
+          }
         }
+        totalAuth += authentic;
+        totalEx += levelCounts[level];
+      });
+      
+      console.log(`最终轮${finalRound}: +${roundExtracted} | 总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
+      
+      if (totalAuth === totalEx) {
+        console.log(`🎉 全部340个练习完成！最终轮${finalRound}完成任务`);
+        
+        // 最终验证
+        console.log('最终验证各级别完成情况:');
+        [3,4,5,6,7,8].forEach(level => {
+          let authentic = 0;
+          for (let i = 1; i <= levelCounts[level]; i++) {
+            const desc = descriptions[`${level}-${i}`];
+            if (desc && 
+                !desc.includes('如图示摆放球型，完成') && 
+                !desc.includes('精进台球技能练习') &&
+                !desc.includes('高级台球技巧训练') &&
+                desc.length > 15) {
+              authentic++;
+            }
+          }
+          const pct = (authentic/levelCounts[level]*100).toFixed(1);
+          console.log(`Level ${level}: ${authentic}/${levelCounts[level]} (${pct}%)`);
+        });
+        
+        break;
       }
-      totalAuth += authentic;
-      totalEx += levelCounts[level];
-    });
+    }
     
-    console.log(`循环${cycle}: +${cycleExtracted} | 总体: ${totalAuth}/${totalEx} (${(totalAuth/totalEx*100).toFixed(1)}%)`);
-    
-    if (totalAuth === totalEx) {
-      console.log(`全部340个练习完成！循环${cycle}次，总提取${totalExtracted}个`);
+    if (roundExtracted === 0 && finalRound > 20) {
+      console.log('连续20轮无进展，可能遇到技术限制');
       break;
     }
   }
   
-  console.log(`最终版完成: ${totalExtracted}个描述`);
+  console.log(`最终完成系统结束: 总共提取${totalExtracted}个新描述`);
 }
 
 completeAllRemainingFinal().catch(console.error);
