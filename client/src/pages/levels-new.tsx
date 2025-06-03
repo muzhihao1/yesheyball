@@ -309,7 +309,7 @@ export default function Levels() {
           </h1>
           <div className="absolute -top-2 -right-8 text-2xl">🎱</div>
         </div>
-        <p className="text-gray-700 text-lg mb-6">系统化掌握中式八球技术，从基础到精通</p>
+        <p className="text-gray-700 text-lg mb-6">通过耶氏台球学院系列练习，系统化提升中式八球技术水平</p>
         
         <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-blue-100 rounded-full px-6 py-3 shadow-md">
           <Trophy className="w-5 h-5 mr-2 text-yellow-600" />
