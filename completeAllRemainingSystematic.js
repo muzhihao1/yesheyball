@@ -58,32 +58,12 @@ async function completeAllRemainingSystematic() {
   const descriptionsPath = 'client/src/data/exerciseDescriptions.json';
   let descriptions = JSON.parse(fs.readFileSync(descriptionsPath, 'utf8'));
   
-  console.log('全面系统化完成剩余...');
+  console.log('全面系统化完成剩余171题...');
   
   let processed = 0;
   
-  // Complete remaining Level 5 (57-60)
-  for (let i = 57; i <= 60; i++) {
-    const key = `5-${i}`;
-    const currentDesc = descriptions[key];
-    
-    if (!currentDesc || 
-        currentDesc.includes('如图示摆放球型，完成') || 
-        currentDesc.includes('精进台球技能练习') ||
-        currentDesc.length < 20) {
-      
-      const extracted = await extractDescription(5, i);
-      if (extracted) {
-        descriptions[key] = extracted;
-        console.log(`${key}: ${extracted}`);
-        processed++;
-        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
-      }
-    }
-  }
-  
-  // Complete all Level 6 exercises (5-60)
-  for (let i = 5; i <= 60; i++) {
+  // Continue Level 6 from exercise 16
+  for (let i = 16; i <= 60; i++) {
     const key = `6-${i}`;
     const currentDesc = descriptions[key];
     
@@ -102,7 +82,7 @@ async function completeAllRemainingSystematic() {
     }
   }
   
-  // Complete all Level 7 exercises (4-55)
+  // Process Level 7 from exercise 4
   for (let i = 4; i <= 55; i++) {
     const key = `7-${i}`;
     const currentDesc = descriptions[key];
@@ -122,7 +102,7 @@ async function completeAllRemainingSystematic() {
     }
   }
   
-  // Complete all Level 8 exercises (8-55)
+  // Process Level 8 from exercise 8
   for (let i = 8; i <= 55; i++) {
     const key = `8-${i}`;
     const currentDesc = descriptions[key];
@@ -142,7 +122,27 @@ async function completeAllRemainingSystematic() {
     }
   }
   
-  // Complete remaining Level 3 and 4 (42-max)
+  // Complete remaining Level 5 from exercise 57
+  for (let i = 57; i <= 60; i++) {
+    const key = `5-${i}`;
+    const currentDesc = descriptions[key];
+    
+    if (!currentDesc || 
+        currentDesc.includes('如图示摆放球型，完成') || 
+        currentDesc.includes('精进台球技能练习') ||
+        currentDesc.length < 20) {
+      
+      const extracted = await extractDescription(5, i);
+      if (extracted) {
+        descriptions[key] = extracted;
+        console.log(`${key}: ${extracted}`);
+        processed++;
+        fs.writeFileSync(descriptionsPath, JSON.stringify(descriptions, null, 2), 'utf8');
+      }
+    }
+  }
+  
+  // Complete remaining Level 3 and 4 from exercise 42
   for (const level of [3, 4]) {
     const maxEx = level === 3 ? 50 : 60;
     for (let i = 42; i <= maxEx; i++) {
