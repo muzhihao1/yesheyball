@@ -65,29 +65,29 @@ export default function Levels() {
     return <div className="text-center py-8">用户数据加载失败</div>;
   }
 
-  // 基于真实验证数据的等级关卡配置 (总计411个习题)
+  // 基于实际验证数据的等级关卡配置 (总计411个习题)
   const levelStages: LevelStage[] = [
     {
       level: 1,
       name: "初窥门径",
-      totalExercises: 30,
+      totalExercises: 35,
       category: "启明星",
       description: "在启明星教准轨道，让台球成为你的第一颗卫星！台球技术基础框架搭建",
       unlocked: true,
       completed: user.level > 1,
       progress: user.level > 1 ? 100 : Math.min((user.exp / 100) * 100, 95),
-      completedExercises: user.level > 1 ? 30 : Math.floor((user.exp / 100) * 30)
+      completedExercises: user.level > 1 ? 35 : Math.floor((user.exp / 100) * 35)
     },
     {
       level: 2,
       name: "小有所成",
-      totalExercises: 15,
+      totalExercises: 40,
       category: "启明星",
       description: "台球技术基础框架搭建",
       unlocked: user.level >= 2,
       completed: user.level > 2,
       progress: user.level > 2 ? 100 : user.level === 2 ? Math.min((user.exp / 200) * 100, 95) : 0,
-      completedExercises: user.level > 2 ? 15 : user.level === 2 ? Math.floor((user.exp / 200) * 15) : 0
+      completedExercises: user.level > 2 ? 40 : user.level === 2 ? Math.floor((user.exp / 200) * 40) : 0
     },
     {
       level: 3,
@@ -103,13 +103,13 @@ export default function Levels() {
     {
       level: 4,
       name: "游刃有余",
-      totalExercises: 50,
+      totalExercises: 60,
       category: "超新星",
       description: "在超新星的引力场中，精准控制每一次撞击！",
       unlocked: user.level >= 4,
       completed: user.level > 4,
       progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
-      completedExercises: user.level > 4 ? 50 : user.level === 4 ? Math.floor((user.exp / 400) * 50) : 0
+      completedExercises: user.level > 4 ? 60 : user.level === 4 ? Math.floor((user.exp / 400) * 60) : 0
     },
     {
       level: 5,
@@ -280,7 +280,7 @@ export default function Levels() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-red-600 bg-clip-text text-transparent mb-4">
             台球大师之路
           </h1>
-          <div className="absolute -top-2 -right-8 text-2xl animate-pulse">🎱</div>
+          <div className="absolute -top-2 -right-8 text-2xl">🎱</div>
         </div>
         <p className="text-gray-700 text-lg mb-6">系统化掌握中式八球技术，从基础到精通</p>
         
@@ -372,7 +372,7 @@ export default function Levels() {
                           !isUnlocked 
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                             : exercise.completed 
-                              ? 'bg-gradient-to-br from-green-400 to-green-600 text-white transform scale-105 animate-pulse' 
+                              ? 'bg-gradient-to-br from-green-400 to-green-600 text-white transform scale-105' 
                               : 'bg-gradient-to-br from-white to-green-50 border-4 border-green-500 text-green-600 hover:scale-110 hover:shadow-xl'
                         }`}
                         onClick={() => isUnlocked && handleExerciseClick(exercise)}
