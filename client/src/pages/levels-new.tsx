@@ -58,11 +58,11 @@ export default function Levels() {
 
 
 
-  // Function to get cropping style - 显示完整桌子并居中
+  // Function to get cropping style - 显示更大的桌子
   const getCroppingStyle = (exercise: Exercise): React.CSSProperties => {
     return {
       clipPath: 'inset(19% 6% 3% 52%)', // 裁剪显示桌子
-      width: '300px',
+      width: '450px',
       height: 'auto',
       objectFit: 'contain' as const,
       display: 'block',
@@ -594,9 +594,9 @@ export default function Levels() {
                   </div>
                 </div>
                 
-                {/* 练习图片 - 全宽白色背景容器 */}
+                {/* 练习图片 - 更高的白色背景容器 */}
                 <div className="py-6">
-                  <div className="rounded-lg shadow-lg bg-white overflow-hidden p-6 flex justify-center items-center">
+                  <div className="rounded-lg shadow-lg bg-white overflow-hidden p-8 flex justify-center items-center min-h-[300px]">
                     <img 
                       src={selectedExercise?.imageUrl} 
                       alt={selectedExercise?.title}
@@ -606,7 +606,7 @@ export default function Levels() {
                         if (e.currentTarget.parentElement) {
                           e.currentTarget.style.display = 'none';
                           e.currentTarget.parentElement.innerHTML = `
-                            <div class="w-72 h-96 bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
+                            <div class="w-80 h-[400px] bg-green-600 border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
                               <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
                               <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
                               <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
