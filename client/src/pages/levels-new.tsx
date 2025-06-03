@@ -66,7 +66,7 @@ export default function Levels() {
       height: 'auto',
       objectFit: 'contain' as const,
       display: 'block',
-      transform: 'translateX(23%)', // 向右偏移以补偿不对称裁剪
+      transform: 'translateX(-23%)', // 向左偏移以补偿左侧裁剪
       transformOrigin: 'center'
     };
   };
