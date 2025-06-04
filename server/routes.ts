@@ -339,6 +339,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Progress to next episode
+  app.post("/api/training-programs/next-episode", async (req, res) => {
+    try {
+      const programs = await storage.getAllTrainingPrograms();
+      const beginnerProgram = programs.find(p => p.name === "新手指导计划");
+      
+      if (beginnerProgram) {
+        const nextDay = Math.min((beginnerProgram.currentDay || 1) + 1, 51);
+        await storage.updateTrainingProgram(beginnerProgram.id, { currentDay: nextDay });
+        
+        // Create new session for next episode
+        const newSession = await storage.createTrainingSession({
+          userId: 1,
+          programId: beginnerProgram.id,
+          dayId: nextDay,
+          title: `第${nextDay}集：${nextDay <= 17 ? '基础技能训练' : nextDay <= 34 ? '中级技术提升' : '高级技巧掌握'}`,
+          description: `第${nextDay}集训练内容，持续提升台球技能。`,
+          sessionType: "系统训练"
+        });
+        
+        res.json(newSession);
+      } else {
+        res.status(404).json({ message: "Training program not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to progress to next episode" });
+    }
+  });
+
   app.post("/api/training-sessions/:sessionId/notes", async (req, res) => {
     try {
       const validatedData = insertTrainingNoteSchema.parse({
