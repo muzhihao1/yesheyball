@@ -238,6 +238,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Achievement routes
+  app.get("/api/achievements", async (req, res) => {
+    try {
+      const achievements = await storage.getAllAchievements();
+      res.json(achievements);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get achievements" });
+    }
+  });
+
+  app.get("/api/user-achievements", async (req, res) => {
+    try {
+      const userAchievements = await storage.getUserAchievements(1);
+      res.json(userAchievements);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user achievements" });
+    }
+  });
+
+  app.post("/api/check-achievements", async (req, res) => {
+    try {
+      const newAchievements = await storage.checkAndUnlockAchievements(1);
+      res.json(newAchievements);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check achievements" });
+    }
+  });
+
   // Training program routes
   app.get("/api/training-programs", async (req, res) => {
     try {

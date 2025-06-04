@@ -42,6 +42,29 @@ interface LevelStage {
   examPassed?: boolean;
 }
 
+interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  type: string;
+  condition: any;
+  expReward: number;
+  category: "beginner" | "intermediate" | "advanced" | "master";
+  unlocked: boolean;
+  createdAt: string;
+}
+
+interface UserAchievement {
+  id: number;
+  userId: number;
+  achievementId: number;
+  progress: number;
+  completed: boolean;
+  unlockedAt: string;
+  achievement: Achievement;
+}
+
 interface TrainingSession {
   id: number;
   userId: number;
