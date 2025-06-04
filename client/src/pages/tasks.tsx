@@ -94,12 +94,15 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
       setShowTrainingComplete(false);
       setIsTraining(false);
       setElapsedTime(0);
       setTrainingNotes("");
       setUserRating(0);
-      toast({ title: "训练完成", description: "您的训练记录已保存" });
+      // Progress to next episode
+      nextEpisodeMutation.mutate();
+      toast({ title: "训练完成", description: "您的训练记录已保存，进入下一集" });
     }
   });
 
@@ -213,7 +216,7 @@ export default function Tasks() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="text-xl font-semibold mb-2">{currentSession?.title || `第${currentDay}集：基础技能训练`}</h3>
+            <h3 className="text-xl font-semibold mb-2">{currentSession?.title || `${currentEpisode}：基础技能训练`}</h3>
             <p className="text-gray-600 mb-4">
               {currentSession?.description || "进一步掌握基础击球技巧，提升准度和稳定性。"}
             </p>
@@ -263,7 +266,7 @@ export default function Tasks() {
             )}
           </div>
 
-          <div className="flex justify-between items-center">
+          <div className="flex justify-center">
             <Button 
               variant="outline" 
               onClick={() => setShowCustomTraining(true)}
@@ -271,10 +274,6 @@ export default function Tasks() {
             >
               <Plus className="h-4 w-4 mr-2" />
               自定义训练
-            </Button>
-            <Button variant="outline">
-              <Eye className="h-4 w-4 mr-2" />
-              观看教学视频
             </Button>
           </div>
         </CardContent>
