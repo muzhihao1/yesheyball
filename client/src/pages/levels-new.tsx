@@ -659,12 +659,32 @@ export default function Levels() {
                                     filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
                                   }}
                                 >
-                                  {/* Trophy Design from Screenshot */}
+                                  {/* Modern Achievement Badge */}
                                   <div className="relative w-20 h-24 flex flex-col items-center">
                                     <svg viewBox="0 0 120 120" className="w-20 h-20">
-                                      {/* Trophy Cup Main Body */}
+                                      {/* Badge Base/Pedestal */}
+                                      <ellipse cx="60" cy="95" rx="18" ry="8" 
+                                        fill={
+                                          !isUnlocked 
+                                            ? '#9CA3AF' 
+                                            : exercise.completed 
+                                              ? levelColors.node.includes('emerald') ? '#059669'
+                                                : levelColors.node.includes('blue') ? '#2563EB' 
+                                                : levelColors.node.includes('purple') ? '#7C3AED'
+                                                : levelColors.node.includes('pink') ? '#DB2777'
+                                                : levelColors.node.includes('yellow') ? '#D97706'
+                                                : levelColors.node.includes('red') ? '#DC2626'
+                                                : levelColors.node.includes('indigo') ? '#4F46E5'
+                                                : levelColors.node.includes('green') ? '#16A34A'
+                                                : '#f69acc'
+                                              : '#E5E7EB'
+                                        }
+                                        opacity="0.6"
+                                      />
+                                      
+                                      {/* Main Shield Body */}
                                       <path 
-                                        d="M35 25 Q35 15 45 15 L75 15 Q85 15 85 25 L85 55 Q85 70 70 75 L50 75 Q35 70 35 55 Z" 
+                                        d="M40 25 Q40 15 50 15 L70 15 Q80 15 80 25 L80 50 Q80 65 60 75 Q40 65 40 50 Z" 
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
@@ -682,52 +702,56 @@ export default function Levels() {
                                         }
                                       />
                                       
-                                      {/* Trophy Highlights */}
-                                      <ellipse cx="50" cy="25" rx="8" ry="4" fill="rgba(255,255,255,0.3)" />
-                                      <ellipse cx="70" cy="35" rx="12" ry="6" fill="rgba(255,255,255,0.2)" />
-                                      
-                                      {/* Left Side Handle */}
+                                      {/* Shield Highlight/Gloss */}
                                       <path 
-                                        d="M25 30 Q15 30 15 40 Q15 50 25 50 Q30 45 30 40 Q30 35 25 30" 
+                                        d="M45 20 Q45 18 47 18 L65 18 Q70 18 70 22 L70 40 Q70 45 60 50 Q50 45 45 35 Z" 
+                                        fill="rgba(255,255,255,0.3)"
+                                      />
+                                      
+                                      {/* Left Wing/Laurel */}
+                                      <path 
+                                        d="M25 35 Q20 30 15 35 Q10 40 15 45 Q20 50 25 45 Q30 42 30 40 Q30 38 25 35" 
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
                                             : exercise.completed 
-                                              ? levelColors.node.includes('emerald') ? '#10B981'
-                                                : levelColors.node.includes('blue') ? '#3B82F6' 
-                                                : levelColors.node.includes('purple') ? '#8B5CF6'
-                                                : levelColors.node.includes('pink') ? '#EC4899'
-                                                : levelColors.node.includes('yellow') ? '#F59E0B'
-                                                : levelColors.node.includes('red') ? '#EF4444'
-                                                : levelColors.node.includes('indigo') ? '#6366F1'
-                                                : levelColors.node.includes('green') ? '#22C55E'
-                                                : '#f69acc'
+                                              ? levelColors.node.includes('emerald') ? '#34D399'
+                                                : levelColors.node.includes('blue') ? '#60A5FA' 
+                                                : levelColors.node.includes('purple') ? '#A78BFA'
+                                                : levelColors.node.includes('pink') ? '#F472B6'
+                                                : levelColors.node.includes('yellow') ? '#FBBF24'
+                                                : levelColors.node.includes('red') ? '#F87171'
+                                                : levelColors.node.includes('indigo') ? '#818CF8'
+                                                : levelColors.node.includes('green') ? '#4ADE80'
+                                                : '#f8a2c4'
                                               : '#E5E7EB'
                                         }
+                                        opacity="0.8"
                                       />
                                       
-                                      {/* Right Side Handle */}
+                                      {/* Right Wing/Laurel */}
                                       <path 
-                                        d="M95 30 Q105 30 105 40 Q105 50 95 50 Q90 45 90 40 Q90 35 95 30" 
+                                        d="M95 35 Q100 30 105 35 Q110 40 105 45 Q100 50 95 45 Q90 42 90 40 Q90 38 95 35" 
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
                                             : exercise.completed 
-                                              ? levelColors.node.includes('emerald') ? '#10B981'
-                                                : levelColors.node.includes('blue') ? '#3B82F6' 
-                                                : levelColors.node.includes('purple') ? '#8B5CF6'
-                                                : levelColors.node.includes('pink') ? '#EC4899'
-                                                : levelColors.node.includes('yellow') ? '#F59E0B'
-                                                : levelColors.node.includes('red') ? '#EF4444'
-                                                : levelColors.node.includes('indigo') ? '#6366F1'
-                                                : levelColors.node.includes('green') ? '#22C55E'
-                                                : '#f69acc'
+                                              ? levelColors.node.includes('emerald') ? '#34D399'
+                                                : levelColors.node.includes('blue') ? '#60A5FA' 
+                                                : levelColors.node.includes('purple') ? '#A78BFA'
+                                                : levelColors.node.includes('pink') ? '#F472B6'
+                                                : levelColors.node.includes('yellow') ? '#FBBF24'
+                                                : levelColors.node.includes('red') ? '#F87171'
+                                                : levelColors.node.includes('indigo') ? '#818CF8'
+                                                : levelColors.node.includes('green') ? '#4ADE80'
+                                                : '#f8a2c4'
                                               : '#E5E7EB'
                                         }
+                                        opacity="0.8"
                                       />
                                       
-                                      {/* Trophy Stem */}
-                                      <rect x="55" y="75" width="10" height="15" 
+                                      {/* Small connecting stem */}
+                                      <rect x="57" y="75" width="6" height="12" 
                                         fill={
                                           !isUnlocked 
                                             ? '#6B7280' 
@@ -745,32 +769,13 @@ export default function Levels() {
                                         }
                                       />
                                       
-                                      {/* Trophy Base */}
-                                      <ellipse cx="60" cy="95" rx="20" ry="6" 
-                                        fill={
-                                          !isUnlocked 
-                                            ? '#6B7280' 
-                                            : exercise.completed 
-                                              ? levelColors.node.includes('emerald') ? '#059669'
-                                                : levelColors.node.includes('blue') ? '#2563EB' 
-                                                : levelColors.node.includes('purple') ? '#7C3AED'
-                                                : levelColors.node.includes('pink') ? '#DB2777'
-                                                : levelColors.node.includes('yellow') ? '#D97706'
-                                                : levelColors.node.includes('red') ? '#DC2626'
-                                                : levelColors.node.includes('indigo') ? '#4F46E5'
-                                                : levelColors.node.includes('green') ? '#16A34A'
-                                                : '#DB2777'
-                                              : '#9CA3AF'
-                                        }
-                                      />
-                                      
-                                      {/* Trophy Content */}
+                                      {/* Badge Content */}
                                       {!isUnlocked ? (
                                         <foreignObject x="50" y="35" width="20" height="20">
                                           <Lock className="w-5 h-5 text-white" />
                                         </foreignObject>
                                       ) : (
-                                        <text x="60" y="55" textAnchor="middle" fontSize="20" fill="white" fontFamily="Arial, sans-serif" fontWeight="bold">
+                                        <text x="60" y="52" textAnchor="middle" fontSize="22" fill="white" fontFamily="Arial, sans-serif" fontWeight="bold">
                                           {groupNumber}
                                         </text>
                                       )}
