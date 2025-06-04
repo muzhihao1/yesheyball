@@ -355,26 +355,41 @@ export default function Tasks() {
           <CardContent>
             <div className="space-y-4">
               {trainingRecords.slice(0, 5).map((record) => (
-                <div key={record.id} className="border-l-4 border-green-500 pl-4 py-2">
-                  <div className="flex justify-between items-start">
+                <div key={record.id} className="bg-gradient-to-r from-green-50 to-transparent border-l-4 border-green-500 rounded-r-lg p-4 transition-all hover:shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-800">{record.title}</h4>
-                      <p className="text-gray-600 mt-1">{record.content}</p>
-                      <div className="flex items-center mt-2 text-sm text-gray-500">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {new Date(record.completedAt).toLocaleDateString('zh-CN')}
-                        {record.duration && (
-                          <div className="ml-4 flex items-center">
-                            <span className="mr-1">⏱️</span>
-                            {Math.floor(record.duration / 60)}分钟
-                          </div>
-                        )}
-                        {record.rating && (
-                          <div className="ml-4 flex items-center">
-                            <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                            {record.rating}/5
-                          </div>
-                        )}
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-gray-800 text-base">{record.title}</h4>
+                        <div className="flex items-center space-x-3 text-sm text-gray-500">
+                          {record.duration && (
+                            <div className="flex items-center bg-blue-100 px-2 py-1 rounded-full">
+                              <Clock className="h-3 w-3 mr-1 text-blue-600" />
+                              <span className="text-blue-700 font-medium">{Math.floor(record.duration / 60)}分钟</span>
+                            </div>
+                          )}
+                          {record.rating && (
+                            <div className="flex items-center bg-yellow-100 px-2 py-1 rounded-full">
+                              <Star className="h-3 w-3 mr-1 text-yellow-600 fill-current" />
+                              <span className="text-yellow-700 font-medium">{record.rating}/5</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white/70 rounded-md p-3 border border-green-100">
+                        <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{record.content}</p>
+                      </div>
+                      
+                      <div className="flex items-center mt-3 text-xs text-gray-500">
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                          {new Date(record.completedAt).toLocaleDateString('zh-CN', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric',
+                            weekday: 'short'
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -423,11 +438,16 @@ export default function Tasks() {
               />
               
               {coachingFeedback && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3">
-                  <div className="flex items-center mb-2">
-                    <div className="text-sm font-medium text-blue-700">🏓 教练回复</div>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mt-3">
+                  <div className="flex items-center mb-3">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 text-sm">🏓</span>
+                      </div>
+                      <div className="text-sm font-semibold text-green-700">教练回复</div>
+                    </div>
                   </div>
-                  <div className="text-sm text-blue-800 leading-relaxed whitespace-pre-wrap">
+                  <div className="text-sm text-green-800 leading-relaxed whitespace-pre-wrap bg-white/60 rounded-md p-3 border border-green-100">
                     {coachingFeedback}
                   </div>
                 </div>
