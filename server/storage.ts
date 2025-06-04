@@ -74,7 +74,7 @@ export class MemStorage implements IStorage {
     };
     this.users.set(defaultUser.id, defaultUser);
 
-    // Create daily training tasks - completely independent from level exercises
+    // Create daily training tasks - completely independent from level assessment exercises
     const defaultTasks: Omit<Task, 'id'>[] = [
       {
         title: "出杆节奏训练",
@@ -101,78 +101,28 @@ export class MemStorage implements IStorage {
         imageUrl: null
       },
       {
-        title: "第17题 - 高杆技巧",
-        description: "练习高杆击球技术，使白球在碰撞后继续向前滚动。",
+        title: "杆法综合训练",
+        description: "综合练习高杆、低杆、侧旋等各种杆法，提升技术的全面性和实战应用能力。",
+        level: 5,
+        difficulty: "高级",
+        category: "杆法技巧",
+        imageUrl: null
+      },
+      {
+        title: "球感培养专项",
+        description: "通过专门的练习来培养和提升球感，增强对球的感知和控制能力。",
+        level: 3,
+        difficulty: "中级",
+        category: "球感训练",
+        imageUrl: null
+      },
+      {
+        title: "心理素质训练",
+        description: "在练习中注重心理素质的培养，提高比赛中的心理稳定性和抗压能力。",
         level: 4,
         difficulty: "高级",
-        category: "高杆技巧",
-        imageUrl: "/assessments/4、炉火纯青/4、炉火纯青_03.jpg"
-      },
-      {
-        title: "第18题 - 低杆技巧",
-        description: "练习低杆击球技术，使白球在碰撞后向后回拉。",
-        level: 4,
-        difficulty: "高级",
-        category: "低杆技巧",
-        imageUrl: "/assessments/4、炉火纯青/4、炉火纯青_04.jpg"
-      },
-      {
-        title: "第19题 - 侧旋技巧",
-        description: "练习左右侧旋技术，掌握侧旋对球路的影响。",
-        level: 4,
-        difficulty: "高级",
-        category: "侧旋技巧",
-        imageUrl: "/assessments/4、炉火纯青/4、炉火纯青_05.jpg"
-      },
-      {
-        title: "第20题 - 组合杆法",
-        description: "练习多种杆法的组合运用，提高技术的综合运用能力。",
-        level: 4,
-        difficulty: "高级",
-        category: "组合杆法",
-        imageUrl: "/assessments/4、炉火纯青/4、炉火纯青_06.jpg"
-      },
-
-      // Level 5: 登堂入室 - Advanced control (62 exercises)
-      {
-        title: "第21题 - 高阶控球技术",
-        description: "练习更高级的控球技术，实现精确的球路控制。",
-        level: 5,
-        difficulty: "高级",
-        category: "高阶控球",
-        imageUrl: "/assessments/5、登堂入室/5、登堂入室_02.jpg"
-      },
-      {
-        title: "第22题 - 实战球型训练",
-        description: "模拟实战中的复杂球型，提高实战应用能力。",
-        level: 5,
-        difficulty: "高级",
-        category: "实战训练",
-        imageUrl: "/assessments/5、登堂入室/5、登堂入室_03.jpg"
-      },
-      {
-        title: "第23题 - 连续走位",
-        description: "练习连续多球的走位控制，保持良好的击球节奏。",
-        level: 5,
-        difficulty: "高级",
-        category: "连续走位",
-        imageUrl: "/assessments/5、登堂入室/5、登堂入室_04.jpg"
-      },
-      {
-        title: "第24题 - 防守技巧",
-        description: "学习防守性击球，包括做障碍球和安全球的技巧。",
-        level: 5,
-        difficulty: "高级",
-        category: "防守技巧",
-        imageUrl: "/assessments/5、登堂入室/5、登堂入室_05.jpg"
-      },
-      {
-        title: "第25题 - 进攻策略",
-        description: "练习进攻性击球策略，提高得分效率。",
-        level: 5,
-        difficulty: "高级",
-        category: "进攻策略",
-        imageUrl: "/assessments/5、登堂入室/5、登堂入室_06.jpg"
+        category: "心理训练",
+        imageUrl: null
       }
     ];
 
