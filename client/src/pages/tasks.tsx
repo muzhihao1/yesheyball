@@ -49,10 +49,19 @@ interface TrainingRecord {
 }
 
 export default function Tasks() {
-  const [isTraining, setIsTraining] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [trainingNotes, setTrainingNotes] = useState("");
+  // Guided training states
+  const [isGuidedTraining, setIsGuidedTraining] = useState(false);
+  const [isGuidedPaused, setIsGuidedPaused] = useState(false);
+  const [guidedElapsedTime, setGuidedElapsedTime] = useState(0);
+  const [guidedTrainingNotes, setGuidedTrainingNotes] = useState("");
+  
+  // Custom training states
+  const [isCustomTraining, setIsCustomTraining] = useState(false);
+  const [isCustomPaused, setIsCustomPaused] = useState(false);
+  const [customElapsedTime, setCustomElapsedTime] = useState(0);
+  const [customTrainingNotes, setCustomTrainingNotes] = useState("");
+  
+  // Shared states
   const [showTrainingComplete, setShowTrainingComplete] = useState(false);
   const [showCustomTraining, setShowCustomTraining] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
@@ -88,14 +97,16 @@ export default function Tasks() {
   const completeSessionMutation = useMutation({
     mutationFn: (sessionId: number) => {
       // Combine training notes with coaching feedback if available
+      const currentNotes = selectedSessionType === "custom" ? customTrainingNotes : guidedTrainingNotes;
+      const currentDuration = selectedSessionType === "custom" ? customElapsedTime : guidedElapsedTime;
       const combinedNotes = coachingFeedback 
-        ? `${trainingNotes}\n\n🏓 教练回复：\n${coachingFeedback}`
-        : trainingNotes;
+        ? `${currentNotes}\n\n🏓 教练回复：\n${coachingFeedback}`
+        : currentNotes;
       
       return apiRequest(`/api/training-sessions/${sessionId}/complete`, "POST", { 
         notes: combinedNotes, 
         rating: userRating, 
-        duration: elapsedTime 
+        duration: currentDuration 
       });
     },
     onSuccess: (data) => {
@@ -107,9 +118,15 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
       
       setShowTrainingComplete(false);
-      setIsTraining(false);
-      setElapsedTime(0);
-      setTrainingNotes("");
+      if (selectedSessionType === "custom") {
+        setIsCustomTraining(false);
+        setCustomElapsedTime(0);
+        setCustomTrainingNotes("");
+      } else {
+        setIsGuidedTraining(false);
+        setGuidedElapsedTime(0);
+        setGuidedTrainingNotes("");
+      }
       setUserRating(0);
       setCoachingFeedback("");
       
@@ -156,16 +173,26 @@ export default function Tasks() {
     }
   });
 
-  // Timer effect
+  // Timer effects for both training types
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isTraining && !isPaused) {
+    if (isGuidedTraining && !isGuidedPaused) {
       interval = setInterval(() => {
-        setElapsedTime(prev => prev + 1);
+        setGuidedElapsedTime(prev => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTraining, isPaused]);
+  }, [isGuidedTraining, isGuidedPaused]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isCustomTraining && !isCustomPaused) {
+      interval = setInterval(() => {
+        setCustomElapsedTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isCustomTraining, isCustomPaused]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -175,13 +202,18 @@ export default function Tasks() {
   };
 
   const handleStartTraining = () => {
-    setIsTraining(true);
-    setIsPaused(false);
-    setElapsedTime(0);
+    setSelectedSessionType("系统训练");
+    setIsGuidedTraining(true);
+    setIsGuidedPaused(false);
+    setGuidedElapsedTime(0);
   };
 
   const handlePauseTraining = () => {
-    setIsPaused(!isPaused);
+    if (selectedSessionType === "custom") {
+      setIsCustomPaused(!isCustomPaused);
+    } else {
+      setIsGuidedPaused(!isGuidedPaused);
+    }
   };
 
   const handleStopTraining = () => {
@@ -222,7 +254,9 @@ export default function Tasks() {
 
   const handleStartCustomTraining = () => {
     setSelectedSessionType("custom");
-    handleStartTraining();
+    setIsCustomTraining(true);
+    setIsCustomPaused(false);
+    setCustomElapsedTime(0);
   };
 
   const handleCompleteCustomTraining = () => {
@@ -300,10 +334,10 @@ export default function Tasks() {
           <div className="bg-white rounded-lg p-4 border">
             <div className="flex items-center justify-between mb-4">
               <div className="text-2xl font-mono text-green-600">
-                {formatTime(elapsedTime)}
+                {formatTime(guidedElapsedTime)}
               </div>
               <div className="flex space-x-2">
-                {!isTraining ? (
+                {!isGuidedTraining ? (
                   <Button onClick={handleStartTraining} className="bg-green-600 hover:bg-green-700">
                     <Play className="h-4 w-4 mr-2" />
                     开始训练
@@ -311,8 +345,8 @@ export default function Tasks() {
                 ) : (
                   <>
                     <Button onClick={handlePauseTraining} variant="outline">
-                      {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-                      {isPaused ? "继续" : "暂停"}
+                      {isGuidedPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                      {isGuidedPaused ? "继续" : "暂停"}
                     </Button>
                     <Button onClick={handleStopTraining} variant="destructive">
                       <Square className="h-4 w-4 mr-2" />
@@ -323,14 +357,14 @@ export default function Tasks() {
               </div>
             </div>
 
-            {isTraining && (
+            {isGuidedTraining && (
               <div className="space-y-3">
                 <Label htmlFor="notes">训练笔记</Label>
                 <Textarea
                   id="notes"
                   placeholder="记录训练感受、技巧心得或遇到的问题..."
-                  value={trainingNotes}
-                  onChange={(e) => setTrainingNotes(e.target.value)}
+                  value={guidedTrainingNotes}
+                  onChange={(e) => setGuidedTrainingNotes(e.target.value)}
                   className="min-h-[100px]"
                 />
               </div>
