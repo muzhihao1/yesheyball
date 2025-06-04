@@ -419,9 +419,9 @@ export default function Tasks() {
             </p>
             
             {/* Custom Training Timer and Controls */}
-            <div className="bg-white rounded-lg p-4 border">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-2xl font-mono text-blue-600">
+            <div className="bg-white rounded-lg p-3 sm:p-4 border">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
+                <div className="text-xl sm:text-2xl font-mono text-blue-600 text-center sm:text-left">
                   {formatTime(customElapsedTime)}
                 </div>
                 <div className="flex space-x-2">
