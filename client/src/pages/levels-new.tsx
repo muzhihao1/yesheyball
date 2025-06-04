@@ -320,6 +320,14 @@ export default function Levels() {
   const handleAbortPractice = () => {
     setIsPracticing(false);
     setPracticeTime(0);
+    // 放弃练习后恢复到已完成状态
+    if (selectedExercise) {
+      const overrideKey = `${selectedExercise.level}-${selectedExercise.exerciseNumber}`;
+      setExerciseOverride(prev => ({
+        ...prev,
+        [overrideKey]: true
+      }));
+    }
   };
 
   const handleResetPractice = () => {
