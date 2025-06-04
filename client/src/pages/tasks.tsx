@@ -428,18 +428,18 @@ export default function Tasks() {
                   {!isCustomTraining ? (
                     <Button 
                       onClick={handleStartCustomTraining} 
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-blue-600 hover:bg-blue-700 touch-target h-12 sm:h-auto"
                     >
                       <Play className="h-4 w-4 mr-2" />
                       自主训练
                     </Button>
                   ) : (
                     <>
-                      <Button onClick={handlePauseTraining} variant="outline">
+                      <Button onClick={handlePauseTraining} variant="outline" className="touch-target h-12 sm:h-auto">
                         {isCustomPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
                         {isCustomPaused ? "继续" : "暂停"}
                       </Button>
-                      <Button onClick={handleCompleteCustomTraining} className="bg-blue-600 hover:bg-blue-700">
+                      <Button onClick={handleCompleteCustomTraining} className="bg-blue-600 hover:bg-blue-700 touch-target h-12 sm:h-auto">
                         <Square className="h-4 w-4 mr-2" />
                         完成训练
                       </Button>
