@@ -52,7 +52,7 @@ export default function Header() {
               <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white rounded-full"></div>
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-2xl font-bold text-green-700 truncate">台球大师之路</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-green-700 truncate">中八大师之路</h1>
               <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">中式八球训练系统</p>
             </div>
           </div>
