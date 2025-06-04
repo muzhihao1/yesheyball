@@ -59,6 +59,8 @@ export default function Tasks() {
   const [customDescription, setCustomDescription] = useState("");
   const [userRating, setUserRating] = useState(0);
   const [selectedSessionType, setSelectedSessionType] = useState("系统训练");
+  const [coachingFeedback, setCoachingFeedback] = useState("");
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
 
   const { toast } = useToast();
 
@@ -162,6 +164,30 @@ export default function Tasks() {
 
   const handleStopTraining = () => {
     setShowTrainingComplete(true);
+  };
+
+  const generateCoachingFeedback = async () => {
+    if (!trainingNotes.trim()) return;
+    
+    setLoadingFeedback(true);
+    try {
+      const response = await apiRequest("/api/coaching-feedback", "POST", {
+        duration: elapsedTime,
+        summary: trainingNotes,
+        rating: userRating,
+        exerciseType: currentSession?.sessionType || "系统训练",
+        level: 9 // User's current level
+      });
+      setCoachingFeedback(response.feedback);
+    } catch (error) {
+      toast({
+        title: "获取教练反馈失败",
+        description: "请稍后重试",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingFeedback(false);
+    }
   };
 
   const handleCompleteTraining = () => {
@@ -390,6 +416,31 @@ export default function Tasks() {
                 ))}
               </div>
             </div>
+
+            {/* AI Coaching Feedback Section */}
+            {trainingNotes.trim() && (
+              <div className="space-y-3 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-blue-700 font-medium">🎯 AI教练反馈</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={generateCoachingFeedback}
+                    disabled={loadingFeedback}
+                  >
+                    {loadingFeedback ? "分析中..." : "获取反馈"}
+                  </Button>
+                </div>
+                
+                {coachingFeedback && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="text-sm text-blue-800 leading-relaxed whitespace-pre-wrap">
+                      {coachingFeedback}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex space-x-3">
               <Button variant="outline" onClick={() => setShowTrainingComplete(false)}>

@@ -137,8 +137,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createFeedback({
         userId: 1,
         taskId: taskData.taskId,
-        content: aiFeedback.feedback,
-        rating: aiFeedback.rating,
+        content: aiFeedback,
+        rating: rating,
         date: new Date(),
       });
 
