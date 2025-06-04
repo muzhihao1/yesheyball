@@ -100,6 +100,28 @@ export const trainingNotes = pgTable("training_notes", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
+export const achievements = pgTable("achievements", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  type: text("type").notNull(), // "training", "streak", "level", "time", "rating"
+  condition: jsonb("condition").notNull(), // { type: "complete_sessions", target: 1 }
+  expReward: integer("exp_reward").notNull().default(0),
+  category: text("category").notNull(), // "beginner", "intermediate", "advanced", "master"
+  unlocked: boolean("unlocked").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  achievementId: integer("achievement_id").notNull().references(() => achievements.id),
+  unlockedAt: timestamp("unlocked_at").notNull().defaultNow(),
+  progress: integer("progress").notNull().default(0),
+  completed: boolean("completed").notNull().default(false),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -161,3 +183,18 @@ export type TrainingSession = typeof trainingSessions.$inferSelect;
 export type InsertTrainingSession = z.infer<typeof insertTrainingSessionSchema>;
 export type TrainingNote = typeof trainingNotes.$inferSelect;
 export type InsertTrainingNote = z.infer<typeof insertTrainingNoteSchema>;
+
+export const insertAchievementSchema = createInsertSchema(achievements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({
+  id: true,
+  unlockedAt: true,
+});
+
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;

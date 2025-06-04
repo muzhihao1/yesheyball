@@ -1,4 +1,4 @@
-import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, type User, type InsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote } from "@shared/schema";
+import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, achievements, userAchievements, type User, type InsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote, type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement } from "@shared/schema";
 
 export interface IStorage {
   // User operations
@@ -46,6 +46,13 @@ export interface IStorage {
   getTrainingNotes(sessionId: number): Promise<TrainingNote[]>;
   getAllTrainingNotes(userId: number): Promise<TrainingNote[]>;
   createTrainingNote(note: InsertTrainingNote): Promise<TrainingNote>;
+  
+  // Achievement operations
+  getAllAchievements(): Promise<Achievement[]>;
+  getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]>;
+  checkAndUnlockAchievements(userId: number): Promise<UserAchievement[]>;
+  unlockAchievement(userId: number, achievementId: number): Promise<UserAchievement>;
+  updateAchievementProgress(userId: number, achievementId: number, progress: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -58,6 +65,8 @@ export class MemStorage implements IStorage {
   private trainingDays: Map<number, TrainingDay>;
   private trainingSessions: Map<number, TrainingSession>;
   private trainingNotes: Map<number, TrainingNote>;
+  private achievements: Map<number, Achievement>;
+  private userAchievements: Map<number, UserAchievement>;
   
   private currentUserId: number;
   private currentTaskId: number;
@@ -68,6 +77,8 @@ export class MemStorage implements IStorage {
   private currentTrainingDayId: number;
   private currentTrainingSessionId: number;
   private currentTrainingNoteId: number;
+  private currentAchievementId: number;
+  private currentUserAchievementId: number;
 
   constructor() {
     this.users = new Map();
