@@ -37,13 +37,15 @@ interface TrainingSession {
   sessionType: string;
 }
 
-interface TrainingLog {
+interface TrainingRecord {
   id: number;
   userId: number;
+  title: string;
   content: string;
-  date: Date;
+  duration: number | null;
   rating: number | null;
-  taskId: number | null;
+  completedAt: Date;
+  sessionType: string;
 }
 
 export default function Tasks() {
@@ -75,9 +77,9 @@ export default function Tasks() {
     queryKey: ["/api/training-sessions"],
   });
 
-  // Get training logs
-  const { data: logs = [] } = useQuery<TrainingLog[]>({
-    queryKey: ["/api/training-logs"],
+  // Get completed training records
+  const { data: trainingRecords = [] } = useQuery<TrainingRecord[]>({
+    queryKey: ["/api/training-records"],
   });
 
   // Complete session mutation
@@ -91,6 +93,7 @@ export default function Tasks() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
       setShowTrainingComplete(false);
       setIsTraining(false);
       setElapsedTime(0);
@@ -309,26 +312,33 @@ export default function Tasks() {
         </CardContent>
       </Card>
 
-      {/* Training Logs */}
-      {logs.length > 0 && (
+      {/* Training Records */}
+      {trainingRecords.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>训练记录</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {logs.slice(0, 5).map((log) => (
-                <div key={log.id} className="border-l-4 border-green-500 pl-4 py-2">
+              {trainingRecords.slice(0, 5).map((record) => (
+                <div key={record.id} className="border-l-4 border-green-500 pl-4 py-2">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <p className="text-gray-800">{log.content}</p>
+                      <h4 className="font-medium text-gray-800">{record.title}</h4>
+                      <p className="text-gray-600 mt-1">{record.content}</p>
                       <div className="flex items-center mt-2 text-sm text-gray-500">
                         <Clock className="h-4 w-4 mr-1" />
-                        {new Date(log.date).toLocaleDateString('zh-CN')}
-                        {log.rating && (
+                        {new Date(record.completedAt).toLocaleDateString('zh-CN')}
+                        {record.duration && (
+                          <div className="ml-4 flex items-center">
+                            <span className="mr-1">⏱️</span>
+                            {Math.floor(record.duration / 60)}分钟
+                          </div>
+                        )}
+                        {record.rating && (
                           <div className="ml-4 flex items-center">
                             <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                            {log.rating}/5
+                            {record.rating}/5
                           </div>
                         )}
                       </div>
