@@ -323,7 +323,6 @@ export default function Levels() {
   };
 
   const handleResetPractice = () => {
-    setIsPracticing(false);
     setPracticeTime(0);
     // 重置练习状态以允许重新练习
     if (selectedExercise) {
@@ -332,6 +331,8 @@ export default function Levels() {
         ...prev,
         [overrideKey]: false
       }));
+      // 直接开始计时
+      setIsPracticing(true);
     }
   };
 
