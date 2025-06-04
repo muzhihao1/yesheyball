@@ -86,12 +86,18 @@ export default function Tasks() {
 
   // Complete session mutation
   const completeSessionMutation = useMutation({
-    mutationFn: (sessionId: number) => 
-      apiRequest(`/api/training-sessions/${sessionId}/complete`, "POST", { 
-        notes: trainingNotes, 
+    mutationFn: (sessionId: number) => {
+      // Combine training notes with coaching feedback if available
+      const combinedNotes = coachingFeedback 
+        ? `${trainingNotes}\n\n🏓 教练回复：\n${coachingFeedback}`
+        : trainingNotes;
+      
+      return apiRequest(`/api/training-sessions/${sessionId}/complete`, "POST", { 
+        notes: combinedNotes, 
         rating: userRating, 
         duration: elapsedTime 
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
@@ -102,6 +108,7 @@ export default function Tasks() {
       setElapsedTime(0);
       setTrainingNotes("");
       setUserRating(0);
+      setCoachingFeedback("");
       // Progress to next episode
       nextEpisodeMutation.mutate();
       toast({ title: "训练完成", description: "您的训练记录已保存，进入下一集" });
@@ -391,7 +398,20 @@ export default function Tasks() {
             </div>
             
             <div className="space-y-3">
-              <Label htmlFor="final-notes">训练总结</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="final-notes">训练总结</Label>
+                {trainingNotes.trim() && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={generateCoachingFeedback}
+                    disabled={loadingFeedback}
+                    className="text-xs"
+                  >
+                    {loadingFeedback ? "分析中..." : "发送给教练"}
+                  </Button>
+                )}
+              </div>
               <Textarea
                 id="final-notes"
                 placeholder="总结本次训练的收获和感受..."
@@ -399,6 +419,17 @@ export default function Tasks() {
                 onChange={(e) => setTrainingNotes(e.target.value)}
                 className="min-h-[100px]"
               />
+              
+              {coachingFeedback && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3">
+                  <div className="flex items-center mb-2">
+                    <div className="text-sm font-medium text-blue-700">🏓 教练回复</div>
+                  </div>
+                  <div className="text-sm text-blue-800 leading-relaxed whitespace-pre-wrap">
+                    {coachingFeedback}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -417,30 +448,7 @@ export default function Tasks() {
               </div>
             </div>
 
-            {/* AI Coaching Feedback Section */}
-            {trainingNotes.trim() && (
-              <div className="space-y-3 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-blue-700 font-medium">🎯 AI教练反馈</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={generateCoachingFeedback}
-                    disabled={loadingFeedback}
-                  >
-                    {loadingFeedback ? "分析中..." : "获取反馈"}
-                  </Button>
-                </div>
-                
-                {coachingFeedback && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="text-sm text-blue-800 leading-relaxed whitespace-pre-wrap">
-                      {coachingFeedback}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+
 
             <div className="flex space-x-3">
               <Button variant="outline" onClick={() => setShowTrainingComplete(false)}>
