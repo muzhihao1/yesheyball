@@ -660,8 +660,8 @@ export default function Levels() {
                                   }}
                                 >
                                   {/* Modern Achievement Badge */}
-                                  <div className="relative w-20 h-24 flex flex-col items-center">
-                                    <svg viewBox="0 0 120 120" className="w-20 h-20">
+                                  <div className="relative w-24 h-28 flex flex-col items-center">
+                                    <svg viewBox="0 0 120 120" className="w-24 h-24">
                                       {/* Badge Base/Pedestal */}
                                       <ellipse cx="60" cy="95" rx="18" ry="8" 
                                         fill={
