@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateTrainingFeedback, generateDiaryInsights } from "./openai";
 import { upload } from "./upload";
-import { insertDiaryEntrySchema, insertUserTaskSchema } from "@shared/schema";
+import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema } from "@shared/schema";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer";
 import { adaptiveLearning } from "./adaptiveLearning";
@@ -205,6 +205,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(feedbacks);
     } catch (error) {
       res.status(500).json({ message: "Failed to get feedbacks" });
+    }
+  });
+
+  // Training program routes
+  app.get("/api/training-programs", async (req, res) => {
+    try {
+      const programs = await storage.getAllTrainingPrograms();
+      res.json(programs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get training programs" });
+    }
+  });
+
+  app.get("/api/training-programs/:id", async (req, res) => {
+    try {
+      const program = await storage.getTrainingProgram(parseInt(req.params.id));
+      if (!program) {
+        return res.status(404).json({ message: "Training program not found" });
+      }
+      res.json(program);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get training program" });
+    }
+  });
+
+  app.get("/api/training-programs/:id/days", async (req, res) => {
+    try {
+      const days = await storage.getTrainingDays(parseInt(req.params.id));
+      res.json(days);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get training days" });
+    }
+  });
+
+  app.get("/api/training-programs/:programId/days/:day", async (req, res) => {
+    try {
+      const day = await storage.getTrainingDay(parseInt(req.params.programId), parseInt(req.params.day));
+      if (!day) {
+        return res.status(404).json({ message: "Training day not found" });
+      }
+      res.json(day);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get training day" });
+    }
+  });
+
+  // Training session routes
+  app.get("/api/training-sessions", async (req, res) => {
+    try {
+      const sessions = await storage.getUserTrainingSessions(1);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get training sessions" });
+    }
+  });
+
+  app.get("/api/training-sessions/current", async (req, res) => {
+    try {
+      const session = await storage.getCurrentTrainingSession(1);
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get current training session" });
+    }
+  });
+
+  app.post("/api/training-sessions", async (req, res) => {
+    try {
+      const validatedData = insertTrainingSessionSchema.parse(req.body);
+      const session = await storage.createTrainingSession(validatedData);
+      res.json(session);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid training session data" });
+    }
+  });
+
+  app.patch("/api/training-sessions/:id", async (req, res) => {
+    try {
+      const session = await storage.updateTrainingSession(parseInt(req.params.id), req.body);
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update training session" });
+    }
+  });
+
+  app.post("/api/training-sessions/:id/complete", async (req, res) => {
+    try {
+      const { duration, rating, notes } = req.body;
+      const session = await storage.completeTrainingSession(parseInt(req.params.id), duration, rating, notes);
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to complete training session" });
+    }
+  });
+
+  // Training notes routes
+  app.get("/api/training-sessions/:sessionId/notes", async (req, res) => {
+    try {
+      const notes = await storage.getTrainingNotes(parseInt(req.params.sessionId));
+      res.json(notes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get training notes" });
+    }
+  });
+
+  app.post("/api/training-sessions/:sessionId/notes", async (req, res) => {
+    try {
+      const validatedData = insertTrainingNoteSchema.parse({
+        ...req.body,
+        sessionId: parseInt(req.params.sessionId)
+      });
+      const note = await storage.createTrainingNote(validatedData);
+      res.json(note);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid training note data" });
     }
   });
 
