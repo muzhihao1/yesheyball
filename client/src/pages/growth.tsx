@@ -186,9 +186,15 @@ export default function GrowthPage() {
   const completionRate = totalExercises > 0 ? Math.round((totalCompletedExercises / totalExercises) * 100) : 0;
   
   const completedTraining = trainingSessions.filter(ts => ts.completed);
-  const totalTrainingTime = completedTraining.reduce((sum, session) => sum + (session.duration || 0), 0);
-  const avgRating = completedTraining.length > 0 
-    ? completedTraining.reduce((sum, session) => sum + (session.rating || 0), 0) / completedTraining.length 
+  
+  // Fix total training time calculation (convert seconds to proper format)
+  const totalTrainingTimeSeconds = completedTraining.reduce((sum, session) => sum + (session.duration || 0), 0);
+  const totalTrainingTime = totalTrainingTimeSeconds; // Keep in seconds for calculations
+  
+  // Fix average rating calculation (exclude sessions without ratings)
+  const ratedSessions = completedTraining.filter(session => session.rating && session.rating > 0);
+  const avgRating = ratedSessions.length > 0 
+    ? ratedSessions.reduce((sum, session) => sum + (session.rating || 0), 0) / ratedSessions.length 
     : 0;
 
   // Group levels by category
@@ -360,7 +366,9 @@ export default function GrowthPage() {
                     <div className="text-sm text-gray-600">完成训练</div>
                   </div>
                   <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-xl font-bold text-green-600">{Math.floor(totalTrainingTime / 60)}h {totalTrainingTime % 60}m</div>
+                    <div className="text-xl font-bold text-green-600">
+                      {Math.floor(totalTrainingTimeSeconds / 3600)}h {Math.floor((totalTrainingTimeSeconds % 3600) / 60)}m
+                    </div>
                     <div className="text-sm text-gray-600">总时长</div>
                   </div>
                   <div className="text-center p-4 bg-yellow-50 rounded-lg">
