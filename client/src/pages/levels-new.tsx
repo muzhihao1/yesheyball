@@ -309,6 +309,9 @@ export default function Levels() {
 
   const handleExerciseClick = async (exercise: Exercise) => {
     setSelectedExercise(exercise);
+    // Find and set the corresponding level
+    const level = levelStages.find(stage => stage.level === exercise.level);
+    setSelectedLevel(level || null);
     setShowExerciseDialog(true);
   };
 
