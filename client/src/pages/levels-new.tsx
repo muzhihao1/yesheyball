@@ -877,47 +877,48 @@ export default function Levels() {
                 </DialogTitle>
               </DialogHeader>
               
-              {/* 练习内容 - 上下布局 */}
-              <div className="space-y-6">
-                {/* 题目说明和要求 - 水平并排 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 练习内容 - 优化布局适应单屏 */}
+              <div className="h-full flex flex-col">
+                {/* 题目说明和要求 - 紧凑布局 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                   {/* 题目说明 */}
-                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                    <h3 className="font-bold text-blue-700 mb-2">题目说明</h3>
-                    <p className="text-gray-700">{selectedExercise?.description}</p>
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg">
+                    <h3 className="font-bold text-blue-700 mb-1 text-sm">题目说明</h3>
+                    <p className="text-gray-700 text-sm">{selectedExercise?.description}</p>
                   </div>
                   
                   {/* 过关要求 */}
-                  <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
-                    <h3 className="font-bold text-orange-700 mb-2">过关要求</h3>
-                    <p className="text-gray-700">
+                  <div className="bg-orange-50 border-l-4 border-orange-500 p-3 rounded-r-lg">
+                    <h3 className="font-bold text-orange-700 mb-1 text-sm">过关要求</h3>
+                    <p className="text-gray-700 text-sm">
                       {selectedExercise && getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
                     </p>
                   </div>
                 </div>
                 
-                {/* 练习图片 - 响应式设计 */}
-                <div className="py-4 sm:py-6 w-full">
-                  <div className="rounded-lg shadow-lg bg-white p-2 sm:p-4 w-full">
-                    <div className="w-full flex justify-center items-center overflow-x-auto">
+                {/* 练习图片和操作 - 水平布局 */}
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* 练习图片 - 居中显示 */}
+                  <div className="lg:col-span-2 flex items-center justify-center">
+                    <div className="rounded-lg shadow-lg bg-white p-2">
                       <img 
                         src={selectedExercise?.imageUrl} 
                         alt={selectedExercise?.title}
-                        className="block max-w-none"
+                        className="block max-h-[300px] w-auto object-contain"
                         style={getCroppingStyle(selectedExercise!)}
                         onError={(e) => {
                           if (e.currentTarget.parentElement) {
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement.innerHTML = `
-                              <div class="w-[300px] sm:w-[400px] md:w-[500px] h-[350px] sm:h-[450px] md:h-[550px] bg-green-600 border-4 sm:border-6 md:border-8 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
-                                <div class="absolute top-2 left-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full"></div>
-                                <div class="absolute top-2 right-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full"></div>
-                                <div class="absolute bottom-2 left-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full"></div>
-                                <div class="absolute bottom-2 right-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full"></div>
-                                <div class="absolute top-1/2 left-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="absolute top-1/2 right-2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-black rounded-full transform -translate-y-1/2"></div>
-                                <div class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-white rounded-full"></div>
-                                <div class="absolute top-4 right-4 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-black rounded-full border-2 border-red-500"></div>
+                              <div class="w-[250px] h-[300px] bg-green-600 border-4 border-amber-800 rounded-lg flex items-center justify-center relative mx-auto">
+                                <div class="absolute top-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute top-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 left-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute bottom-2 right-2 w-3 h-3 bg-black rounded-full"></div>
+                                <div class="absolute top-1/2 left-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="absolute top-1/2 right-2 w-3 h-3 bg-black rounded-full transform -translate-y-1/2"></div>
+                                <div class="w-4 h-4 bg-white rounded-full"></div>
+                                <div class="absolute top-4 right-4 w-4 h-4 bg-black rounded-full border-2 border-red-500"></div>
                               </div>
                             `;
                           }
@@ -926,43 +927,40 @@ export default function Levels() {
                     </div>
                   </div>
                   
-
-                </div>
-                
-                {/* 练习状态和操作 */}
-                <div className="border-t pt-6">
-                  {selectedExercise && isExerciseCompleted(selectedExercise) ? (
-                    <div className="text-center space-y-4">
-                      <div className="space-x-3">
-                        <Button 
-                          onClick={handleNextExercise}
-                          className="bg-green-500 hover:bg-green-600 px-8"
-                        >
-                          继续下一题
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={handleResetPractice}
-                        >
-                          重新练习
-                        </Button>
+                  {/* 练习控制 - 右侧固定 */}
+                  <div className="flex flex-col justify-center">
+                    {selectedExercise && isExerciseCompleted(selectedExercise) ? (
+                      <div className="text-center space-y-4">
+                        <div className="space-y-3">
+                          <Button 
+                            onClick={handleNextExercise}
+                            className="bg-green-500 hover:bg-green-600 w-full"
+                          >
+                            继续下一题
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            onClick={handleResetPractice}
+                            className="w-full"
+                          >
+                            重新练习
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="text-center space-y-6">
-                      {/* 练习计时器 */}
-                      <div className="bg-gray-50 rounded-lg p-6">
-                        <div className="text-center space-y-4">
-                          <div className="text-3xl font-mono font-bold text-gray-800">
+                    ) : (
+                      <div className="text-center space-y-4">
+                        {/* 练习计时器 */}
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="text-2xl font-mono font-bold text-gray-800 mb-4">
                             {formatTime(practiceTime)}
                           </div>
                           
                           {/* 练习控制按钮 */}
-                          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:space-x-3">
+                          <div className="space-y-3">
                             {!isPracticing && practiceTime === 0 ? (
                               <Button 
                                 onClick={handleStartPractice}
-                                className="bg-blue-500 hover:bg-blue-600 px-8 h-12 sm:h-auto touch-target"
+                                className="bg-blue-500 hover:bg-blue-600 w-full h-12"
                               >
                                 <Play className="w-4 h-4 mr-2" />
                                 开始练习
@@ -972,14 +970,14 @@ export default function Levels() {
                                 <Button 
                                   onClick={isPracticing ? handleAbortPractice : handleStartPractice}
                                   variant="outline"
-                                  className="h-12 sm:h-auto touch-target"
+                                  className="w-full h-12"
                                 >
                                   {isPracticing ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
                                   {isPracticing ? '放弃练习' : '继续'}
                                 </Button>
                                 <Button 
                                   onClick={handleFinishPractice}
-                                  className="bg-green-500 hover:bg-green-600 h-12 sm:h-auto touch-target"
+                                  className="bg-green-500 hover:bg-green-600 w-full h-12"
                                 >
                                   <CheckCircle className="w-4 h-4 mr-2" />
                                   完成练习
@@ -989,9 +987,10 @@ export default function Levels() {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
+              </div>
                 
 
               </div>
