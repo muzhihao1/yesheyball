@@ -1,4 +1,4 @@
-import { users, tasks, userTasks, diaryEntries, feedbacks, type User, type InsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback } from "@shared/schema";
+import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, type User, type InsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote } from "@shared/schema";
 
 export interface IStorage {
   // User operations
@@ -26,6 +26,23 @@ export interface IStorage {
   // Feedback operations
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   getUserFeedbacks(userId: number): Promise<Feedback[]>;
+  
+  // Training program operations
+  getAllTrainingPrograms(): Promise<TrainingProgram[]>;
+  getTrainingProgram(id: number): Promise<TrainingProgram | undefined>;
+  getTrainingDays(programId: number): Promise<TrainingDay[]>;
+  getTrainingDay(programId: number, day: number): Promise<TrainingDay | undefined>;
+  
+  // Training session operations
+  getUserTrainingSessions(userId: number): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay })[]>;
+  getCurrentTrainingSession(userId: number): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay }) | undefined>;
+  createTrainingSession(session: InsertTrainingSession): Promise<TrainingSession>;
+  updateTrainingSession(id: number, updates: Partial<TrainingSession>): Promise<TrainingSession>;
+  completeTrainingSession(id: number, duration: number, rating: number, notes?: string): Promise<TrainingSession>;
+  
+  // Training note operations
+  getTrainingNotes(sessionId: number): Promise<TrainingNote[]>;
+  createTrainingNote(note: InsertTrainingNote): Promise<TrainingNote>;
 }
 
 export class MemStorage implements IStorage {
@@ -34,12 +51,20 @@ export class MemStorage implements IStorage {
   private userTasks: Map<number, UserTask>;
   private diaryEntries: Map<number, DiaryEntry>;
   private feedbacks: Map<number, Feedback>;
+  private trainingPrograms: Map<number, TrainingProgram>;
+  private trainingDays: Map<number, TrainingDay>;
+  private trainingSessions: Map<number, TrainingSession>;
+  private trainingNotes: Map<number, TrainingNote>;
   
   private currentUserId: number;
   private currentTaskId: number;
   private currentUserTaskId: number;
   private currentDiaryId: number;
   private currentFeedbackId: number;
+  private currentTrainingProgramId: number;
+  private currentTrainingDayId: number;
+  private currentTrainingSessionId: number;
+  private currentTrainingNoteId: number;
 
   constructor() {
     this.users = new Map();
@@ -47,12 +72,20 @@ export class MemStorage implements IStorage {
     this.userTasks = new Map();
     this.diaryEntries = new Map();
     this.feedbacks = new Map();
+    this.trainingPrograms = new Map();
+    this.trainingDays = new Map();
+    this.trainingSessions = new Map();
+    this.trainingNotes = new Map();
     
     this.currentUserId = 1;
     this.currentTaskId = 1;
     this.currentUserTaskId = 1;
     this.currentDiaryId = 1;
     this.currentFeedbackId = 1;
+    this.currentTrainingProgramId = 1;
+    this.currentTrainingDayId = 1;
+    this.currentTrainingSessionId = 1;
+    this.currentTrainingNoteId = 1;
     
     this.initializeDefaultData();
   }
