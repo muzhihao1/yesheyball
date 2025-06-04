@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateTrainingFeedback, generateDiaryInsights } from "./openai";
+import { generateCoachingFeedback } from "./openai";
 import { upload } from "./upload";
 import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema } from "@shared/schema";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
@@ -125,13 +125,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate AI feedback
-      const aiFeedback = await generateTrainingFeedback(
-        taskData.task.title,
-        taskData.task.description,
-        rating,
-        user.level,
-        user.completedTasks
-      );
+      const aiFeedback = await generateCoachingFeedback({
+        duration: 30, // Default session duration
+        summary: `完成练习: ${taskData.task.title}`,
+        rating: rating,
+        exerciseType: taskData.task.category,
+        level: user.level
+      });
 
       // Save feedback to storage
       await storage.createFeedback({
@@ -205,6 +205,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(feedbacks);
     } catch (error) {
       res.status(500).json({ message: "Failed to get feedbacks" });
+    }
+  });
+
+  // Generate coaching feedback for training session
+  app.post("/api/coaching-feedback", async (req, res) => {
+    try {
+      const { duration, summary, rating, exerciseType, level } = req.body;
+      
+      if (!duration || !summary) {
+        return res.status(400).json({ message: "Duration and summary are required" });
+      }
+
+      const feedback = await generateCoachingFeedback({
+        duration: parseInt(duration),
+        summary: summary.trim(),
+        rating: rating ? parseInt(rating) : null,
+        exerciseType,
+        level
+      });
+
+      res.json({ feedback });
+    } catch (error) {
+      console.error("Coaching feedback error:", error);
+      res.status(500).json({ message: "Failed to generate coaching feedback" });
     }
   });
 
