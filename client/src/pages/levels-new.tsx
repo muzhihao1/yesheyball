@@ -764,17 +764,7 @@ export default function Levels() {
                   )}
                 </div>
                 
-                {/* 练习记录 */}
-                {selectedExercise && isExerciseCompleted(selectedExercise) && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-800 mb-2">练习记录</h4>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <div>完成时间：{new Date().toLocaleDateString()}</div>
-                      <div>练习次数：{Math.floor(Math.random() * 10) + 3} 次</div>
-                      <div>成功率：{Math.floor(Math.random() * 30) + 70}%</div>
-                    </div>
-                  </div>
-                )}
+
               </div>
             </>
           )}
