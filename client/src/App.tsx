@@ -7,7 +7,7 @@ import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 import Levels from "@/pages/levels-new";
 import Tasks from "@/pages/tasks";
-
+import Growth from "@/pages/growth";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
 
@@ -19,7 +19,7 @@ function Router() {
       <Route path="/" component={Levels} />
       <Route path="/levels" component={Levels} />
       <Route path="/tasks" component={Tasks} />
-
+      <Route path="/growth" component={Growth} />
       <Route path="/diary" component={Diary} />
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
