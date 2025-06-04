@@ -314,6 +314,10 @@ export default function Levels() {
   const handleResetPractice = () => {
     setIsPracticing(false);
     setPracticeTime(0);
+    // 如果是已完成的练习，重置状态以允许重新练习
+    if (selectedExercise?.completed) {
+      selectedExercise.completed = false;
+    }
   };
 
   const handleFinishPractice = () => {
