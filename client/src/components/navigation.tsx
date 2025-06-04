@@ -12,29 +12,27 @@ export default function Navigation() {
   ];
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-20 z-40">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location === item.path || (item.path === "/levels" && location === "/");
-            
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "text-green-600 border-b-2 border-green-600 bg-green-50"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-pb">
+      <div className="flex justify-around items-center py-2 px-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location === item.path || (item.path === "/levels" && location === "/");
+          
+          return (
+            <Link
+              key={item.path}
+              href={item.path}
+              className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-colors min-w-0 flex-1 ${
+                isActive
+                  ? "text-green-600 bg-green-50"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <Icon className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium truncate">{item.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

@@ -294,13 +294,13 @@ export default function Tasks() {
   }, 0);
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-green-700">训练计划</h1>
-        <p className="text-gray-600">耶氏台球学院系统教学 · 共30集</p>
-        <div className="flex items-center justify-center text-gray-500">
-          <Calendar className="h-5 w-5 mr-2" />
+      <div className="text-center space-y-2 sm:space-y-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-green-700">训练计划</h1>
+        <p className="text-sm sm:text-base text-gray-600">耶氏台球学院系统教学 · 共30集</p>
+        <div className="flex items-center justify-center text-gray-500 text-sm">
+          <Calendar className="h-4 w-4 mr-2" />
           {new Date().toLocaleDateString('zh-CN')}
         </div>
       </div>
@@ -361,24 +361,24 @@ export default function Tasks() {
           </div>
 
           {/* Training Controls */}
-          <div className="bg-white rounded-lg p-4 border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-2xl font-mono text-green-600">
+          <div className="bg-white rounded-lg p-3 sm:p-4 border">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
+              <div className="text-xl sm:text-2xl font-mono text-green-600 text-center sm:text-left">
                 {formatTime(guidedElapsedTime)}
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 {!isGuidedTraining ? (
-                  <Button onClick={handleStartTraining} className="bg-green-600 hover:bg-green-700">
+                  <Button onClick={handleStartTraining} className="bg-green-600 hover:bg-green-700 touch-target h-12 sm:h-auto">
                     <Play className="h-4 w-4 mr-2" />
                     开始训练
                   </Button>
                 ) : (
                   <>
-                    <Button onClick={handlePauseTraining} variant="outline">
+                    <Button onClick={handlePauseTraining} variant="outline" className="touch-target h-12 sm:h-auto">
                       {isGuidedPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
                       {isGuidedPaused ? "继续" : "暂停"}
                     </Button>
-                    <Button onClick={handleStopTraining} variant="destructive">
+                    <Button onClick={handleStopTraining} variant="destructive" className="touch-target h-12 sm:h-auto">
                       <Square className="h-4 w-4 mr-2" />
                       结束训练
                     </Button>
