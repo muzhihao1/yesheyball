@@ -177,16 +177,16 @@ export default function Levels() {
     };
   };
 
-  if (userLoading) {
+  if (userLoading || !exerciseData) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <div className="w-48 h-8 skeleton mx-auto mb-4"></div>
-          <div className="w-64 h-6 skeleton mx-auto"></div>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="w-32 sm:w-48 h-6 sm:h-8 skeleton mx-auto mb-4"></div>
+          <div className="w-48 sm:w-64 h-4 sm:h-6 skeleton mx-auto"></div>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[...Array(9)].map((_, i) => (
-            <div key={i} className="skeleton h-96 rounded-xl"></div>
+            <div key={i} className="skeleton h-64 sm:h-96 rounded-xl"></div>
           ))}
         </div>
       </div>
@@ -810,10 +810,11 @@ export default function Levels() {
 
       {/* Exercise Dialog */}
       <Dialog open={showExerciseDialog} onOpenChange={setShowExerciseDialog}>
-        <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-6xl max-h-[95vh] overflow-y-auto w-[95vw]">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-6xl max-h-[90vh] overflow-y-auto mobile-scroll p-3 sm:p-6">
+          <DialogDescription className="sr-only">练习详情和训练界面</DialogDescription>
           {selectedExercise && (
             <>
-              <DialogHeader>
+              <DialogHeader className="space-y-3 pb-4">
                 <DialogTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
@@ -828,9 +829,6 @@ export default function Levels() {
                     等级 {selectedExercise.level} - {selectedLevel?.name}
                   </div>
                 </DialogTitle>
-                <DialogDescription>
-                  通过耶氏台球学院系列练习，系统化提升中式八球技术水平
-                </DialogDescription>
               </DialogHeader>
               
               {/* 练习内容 - 上下布局 */}
@@ -916,11 +914,11 @@ export default function Levels() {
                           </div>
                           
                           {/* 练习控制按钮 */}
-                          <div className="flex justify-center space-x-3">
+                          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:space-x-3">
                             {!isPracticing && practiceTime === 0 ? (
                               <Button 
                                 onClick={handleStartPractice}
-                                className="bg-blue-500 hover:bg-blue-600 px-8"
+                                className="bg-blue-500 hover:bg-blue-600 px-8 h-12 sm:h-auto touch-target"
                               >
                                 <Play className="w-4 h-4 mr-2" />
                                 开始练习
@@ -930,15 +928,14 @@ export default function Levels() {
                                 <Button 
                                   onClick={isPracticing ? handleAbortPractice : handleStartPractice}
                                   variant="outline"
-                                  size="sm"
+                                  className="h-12 sm:h-auto touch-target"
                                 >
                                   {isPracticing ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
                                   {isPracticing ? '放弃练习' : '继续'}
                                 </Button>
                                 <Button 
                                   onClick={handleFinishPractice}
-                                  className="bg-green-500 hover:bg-green-600"
-                                  size="sm"
+                                  className="bg-green-500 hover:bg-green-600 h-12 sm:h-auto touch-target"
                                 >
                                   <CheckCircle className="w-4 h-4 mr-2" />
                                   完成练习
