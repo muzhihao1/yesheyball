@@ -29,24 +29,17 @@ interface User {
   totalTime: number;
 }
 
-interface Task {
-  id: number;
-  title: string;
-  description: string;
+interface LevelStage {
   level: number;
-  difficulty: string;
-  category: string;
-}
-
-interface UserTask {
-  id: number;
-  userId: number;
-  taskId: number;
-  rating: number | null;
+  name: string;
+  totalExercises: number;
+  category: "启明星" | "超新星" | "智子星";
+  description: string;
+  unlocked: boolean;
   completed: boolean;
-  completedAt: Date | null;
-  createdAt: Date;
-  task: Task;
+  progress: number;
+  completedExercises: number;
+  examPassed?: boolean;
 }
 
 interface TrainingSession {
@@ -80,11 +73,6 @@ export default function GrowthPage() {
     queryKey: ["/api/user"],
   });
 
-  // Fetch user tasks (challenge progress)
-  const { data: userTasks = [] } = useQuery<UserTask[]>({
-    queryKey: ["/api/user-tasks"],
-  });
-
   // Fetch training sessions
   const { data: trainingSessions = [] } = useQuery<TrainingSession[]>({
     queryKey: ["/api/training-sessions"],
@@ -95,10 +83,107 @@ export default function GrowthPage() {
     queryKey: ["/api/training-records"],
   });
 
-  // Calculate statistics
-  const completedTasks = userTasks.filter(ut => ut.completed);
-  const totalTasks = userTasks.length;
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
+  if (!user) {
+    return <div>加载中...</div>;
+  }
+
+  // Generate level stages based on user progress (same logic as levels page)
+  const levelStages: LevelStage[] = [
+    {
+      level: 1,
+      name: "初窥门径",
+      totalExercises: 30,
+      category: "启明星",
+      description: "掌握基础击球姿势与瞄准技巧",
+      unlocked: user.level >= 1,
+      completed: user.level > 1,
+      progress: user.level > 1 ? 100 : Math.min((user.exp / 100) * 100, 95),
+      completedExercises: user.level > 1 ? 30 : Math.floor((user.exp / 100) * 30)
+    },
+    {
+      level: 2,
+      name: "小有所成",
+      totalExercises: 40,
+      category: "启明星",
+      description: "练习各种角度的击球技巧",
+      unlocked: user.level >= 2,
+      completed: user.level > 2,
+      progress: user.level > 2 ? 100 : user.level === 2 ? Math.min((user.exp / 200) * 100, 95) : 0,
+      completedExercises: user.level > 2 ? 40 : user.level === 2 ? Math.floor((user.exp / 200) * 40) : 0
+    },
+    {
+      level: 3,
+      name: "渐入佳境",
+      totalExercises: 50,
+      category: "启明星",
+      description: "掌握基本走位与控球技巧",
+      unlocked: user.level >= 3,
+      completed: user.level > 3,
+      progress: user.level > 3 ? 100 : user.level === 3 ? Math.min((user.exp / 300) * 100, 95) : 0,
+      completedExercises: user.level > 3 ? 50 : user.level === 3 ? Math.floor((user.exp / 300) * 50) : 0
+    },
+    {
+      level: 4,
+      name: "炉火纯青",
+      totalExercises: 60,
+      category: "超新星",
+      description: "在超新星的引力场中，精准控制每一次撞击",
+      unlocked: user.level >= 4,
+      completed: user.level > 4,
+      progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
+      completedExercises: user.level > 4 ? 60 : user.level === 4 ? Math.floor((user.exp / 400) * 60) : 0
+    },
+    {
+      level: 5,
+      name: "登堂入室",
+      totalExercises: 60,
+      category: "超新星",
+      description: "技术日臻成熟，走位精准",
+      unlocked: user.level >= 5,
+      completed: user.level > 5,
+      progress: user.level > 5 ? 100 : user.level === 5 ? Math.min((user.exp / 500) * 100, 95) : 0,
+      completedExercises: user.level > 5 ? 60 : user.level === 5 ? Math.floor((user.exp / 500) * 60) : 0
+    },
+    {
+      level: 6,
+      name: "超群绝伦",
+      totalExercises: 60,
+      category: "超新星",
+      description: "精确走位与复杂球局",
+      unlocked: user.level >= 6,
+      completed: user.level > 6,
+      progress: user.level > 6 ? 100 : user.level === 6 ? Math.min((user.exp / 600) * 100, 95) : 0,
+      completedExercises: user.level > 6 ? 60 : user.level === 6 ? Math.floor((user.exp / 600) * 60) : 0
+    },
+    {
+      level: 7,
+      name: "登峰造极",
+      totalExercises: 55,
+      category: "智子星",
+      description: "在智子星的宏观维度，用一杆终结所有因果链",
+      unlocked: user.level >= 7,
+      completed: user.level > 7,
+      progress: user.level > 7 ? 100 : user.level === 7 ? Math.min((user.exp / 700) * 100, 95) : 0,
+      completedExercises: user.level > 7 ? 55 : user.level === 7 ? Math.floor((user.exp / 700) * 55) : 0
+    },
+    {
+      level: 8,
+      name: "出神入化",
+      totalExercises: 55,
+      category: "智子星",
+      description: "超越技巧的艺术境界",
+      unlocked: user.level >= 8,
+      completed: user.level > 8,
+      progress: user.level > 8 ? 100 : user.level === 8 ? Math.min((user.exp / 800) * 100, 95) : 0,
+      completedExercises: user.level > 8 ? 55 : user.level === 8 ? Math.floor((user.exp / 800) * 55) : 0
+    }
+  ];
+
+  // Calculate statistics from level stages
+  const completedLevels = levelStages.filter(stage => stage.completed);
+  const totalCompletedExercises = levelStages.reduce((sum, stage) => sum + stage.completedExercises, 0);
+  const totalExercises = levelStages.reduce((sum, stage) => sum + stage.totalExercises, 0);
+  const completionRate = totalExercises > 0 ? Math.round((totalCompletedExercises / totalExercises) * 100) : 0;
   
   const completedTraining = trainingSessions.filter(ts => ts.completed);
   const totalTrainingTime = completedTraining.reduce((sum, session) => sum + (session.duration || 0), 0);
@@ -106,11 +191,11 @@ export default function GrowthPage() {
     ? completedTraining.reduce((sum, session) => sum + (session.rating || 0), 0) / completedTraining.length 
     : 0;
 
-  // Group tasks by category
-  const categories = ["all", "直线击球", "角度球", "走位控制", "球感训练", "心理训练"];
-  const filteredTasks = selectedCategory === "all" 
-    ? userTasks 
-    : userTasks.filter(ut => ut.task.category === selectedCategory);
+  // Group levels by category
+  const categories = ["all", "启明星", "超新星", "智子星"];
+  const filteredLevels = selectedCategory === "all" 
+    ? levelStages 
+    : levelStages.filter(stage => stage.category === selectedCategory);
 
   // Level progression
   const currentLevelExp = (user?.exp || 0) % 1000;
@@ -120,15 +205,15 @@ export default function GrowthPage() {
   const getAchievements = () => {
     const achievements = [];
     
-    if (completedTasks.length >= 1) achievements.push({ name: "初次尝试", description: "完成第一个练习", earned: true });
-    if (completedTasks.length >= 10) achievements.push({ name: "勤奋练习", description: "完成10个练习", earned: true });
-    if (completedTasks.length >= 25) achievements.push({ name: "持之以恒", description: "完成25个练习", earned: true });
+    if (totalCompletedExercises >= 1) achievements.push({ name: "初次尝试", description: "完成第一个练习", earned: true });
+    if (totalCompletedExercises >= 10) achievements.push({ name: "勤奋练习", description: "完成10个练习", earned: true });
+    if (totalCompletedExercises >= 25) achievements.push({ name: "持之以恒", description: "完成25个练习", earned: true });
     if (user?.streak && user.streak >= 7) achievements.push({ name: "一周连击", description: "连续训练7天", earned: true });
     if (user?.streak && user.streak >= 30) achievements.push({ name: "月度坚持", description: "连续训练30天", earned: true });
     if (totalTrainingTime >= 300) achievements.push({ name: "时间投入", description: "总训练时间超过5小时", earned: true });
     
     // Future achievements
-    if (completedTasks.length < 50) achievements.push({ name: "半百达成", description: "完成50个练习", earned: false });
+    if (totalCompletedExercises < 50) achievements.push({ name: "半百达成", description: "完成50个练习", earned: false });
     if (!user?.streak || user.streak < 100) achievements.push({ name: "百日坚持", description: "连续训练100天", earned: false });
     
     return achievements;
@@ -158,7 +243,7 @@ export default function GrowthPage() {
 
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{completedTasks.length}</div>
+            <div className="text-2xl font-bold text-green-600">{totalCompletedExercises}</div>
             <div className="text-sm text-gray-500">已完成练习</div>
             <div className="text-xs text-gray-400 mt-1">完成率 {completionRate}%</div>
           </CardContent>
@@ -214,50 +299,41 @@ export default function GrowthPage() {
 
               {/* Progress by Level */}
               <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map(level => {
-                  const levelTasks = filteredTasks.filter(ut => ut.task.level === level);
-                  const levelCompleted = levelTasks.filter(ut => ut.completed).length;
-                  const levelTotal = levelTasks.length;
-                  const levelProgress = levelTotal > 0 ? (levelCompleted / levelTotal) * 100 : 0;
+                {filteredLevels.map(stage => {
+                  const levelProgress = stage.progress;
                   
                   return (
-                    <div key={level} className="space-y-2">
+                    <div key={stage.level} className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="font-medium">等级 {level}</span>
-                        <span className="text-sm text-gray-500">{levelCompleted}/{levelTotal}</span>
+                        <span className="font-medium">等级 {stage.level} - {stage.name}</span>
+                        <span className="text-sm text-gray-500">{stage.completedExercises}/{stage.totalExercises}</span>
                       </div>
                       <Progress value={levelProgress} className="h-3" />
                       
-                      {/* Individual tasks for this level */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                        {levelTasks.map(userTask => (
-                          <div
-                            key={userTask.id}
-                            className={`p-3 rounded-lg border ${
-                              userTask.completed 
-                                ? 'bg-green-50 border-green-200' 
-                                : 'bg-gray-50 border-gray-200'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                {userTask.completed ? (
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                ) : (
-                                  <Circle className="h-4 w-4 text-gray-400" />
-                                )}
-                                <span className="text-sm font-medium">{userTask.task.title}</span>
-                              </div>
-                              {userTask.completed && userTask.rating && (
-                                <div className="flex items-center">
-                                  <Star className="h-3 w-3 text-yellow-500 mr-1" />
-                                  <span className="text-xs">{userTask.rating}</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">{userTask.task.category}</div>
+                      {/* Level details */}
+                      <div className={`p-3 rounded-lg border ${
+                        stage.completed 
+                          ? 'bg-green-50 border-green-200' 
+                          : stage.unlocked
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            {stage.completed ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : stage.unlocked ? (
+                              <Circle className="h-4 w-4 text-blue-500" />
+                            ) : (
+                              <Lock className="h-4 w-4 text-gray-400" />
+                            )}
+                            <span className="text-sm font-medium">{stage.category}</span>
                           </div>
-                        ))}
+                          <Badge variant={stage.completed ? "default" : stage.unlocked ? "secondary" : "outline"}>
+                            {stage.completed ? "已完成" : stage.unlocked ? "进行中" : "未解锁"}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">{stage.description}</div>
                       </div>
                     </div>
                   );
