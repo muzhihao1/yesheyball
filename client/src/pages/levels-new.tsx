@@ -994,6 +994,110 @@ export default function Levels() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Exam Dialog */}
+      <Dialog open={showExamDialog} onOpenChange={setShowExamDialog}>
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[95vh] overflow-y-auto">
+          {examQuestions.length > 0 && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Trophy className="w-6 h-6 text-yellow-500" />
+                    <span>等级考核 - {selectedLevel?.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">
+                      题目 {currentExamQuestion + 1} / {examQuestions.length}
+                    </div>
+                    <div className="text-lg font-mono font-bold text-red-600">
+                      {formatExamTime(examTimeRemaining)}
+                    </div>
+                  </div>
+                </DialogTitle>
+                <DialogDescription>
+                  请按照要求完成每道题目，考核期间请保持专注
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* 当前考核题目 */}
+              <div className="space-y-6">
+                {/* 考核规则提示 */}
+                <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                  <h4 className="font-bold text-yellow-700 mb-2">考核规则</h4>
+                  <p className="text-gray-700 text-sm">
+                    {selectedLevel && `${selectedLevel.category}阶段需要完成${examConfigs[selectedLevel.category]?.questionCount}题，
+                    限时${examConfigs[selectedLevel.category]?.timeLimit}分钟。所有题目必须严格按照要求完成。`}
+                  </p>
+                </div>
+
+                {/* 当前题目内容 */}
+                {examQuestions[currentExamQuestion] && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* 题目说明 */}
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                        <h3 className="font-bold text-blue-700 mb-2">
+                          第{examQuestions[currentExamQuestion].exerciseNumber}题
+                        </h3>
+                        <p className="text-gray-700">{examQuestions[currentExamQuestion].description}</p>
+                      </div>
+                      
+                      <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
+                        <h3 className="font-bold text-orange-700 mb-2">完成要求</h3>
+                        <p className="text-gray-700">{examQuestions[currentExamQuestion].requirement}</p>
+                      </div>
+                    </div>
+
+                    {/* 题目图片 */}
+                    <div className="flex justify-center">
+                      <div className="rounded-lg shadow-lg bg-white p-4 max-w-full">
+                        <img 
+                          src={examQuestions[currentExamQuestion].imageUrl}
+                          alt={`考核题目${examQuestions[currentExamQuestion].exerciseNumber}`}
+                          className="max-w-full max-h-80 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.src = "/api/placeholder/400/300";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 考核控制按钮 */}
+                <div className="flex justify-between items-center pt-6 border-t">
+                  <Button 
+                    variant="outline"
+                    onClick={handleExamFinish}
+                    className="text-red-600 border-red-300 hover:bg-red-50"
+                  >
+                    结束考核
+                  </Button>
+                  
+                  <div className="space-x-3">
+                    {currentExamQuestion < examQuestions.length - 1 ? (
+                      <Button 
+                        onClick={handleExamNext}
+                        className="bg-blue-500 hover:bg-blue-600"
+                      >
+                        下一题
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleExamNext}
+                        className="bg-green-500 hover:bg-green-600"
+                      >
+                        完成考核
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
