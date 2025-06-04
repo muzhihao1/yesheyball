@@ -213,33 +213,33 @@ export class MemStorage implements IStorage {
     };
     this.trainingPrograms.set(beginnerProgram.id, beginnerProgram);
 
-    // Training days data for the 51-day program
+    // Training days data for the 30-episode program based on authentic content
     const trainingDaysData = [
-      { day: 1, title: "握杆", description: "握杆姿势稳定、力度适中、手掌与手指配合", objectives: ["掌握正确握杆姿势", "培养稳定握杆力度", "协调手掌与手指配合"], keyPoints: ["握杆不宜过紧", "手腕保持灵活", "握杆位置标准"], estimatedDuration: 30 },
-      { day: 2, title: "手架", description: "学习开放式与封闭式手架", objectives: ["掌握开放式手架", "学会封闭式手架", "选择合适手架类型"], keyPoints: ["手架稳定性", "高度适中", "支撑平衡"], estimatedDuration: 30 },
-      { day: 3, title: "站位与姿势", description: "强调身体重心、双脚角度与球杆角度协调", objectives: ["建立正确站位", "掌握身体重心", "协调整体姿势"], keyPoints: ["双脚间距", "身体平衡", "视线对准"], estimatedDuration: 35 },
-      { day: 4, title: "入位与击球节奏", description: "建立连续击球节奏与出杆一致性", objectives: ["培养击球节奏", "提升出杆一致性", "建立肌肉记忆"], keyPoints: ["节奏控制", "动作连贯", "力度统一"], estimatedDuration: 35 },
-      { day: 5, title: "空杆与节奏巩固", description: "运杆的连贯性与节奏感训练", objectives: ["强化运杆技术", "巩固击球节奏", "提升动作流畅性"], keyPoints: ["空杆练习", "节奏感培养", "动作标准化"], estimatedDuration: 30 },
+      { day: 1, title: "握杆", description: "参照教学内容，左手扶杆，右手做钟摆状运动，直到握力掌握", objectives: ["熟练掌握握力为止"], keyPoints: ["手握空拳，掌心贴合球杆", "不要刻意松指或握紧"], estimatedDuration: 30 },
+      { day: 2, title: "手架", description: "让每种手架稳定支撑为止", objectives: ["掌握稳定手架技巧"], keyPoints: ["大拇指与食指关节紧紧相贴", "手架'浮'于台面，要便于移动", "身体不能有重量压在手架上"], estimatedDuration: 30 },
+      { day: 3, title: "站位与姿势", description: "配合球杆去站位，'以人就杆'熟练分配重心比例为止", objectives: ["掌握正确站位与姿势"], keyPoints: ["重心在右脚占80%，左脚占15%，手架占5%", "移动手架时必须身体重心调整"], estimatedDuration: 35 },
+      { day: 4, title: "入位与节奏", description: "确定进球线路，一步入位", objectives: ["空杆与击球交替训练"], keyPoints: ["一步入位", "运杆平顺度"], estimatedDuration: 35 },
+      { day: 5, title: "空杆与击球", description: "感受'提水桶'时大臂的发力感觉，空杆训练20组", objectives: ["掌握正确发力方式"], keyPoints: ["平顺度", "注意大臂和手肘的配合练习", "站着时候就瞄准"], estimatedDuration: 30 },
       
-      { day: 6, title: "初级瞄准", description: "用球杆与目标球连线进行准心校正", objectives: ["掌握瞄准基础", "学会准心校正", "提升击球精度"], keyPoints: ["视线对准", "瞄准线判断", "目标球选择"], estimatedDuration: 40 },
-      { day: 7, title: "低杆训练", description: "掌握低杆出杆方式，控制母球停顿", objectives: ["学会低杆技术", "控制母球回拉", "掌握力度分配"], keyPoints: ["击球点位", "出杆角度", "力度控制"], estimatedDuration: 40 },
-      { day: 8, title: "穿透力训练", description: "通过增加手肘力量提升出杆穿透力", objectives: ["增强出杆力量", "提升穿透效果", "稳定发力方式"], keyPoints: ["手肘发力", "穿透性", "力量传递"], estimatedDuration: 35 },
-      { day: 9, title: "初级预力控制", description: "控制母球的停球距离与力度", objectives: ["掌握力度控制", "预判停球位置", "提升控球精度"], keyPoints: ["力度分级", "距离预判", "控制精度"], estimatedDuration: 40 },
-      { day: 10, title: "中级预力1", description: "试击法判断击球力量", objectives: ["学会试击法", "提升力量判断", "增强球感"], keyPoints: ["试击技巧", "力量评估", "球感培养"], estimatedDuration: 40 },
+      { day: 6, title: "初级瞄准", description: "空杆练习20次，击球练习20组", objectives: ["掌握瞄准基础技术"], keyPoints: ["中心点：看母球最上方与最下方的连线", "击球时力量无需很大", "出杆要逐渐加速，在击打母球后要送出去", "力量要穿过母球直达目标球上"], estimatedDuration: 40 },
+      { day: 7, title: "初级发力平顺度 低杆", description: "低杆练习，稍有角度", objectives: ["空杆训练20次", "击球训练，球摆出一点角度，20次"], keyPoints: ["每杆均匀抹巧粉", "低杆击打位置：母球最底下高约半颗皮头的位置", "回杆慢慢回，逐渐加速推出球杆"], estimatedDuration: 40 },
+      { day: 8, title: "利用手肘增加穿透力", description: "低杆练习小臂加手肘低杆应至少拉回一台", objectives: ["空杆慢速训练20次", "熟练后稍稍加快出杆末端的速度训练20次", "小力量击球训练20组，每组10颗"], keyPoints: ["手肘用于衔接小臂摆动力量", "当小臂逐渐快用完力时，小臂继续摆动的同时手肘向前推", "握杆手避免碰胸"], estimatedDuration: 35 },
+      { day: 9, title: "初级准备力量", description: "三段力量训练", objectives: ["小臂力量用完(中力)，连续5杆到中袋附近合格", "小臂加手腕连续5杆到中袋和底库中间合格", "小臂加手腕加手肘"], keyPoints: ["三段力量：小臂占总力量60%，手腕(翻腕)占20%，手肘占20%", "小臂中力可以回到中袋附近", "小臂中力加手腕翻动可以回到中袋靠后"], estimatedDuration: 40 },
+      { day: 10, title: "中级预力 通过试击锁定力量", description: "中级预力练习：母球停在洞口前方", objectives: ["球杆拉回最后方再完全推出来，母球停在洞口前方，却不能进袋，越近越好", "任意位置将母球推至洞口"], keyPoints: ["试击：更加精确的预力", "趴下后来回运杆进行尝试击打", "眼睛要始终盯着母球要停到的位置"], estimatedDuration: 40 },
       
-      { day: 11, title: "中级预力2", description: "低杆结合中力控制", objectives: ["低杆力度配合", "中等力度掌握", "综合技术运用"], keyPoints: ["杆法结合", "力度层次", "技术融合"], estimatedDuration: 45 },
-      { day: 12, title: "翻腕训练", description: "增强出杆时手腕的稳定性", objectives: ["强化手腕控制", "提升出杆稳定性", "减少手腕晃动"], keyPoints: ["手腕固定", "出杆直线", "稳定性"], estimatedDuration: 35 },
-      { day: 13, title: "满弓训练", description: "提升出杆完整性与发力一致性", objectives: ["完整出杆动作", "发力一致性", "动作连贯性"], keyPoints: ["满弓动作", "发力完整", "动作流畅"], estimatedDuration: 40 },
-      { day: 14, title: "分段发力1（中低杆）", description: "在长台中低杆下做分段出杆", objectives: ["学会分段发力", "掌握中低杆", "适应长台距离"], keyPoints: ["分段技巧", "中低杆位", "长台控制"], estimatedDuration: 45 },
-      { day: 15, title: "分段发力2（低杆）", description: "学习长距离低杆下的力量控制", objectives: ["长距离低杆", "力量精确控制", "回拉效果"], keyPoints: ["长台低杆", "力量分配", "回拉距离"], estimatedDuration: 45 },
+      { day: 11, title: "中级预力 低杆力量控制", description: "量值：0的力量中级预力练习：低杆力量控制", objectives: ["将小臂练出3个稳定的力量，5、10、15力量", "然后在小臂各力量等级下，一点点增加手腕的力量"], keyPoints: ["通过试击来控制母球低杆的距离", "试击时，先进行小臂的长试击，再进行手腕力量与方向的短试击", "低杆回中袋：小臂5力量＋手腕0力量"], estimatedDuration: 45 },
+      { day: 12, title: "翻腕训练", description: "翻腕训练：高杆吸库(小角度！)", objectives: ["空杆加速训练，感觉小臂拖出来手腕很重，然后加速翻动手腕", "高杆吸库，每组10颗球，练习10组"], keyPoints: ["要感受小臂拖出来时手腕很重的感觉", "由后面三指接触球杆到前面后掌心接触球杆", "要训练手腕翻动的平顺度", "高杆吸库：比中杆高出半颗皮头位置"], estimatedDuration: 35 },
+      { day: 13, title: "分段发力1", description: "大臂-小臂-手腕-手肘分段发力训练", objectives: ["掌握分段发力技术", "提升动作协调性"], keyPoints: ["分段发力顺序", "动作连贯", "力量传递"], estimatedDuration: 40 },
+      { day: 14, title: "分段发力2", description: "动作平顺度最重要的练习，1-2个月。根据掌握情况定", objectives: ["长台低杆加速训练"], keyPoints: ["进行动作的加速训练", "大臂先缓慢把小臂拖出来，然后小臂加速，手腕加速，由手肘向前推", "动作不需太大也可以低杆一库", "重点在力量衔接平顺度感觉"], estimatedDuration: 45 },
+      { day: 15, title: "分段发力 极限低杆", description: "极限低杆点位", objectives: ["小力极限低杆训练10组以上"], keyPoints: ["皮头唤醒器使用方法", "小力极限低杆点位，可以回1台", "拓展课没有其他要求，自行练习"], estimatedDuration: 45 },
       
-      { day: 16, title: "分段发力3（极限低杆点位）", description: "提升控制极限点的能力", objectives: ["极限低杆掌握", "精确点位控制", "技术极限突破"], keyPoints: ["极限点位", "精确控制", "技术难度"], estimatedDuration: 50 },
-      { day: 17, title: "直球5分点训练", description: "对目标球进行5个点位练习", objectives: ["5分点精度", "直球准确性", "稳定性提升"], keyPoints: ["5分点位", "直球技术", "准确度"], estimatedDuration: 45 },
-      { day: 18, title: "初级瞄准1（假想球）", description: "使用假想球辅助进球判断", objectives: ["假想球概念", "进球路线判断", "瞄准辅助技巧"], keyPoints: ["假想球法", "路线判断", "瞄准辅助"], estimatedDuration: 40 },
-      { day: 19, title: "初级瞄准2（向边球）", description: "击打靠近边库的目标球训练", objectives: ["边库球处理", "角度调整", "特殊位置瞄准"], keyPoints: ["边库技巧", "角度把握", "位置适应"], estimatedDuration: 40 },
-      { day: 20, title: "初级瞄准3（离边球）", description: "控制母球在靠近边库环境下进攻", objectives: ["边库环境适应", "母球控制", "进攻策略"], keyPoints: ["环境适应", "母球走位", "进攻技巧"], estimatedDuration: 45 },
+      { day: 16, title: "初级瞄准2 直球", description: "5分点直球瞄准训练", objectives: ["掌握5分点瞄准", "直球技术精进"], keyPoints: ["5分点精度", "直球稳定性", "瞄准准确性"], estimatedDuration: 40 },
+      { day: 17, title: "初级瞄准3 离边球", description: "离边球训练(直线球偏一颗半球)", objectives: ["左边(右边)偏1.5颗球各练习5组，每组10颗", "偏2颗到3颗球各练50颗", "再到底库练习两侧离边球各50颗"], keyPoints: ["离边球：击打目标球后，母球会向远离库边方向跑", "注意也要考虑'耦合效应'", "假想球瞄准时，要瞄准厚一些"], estimatedDuration: 45 },
+      { day: 18, title: "初级瞄准4 角度球", description: "不同角度下的瞄准练习", objectives: ["角度球瞄准技术", "适应不同角度"], keyPoints: ["角度判断", "瞄准调整", "进球路线"], estimatedDuration: 40 },
+      { day: 19, title: "初级瞄准 极限薄球", description: "极限薄球-估算假想球体积训练", objectives: ["训练母球中等距离极限薄球", "将母球拿远继续训练", "长台极限薄球训练"], keyPoints: ["只能用假想球瞄准的方式瞄准", "复制出来一个目标球并假象其在目标球后面", "根据母球远近体积的变化，找准复制出假想球的球心"], estimatedDuration: 40 },
+      { day: 20, title: "中级瞄准 锁定进球点与发力", description: "锁定注意力、动作方向、动作力量训练进球点优化", objectives: ["看着目标球进球线路，感知母球位置缺不看母球", "锁定后击球训练练习50颗", "在建立了前面两种锁定后，再练习打穿'透明'目标球练习"], keyPoints: ["注意力的锁定-进球线路", "动作的锁定-试击", "锁定注意力：看着进球线路，站在进球线的正后方趴下"], estimatedDuration: 45 },
       
-      { day: 21, title: "中袋球训练", description: "提高中袋进球成功率", objectives: ["中袋技术掌握", "成功率提升", "角度计算"], keyPoints: ["中袋角度", "进球技巧", "成功率"], estimatedDuration: 40 },
+      { day: 21, title: "分离角1(90度分离角训练)", description: "低杆小力走位实例", objectives: ["练习不同力量的定杆练习50颗", "练习中杆中力、中低杆中小力、低杆小力各50颗直球定杆"], keyPoints: ["定杆点位(中心偏下一点，克服台尼摩擦力)90°方向分离", "库边特性：入射角=反射角", "定杆：中线点偏下中力"], estimatedDuration: 40 },
       { day: 22, title: "极限薄球训练", description: "训练极限角度进球准确性", objectives: ["薄球技术", "极限角度", "精确控制"], keyPoints: ["薄球处理", "极限技巧", "精度要求"], estimatedDuration: 45 },
       { day: 23, title: "中级瞄准（锁定进球点）", description: "学习如何精准选点", objectives: ["精准选点", "进球点锁定", "瞄准升级"], keyPoints: ["选点技巧", "进球点", "瞄准精度"], estimatedDuration: 45 },
       { day: 24, title: "分离角1（90度）", description: "90度母球目标球分离角训练", objectives: ["90度分离角", "角度控制", "分离技术"], keyPoints: ["分离角度", "90度控制", "技术要点"], estimatedDuration: 45 },
