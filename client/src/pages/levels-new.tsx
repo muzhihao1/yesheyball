@@ -51,6 +51,7 @@ export default function Levels() {
   const [isPracticing, setIsPracticing] = useState(false);
   const [practiceTime, setPracticeTime] = useState(0);
   const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
+  const [exerciseOverride, setExerciseOverride] = useState<{[key: string]: boolean}>({});
 
   const { toast } = useToast();
 
@@ -74,6 +75,15 @@ export default function Levels() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Check if exercise is completed (considering overrides for re-practice)
+  const isExerciseCompleted = (exercise: Exercise) => {
+    const overrideKey = `${exercise.level}-${exercise.exerciseNumber}`;
+    if (exerciseOverride[overrideKey] !== undefined) {
+      return exerciseOverride[overrideKey];
+    }
+    return exercise.completed;
   };
 
 
@@ -314,9 +324,13 @@ export default function Levels() {
   const handleResetPractice = () => {
     setIsPracticing(false);
     setPracticeTime(0);
-    // 如果是已完成的练习，重置状态以允许重新练习
-    if (selectedExercise?.completed) {
-      selectedExercise.completed = false;
+    // 重置练习状态以允许重新练习
+    if (selectedExercise) {
+      const overrideKey = `${selectedExercise.level}-${selectedExercise.exerciseNumber}`;
+      setExerciseOverride(prev => ({
+        ...prev,
+        [overrideKey]: false
+      }));
     }
   };
 
@@ -342,7 +356,11 @@ export default function Levels() {
         duration: Math.ceil(practiceTime / 60),
       });
       
-      selectedExercise.completed = true;
+      const overrideKey = `${selectedExercise.level}-${selectedExercise.exerciseNumber}`;
+      setExerciseOverride(prev => ({
+        ...prev,
+        [overrideKey]: true
+      }));
       
       toast({
         title: "练习完成！",
@@ -538,7 +556,7 @@ export default function Levels() {
                               >
                                 {!isUnlocked ? (
                                   <Lock className="w-7 h-7" />
-                                ) : exercise.completed ? (
+                                ) : isExerciseCompleted(exercise) ? (
                                   <CheckCircle className="w-10 h-10 fill-white" />
                                 ) : (
                                   <div className={`w-4 h-4 rounded-full ${levelColors.border.replace('border-', 'bg-')}`}></div>
@@ -669,7 +687,7 @@ export default function Levels() {
                 
                 {/* 练习状态和操作 */}
                 <div className="border-t pt-6">
-                  {selectedExercise?.completed ? (
+                  {selectedExercise && isExerciseCompleted(selectedExercise) ? (
                     <div className="text-center space-y-4">
                       <div className="inline-flex items-center space-x-2 bg-green-100 text-green-700 px-6 py-3 rounded-full">
                         <CheckCircle className="w-5 h-5" />
@@ -759,7 +777,7 @@ export default function Levels() {
                 </div>
                 
                 {/* 练习记录 */}
-                {selectedExercise?.completed && (
+                {selectedExercise && isExerciseCompleted(selectedExercise) && (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h4 className="font-medium text-gray-800 mb-2">练习记录</h4>
                     <div className="text-sm text-gray-600 space-y-1">
