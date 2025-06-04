@@ -659,12 +659,12 @@ export default function Levels() {
                                     filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
                                   }}
                                 >
-                                  {/* Medal Design */}
+                                  {/* Trophy Design from Screenshot */}
                                   <div className="relative w-20 h-24 flex flex-col items-center">
-                                    <svg viewBox="0 0 100 100" className="w-20 h-20">
-                                      {/* Medal body */}
+                                    <svg viewBox="0 0 120 120" className="w-20 h-20">
+                                      {/* Trophy Cup Main Body */}
                                       <path 
-                                        d="M30 20 Q50 0 70 20 Q80 40 50 90 Q20 40 30 20" 
+                                        d="M35 25 Q35 15 45 15 L75 15 Q85 15 85 25 L85 55 Q85 70 70 75 L50 75 Q35 70 35 55 Z" 
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
@@ -682,27 +682,13 @@ export default function Levels() {
                                         }
                                       />
                                       
-                                      {/* Side leaves */}
+                                      {/* Trophy Highlights */}
+                                      <ellipse cx="50" cy="25" rx="8" ry="4" fill="rgba(255,255,255,0.3)" />
+                                      <ellipse cx="70" cy="35" rx="12" ry="6" fill="rgba(255,255,255,0.2)" />
+                                      
+                                      {/* Left Side Handle */}
                                       <path 
-                                        d="M20 30 Q15 40 20 50 Q25 45 20 30" 
-                                        fill={
-                                          !isUnlocked 
-                                            ? '#9CA3AF' 
-                                            : exercise.completed 
-                                              ? levelColors.node.includes('emerald') ? '#10B981'
-                                                : levelColors.node.includes('blue') ? '#3B82F6' 
-                                                : levelColors.node.includes('purple') ? '#8B5CF6'
-                                                : levelColors.node.includes('pink') ? '#EC4899'
-                                                : levelColors.node.includes('yellow') ? '#F59E0B'
-                                                : levelColors.node.includes('red') ? '#EF4444'
-                                                : levelColors.node.includes('indigo') ? '#6366F1'
-                                                : levelColors.node.includes('green') ? '#22C55E'
-                                                : '#f69acc'
-                                              : '#E5E7EB'
-                                        }
-                                      />
-                                      <path 
-                                        d="M80 30 Q85 40 80 50 Q75 45 80 30" 
+                                        d="M25 30 Q15 30 15 40 Q15 50 25 50 Q30 45 30 40 Q30 35 25 30" 
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
@@ -720,13 +706,71 @@ export default function Levels() {
                                         }
                                       />
                                       
-                                      {/* Medal content */}
+                                      {/* Right Side Handle */}
+                                      <path 
+                                        d="M95 30 Q105 30 105 40 Q105 50 95 50 Q90 45 90 40 Q90 35 95 30" 
+                                        fill={
+                                          !isUnlocked 
+                                            ? '#9CA3AF' 
+                                            : exercise.completed 
+                                              ? levelColors.node.includes('emerald') ? '#10B981'
+                                                : levelColors.node.includes('blue') ? '#3B82F6' 
+                                                : levelColors.node.includes('purple') ? '#8B5CF6'
+                                                : levelColors.node.includes('pink') ? '#EC4899'
+                                                : levelColors.node.includes('yellow') ? '#F59E0B'
+                                                : levelColors.node.includes('red') ? '#EF4444'
+                                                : levelColors.node.includes('indigo') ? '#6366F1'
+                                                : levelColors.node.includes('green') ? '#22C55E'
+                                                : '#f69acc'
+                                              : '#E5E7EB'
+                                        }
+                                      />
+                                      
+                                      {/* Trophy Stem */}
+                                      <rect x="55" y="75" width="10" height="15" 
+                                        fill={
+                                          !isUnlocked 
+                                            ? '#6B7280' 
+                                            : exercise.completed 
+                                              ? levelColors.node.includes('emerald') ? '#059669'
+                                                : levelColors.node.includes('blue') ? '#2563EB' 
+                                                : levelColors.node.includes('purple') ? '#7C3AED'
+                                                : levelColors.node.includes('pink') ? '#DB2777'
+                                                : levelColors.node.includes('yellow') ? '#D97706'
+                                                : levelColors.node.includes('red') ? '#DC2626'
+                                                : levelColors.node.includes('indigo') ? '#4F46E5'
+                                                : levelColors.node.includes('green') ? '#16A34A'
+                                                : '#DB2777'
+                                              : '#9CA3AF'
+                                        }
+                                      />
+                                      
+                                      {/* Trophy Base */}
+                                      <ellipse cx="60" cy="95" rx="20" ry="6" 
+                                        fill={
+                                          !isUnlocked 
+                                            ? '#6B7280' 
+                                            : exercise.completed 
+                                              ? levelColors.node.includes('emerald') ? '#059669'
+                                                : levelColors.node.includes('blue') ? '#2563EB' 
+                                                : levelColors.node.includes('purple') ? '#7C3AED'
+                                                : levelColors.node.includes('pink') ? '#DB2777'
+                                                : levelColors.node.includes('yellow') ? '#D97706'
+                                                : levelColors.node.includes('red') ? '#DC2626'
+                                                : levelColors.node.includes('indigo') ? '#4F46E5'
+                                                : levelColors.node.includes('green') ? '#16A34A'
+                                                : '#DB2777'
+                                              : '#9CA3AF'
+                                        }
+                                      />
+                                      
+                                      {/* Trophy Content */}
                                       {!isUnlocked ? (
-                                        <foreignObject x="35" y="35" width="30" height="30">
-                                          <Lock className="w-6 h-6 text-gray-500" />
+                                        <foreignObject x="50" y="35" width="20" height="20">
+                                          <Lock className="w-5 h-5 text-white" />
                                         </foreignObject>
                                       ) : (
-                                        <text x="50" y="60" textAnchor="middle" fontSize="22" fill="white" fontFamily="Arial, sans-serif" fontWeight="bold">
+                                        <text x="60" y="55" textAnchor="middle" fontSize="20" fill="white" fontFamily="Arial, sans-serif" fontWeight="bold">
                                           {groupNumber}
                                         </text>
                                       )}
