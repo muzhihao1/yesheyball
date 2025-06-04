@@ -395,21 +395,39 @@ export default function Levels() {
   };
 
   const handleNextExercise = () => {
-    if (!selectedExercise || !selectedLevel) return;
+    console.log("handleNextExercise called");
+    console.log("selectedExercise:", selectedExercise);
+    console.log("selectedLevel:", selectedLevel);
+    
+    if (!selectedExercise || !selectedLevel) {
+      console.log("Missing selectedExercise or selectedLevel");
+      return;
+    }
     
     // 获取当前等级的所有练习
     const exercises = generateExercisesForLevel(selectedLevel.level);
+    console.log("exercises:", exercises);
+    console.log("current exercise number:", selectedExercise.exerciseNumber);
+    
     const currentIndex = exercises.findIndex((ex: Exercise) => ex.exerciseNumber === selectedExercise.exerciseNumber);
+    console.log("currentIndex:", currentIndex);
+    console.log("exercises.length:", exercises.length);
     
     if (currentIndex < exercises.length - 1) {
       // 有下一题，打开下一题
       const nextExercise = exercises[currentIndex + 1];
+      console.log("nextExercise:", nextExercise);
       setSelectedExercise(nextExercise);
       // 重置练习状态
       setIsPracticing(false);
       setPracticeTime(0);
+      toast({
+        title: "切换到下一题",
+        description: `现在练习第${nextExercise.exerciseNumber}题`,
+      });
     } else {
       // 当前等级最后一题，关闭对话框
+      console.log("Last exercise in level");
       setShowExerciseDialog(false);
       toast({
         title: "等级完成！",
