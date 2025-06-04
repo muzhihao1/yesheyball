@@ -646,7 +646,7 @@ export default function Levels() {
                           {/* Exercise Circle */}
                           <div className="relative z-10">
                             {isMilestone ? (
-                              // Trophy milestone design for every 5th exercise
+                              // Medal milestone design for every 5th exercise
                               <div className="relative">
                                 <div 
                                   className={`cursor-pointer transition-all duration-300 ${
@@ -659,72 +659,78 @@ export default function Levels() {
                                     filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
                                   }}
                                 >
-                                  {/* Modern Trophy Design */}
-                                  <div className="relative w-24 h-28 flex flex-col items-center">
-                                    {/* Trophy Handles - Curved */}
-                                    <div className={`absolute top-4 -left-1.5 w-3 h-6 rounded-full ${
-                                      !isUnlocked 
-                                        ? 'bg-gray-300' 
-                                        : exercise.completed 
-                                          ? levelColors.node.replace('bg-', 'bg-gradient-to-b from-') + ' to-opacity-80'
-                                          : 'bg-gradient-to-b from-gray-200 to-gray-300'
-                                    } transform rotate-12`}></div>
-                                    <div className={`absolute top-4 -right-1.5 w-3 h-6 rounded-full ${
-                                      !isUnlocked 
-                                        ? 'bg-gray-300' 
-                                        : exercise.completed 
-                                          ? levelColors.node.replace('bg-', 'bg-gradient-to-b from-') + ' to-opacity-80'
-                                          : 'bg-gradient-to-b from-gray-200 to-gray-300'
-                                    } transform -rotate-12`}></div>
-                                    
-                                    {/* Trophy Cup - More elegant shape */}
-                                    <div className={`relative w-16 h-16 rounded-t-full flex items-center justify-center shadow-2xl ${
-                                      !isUnlocked 
-                                        ? 'bg-gray-300 text-gray-500' 
-                                        : exercise.completed 
-                                          ? `${levelColors.node} text-white border-2 border-white/30` 
-                                          : `bg-gradient-to-b from-white to-gray-50 ${levelColors.border} border-4 text-gray-700 shadow-xl`
-                                    }`}>
-                                      {/* Inner shine effect */}
-                                      <div className="absolute inset-2 rounded-t-full bg-gradient-to-br from-white/40 via-transparent to-transparent pointer-events-none"></div>
+                                  {/* Medal Design */}
+                                  <div className="relative w-20 h-24 flex flex-col items-center">
+                                    <svg viewBox="0 0 100 100" className="w-20 h-20">
+                                      {/* Medal body */}
+                                      <path 
+                                        d="M30 20 Q50 0 70 20 Q80 40 50 90 Q20 40 30 20" 
+                                        fill={
+                                          !isUnlocked 
+                                            ? '#9CA3AF' 
+                                            : exercise.completed 
+                                              ? levelColors.node.includes('emerald') ? '#10B981'
+                                                : levelColors.node.includes('blue') ? '#3B82F6' 
+                                                : levelColors.node.includes('purple') ? '#8B5CF6'
+                                                : levelColors.node.includes('pink') ? '#EC4899'
+                                                : levelColors.node.includes('yellow') ? '#F59E0B'
+                                                : levelColors.node.includes('red') ? '#EF4444'
+                                                : levelColors.node.includes('indigo') ? '#6366F1'
+                                                : levelColors.node.includes('green') ? '#22C55E'
+                                                : '#f69acc'
+                                              : '#E5E7EB'
+                                        }
+                                      />
                                       
+                                      {/* Side leaves */}
+                                      <path 
+                                        d="M20 30 Q15 40 20 50 Q25 45 20 30" 
+                                        fill={
+                                          !isUnlocked 
+                                            ? '#9CA3AF' 
+                                            : exercise.completed 
+                                              ? levelColors.node.includes('emerald') ? '#10B981'
+                                                : levelColors.node.includes('blue') ? '#3B82F6' 
+                                                : levelColors.node.includes('purple') ? '#8B5CF6'
+                                                : levelColors.node.includes('pink') ? '#EC4899'
+                                                : levelColors.node.includes('yellow') ? '#F59E0B'
+                                                : levelColors.node.includes('red') ? '#EF4444'
+                                                : levelColors.node.includes('indigo') ? '#6366F1'
+                                                : levelColors.node.includes('green') ? '#22C55E'
+                                                : '#f69acc'
+                                              : '#E5E7EB'
+                                        }
+                                      />
+                                      <path 
+                                        d="M80 30 Q85 40 80 50 Q75 45 80 30" 
+                                        fill={
+                                          !isUnlocked 
+                                            ? '#9CA3AF' 
+                                            : exercise.completed 
+                                              ? levelColors.node.includes('emerald') ? '#10B981'
+                                                : levelColors.node.includes('blue') ? '#3B82F6' 
+                                                : levelColors.node.includes('purple') ? '#8B5CF6'
+                                                : levelColors.node.includes('pink') ? '#EC4899'
+                                                : levelColors.node.includes('yellow') ? '#F59E0B'
+                                                : levelColors.node.includes('red') ? '#EF4444'
+                                                : levelColors.node.includes('indigo') ? '#6366F1'
+                                                : levelColors.node.includes('green') ? '#22C55E'
+                                                : '#f69acc'
+                                              : '#E5E7EB'
+                                        }
+                                      />
+                                      
+                                      {/* Medal content */}
                                       {!isUnlocked ? (
-                                        <Lock className="w-6 h-6 relative z-10" />
+                                        <foreignObject x="35" y="35" width="30" height="30">
+                                          <Lock className="w-6 h-6 text-gray-500" />
+                                        </foreignObject>
                                       ) : (
-                                        <div className="relative z-10">
-                                          <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                          </svg>
-                                        </div>
+                                        <text x="50" y="60" textAnchor="middle" fontSize="22" fill="white" fontFamily="Arial, sans-serif" fontWeight="bold">
+                                          {groupNumber}
+                                        </text>
                                       )}
-                                    </div>
-                                    
-                                    {/* Trophy Stem - More refined */}
-                                    <div className={`w-5 h-4 ${
-                                      !isUnlocked 
-                                        ? 'bg-gray-300' 
-                                        : exercise.completed 
-                                          ? levelColors.node.replace('bg-', 'bg-gradient-to-b from-') + ' to-opacity-70'
-                                          : 'bg-gradient-to-b from-gray-200 to-gray-400'
-                                    } shadow-inner`}></div>
-                                    
-                                    {/* Trophy Base - Tiered design */}
-                                    <div className={`w-12 h-2.5 rounded-lg ${
-                                      !isUnlocked 
-                                        ? 'bg-gray-400' 
-                                        : exercise.completed 
-                                          ? levelColors.node.replace('bg-', 'bg-gradient-to-b from-') + ' to-opacity-80 shadow-lg'
-                                          : 'bg-gradient-to-b from-gray-300 to-gray-500 shadow-lg'
-                                    }`}></div>
-                                    
-                                    {/* Trophy Platform */}
-                                    <div className={`w-14 h-1.5 rounded-full mt-0.5 ${
-                                      !isUnlocked 
-                                        ? 'bg-gray-500' 
-                                        : exercise.completed 
-                                          ? levelColors.node.replace('bg-', 'bg-gradient-to-b from-') + ' to-black/20'
-                                          : 'bg-gradient-to-b from-gray-400 to-gray-600'
-                                    } shadow-md`}></div>
+                                    </svg>
                                   </div>
                                 </div>
                               </div>
