@@ -230,7 +230,7 @@ export default function Tasks() {
         duration: currentDuration,
         summary: currentNotes,
         rating: userRating,
-        exerciseType: currentSession?.sessionType || "系统训练",
+        exerciseType: selectedSessionType === "custom" ? "自主训练" : (currentSession?.sessionType || "系统训练"),
         level: 9 // User's current level
       });
       const data = await response.json();
