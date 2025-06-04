@@ -465,7 +465,7 @@ export default function TrainingPage() {
                             <Star
                               key={i}
                               className={`h-3 w-3 ${
-                                i < session.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                i < (session.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                               }`}
                             />
                           ))}
