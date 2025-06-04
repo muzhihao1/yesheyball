@@ -232,7 +232,19 @@ export default function Tasks() {
   const difficultyBadge = getDifficultyBadge(currentDay);
 
   const completedSessions = sessions.filter(s => s.completed);
-  const todayProgress = completedSessions.length;
+  const todayCompletedSessions = completedSessions.filter(session => 
+    session.completedAt && new Date(session.completedAt).toDateString() === new Date().toDateString()
+  );
+  const todayProgress = todayCompletedSessions.length;
+  
+  // Calculate today's experience gained
+  const todayExpGained = todayCompletedSessions.reduce((total, session) => {
+    const baseExp = session.sessionType === "custom" ? 30 : 50;
+    const durationMinutes = session.duration ? Math.floor(session.duration / 60) : 10;
+    const durationMultiplier = durationMinutes < 10 ? 0.8 : durationMinutes <= 30 ? 1.0 : durationMinutes <= 60 ? 1.3 : 1.5;
+    const ratingMultiplier = session.rating ? [0.6, 0.8, 1.0, 1.2, 1.5][session.rating - 1] : 1.0;
+    return total + Math.round(baseExp * durationMultiplier * ratingMultiplier);
+  }, 0);
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -345,15 +357,15 @@ export default function Tasks() {
             <Progress value={(todayProgress / 3) * 100} className="h-3" />
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-yellow-500">0</div>
+                <div className="text-2xl font-bold text-yellow-500">{todayExpGained}</div>
                 <div className="text-sm text-gray-500">经验值</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-blue-500">0</div>
+                <div className="text-2xl font-bold text-blue-500">{todayProgress}</div>
                 <div className="text-sm text-gray-500">今日打卡</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-500">0</div>
+                <div className="text-2xl font-bold text-green-500">{todayProgress > 0 ? todayProgress * 10 : 0}</div>
                 <div className="text-sm text-gray-500">完成奖励</div>
               </div>
             </div>
