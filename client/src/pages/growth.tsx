@@ -230,38 +230,37 @@ export default function GrowthPage() {
         <p className="text-gray-600">追踪你的台球学习进展</p>
       </div>
 
-      {/* Stats Overview */}
+      {/* Progress Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{user?.level || 1}</div>
-            <div className="text-sm text-gray-500 mb-2">当前等级</div>
-            <Progress value={nextLevelProgress} className="h-2" />
-            <div className="text-xs text-gray-400 mt-1">{currentLevelExp}/1000 EXP</div>
+            <div className="text-2xl font-bold text-blue-600">{completedLevels.length}</div>
+            <div className="text-sm text-gray-500">已通关数</div>
+            <div className="text-xs text-gray-400 mt-1">共8个等级</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">{totalCompletedExercises}</div>
-            <div className="text-sm text-gray-500">已完成练习</div>
-            <div className="text-xs text-gray-400 mt-1">完成率 {completionRate}%</div>
+            <div className="text-sm text-gray-500">完成练习</div>
+            <div className="text-xs text-gray-400 mt-1">练习进度 {completionRate}%</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{user?.streak || 0}</div>
-            <div className="text-sm text-gray-500">连续天数</div>
-            <div className="text-xs text-gray-400 mt-1">保持训练习惯</div>
+            <div className="text-2xl font-bold text-orange-600">{completedTraining.length}</div>
+            <div className="text-sm text-gray-500">训练次数</div>
+            <div className="text-xs text-gray-400 mt-1">{avgRating > 0 ? `平均${avgRating.toFixed(1)}星` : '暂无评分'}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{Math.floor(totalTrainingTime / 60)}h</div>
-            <div className="text-sm text-gray-500">总训练时间</div>
-            <div className="text-xs text-gray-400 mt-1">{totalTrainingTime % 60}分钟</div>
+            <div className="text-2xl font-bold text-purple-600">{earnedAchievements.length}</div>
+            <div className="text-sm text-gray-500">获得成就</div>
+            <div className="text-xs text-gray-400 mt-1">共{achievements.length}个成就</div>
           </CardContent>
         </Card>
       </div>
