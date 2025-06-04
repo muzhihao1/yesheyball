@@ -31,6 +31,23 @@ interface LevelStage {
   completed: boolean;
   progress: number;
   completedExercises: number;
+  examPassed?: boolean; // 考核是否通过
+}
+
+interface ExamConfig {
+  category: "启明星" | "超新星" | "智子星";
+  questionCount: number;
+  timeLimit: number; // 分钟
+}
+
+interface ExamQuestion {
+  id: string;
+  level: number;
+  exerciseNumber: number;
+  title: string;
+  description: string;
+  requirement: string;
+  imageUrl: string;
 }
 
 interface Exercise {
@@ -52,8 +69,23 @@ export default function Levels() {
   const [practiceTime, setPracticeTime] = useState(0);
   const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
   const [exerciseOverride, setExerciseOverride] = useState<{[key: string]: boolean}>({});
+  
+  // 考核相关状态
+  const [showExamDialog, setShowExamDialog] = useState(false);
+  const [examQuestions, setExamQuestions] = useState<ExamQuestion[]>([]);
+  const [currentExamQuestion, setCurrentExamQuestion] = useState(0);
+  const [examStartTime, setExamStartTime] = useState<Date | null>(null);
+  const [examTimeRemaining, setExamTimeRemaining] = useState(0);
+  const [examInProgress, setExamInProgress] = useState(false);
 
   const { toast } = useToast();
+
+  // 考核配置
+  const examConfigs: Record<string, ExamConfig> = {
+    "启明星": { category: "启明星", questionCount: 6, timeLimit: 120 }, // 2小时
+    "超新星": { category: "超新星", questionCount: 8, timeLimit: 120 }, // 2小时
+    "智子星": { category: "智子星", questionCount: 10, timeLimit: 180 }, // 3小时
+  };
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ["/api/user"],
@@ -69,6 +101,28 @@ export default function Levels() {
     }
     return () => clearInterval(interval);
   }, [isPracticing]);
+
+  // 考核计时器
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (examInProgress && examTimeRemaining > 0) {
+      interval = setInterval(() => {
+        setExamTimeRemaining(prev => {
+          if (prev <= 1) {
+            setExamInProgress(false);
+            toast({
+              title: "考核时间到",
+              description: "考核时间已结束",
+              variant: "destructive",
+            });
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [examInProgress, examTimeRemaining, toast]);
 
   // Format time display
   const formatTime = (seconds: number) => {
@@ -427,6 +481,78 @@ export default function Levels() {
     return stage.level > 1 && stage.completedExercises >= stage.totalExercises;
   };
 
+  // 生成考核题目
+  const generateExamQuestions = (level: number): ExamQuestion[] => {
+    const exercises = generateExercisesForLevel(level);
+    const config = examConfigs[levelStages.find(s => s.level === level)?.category || "启明星"];
+    
+    // 随机选择题目
+    const shuffled = [...exercises].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, config.questionCount).map(exercise => ({
+      id: exercise.id,
+      level: exercise.level,
+      exerciseNumber: exercise.exerciseNumber,
+      title: exercise.title,
+      description: exercise.description,
+      requirement: getExerciseRequirement(exercise.level, exercise.exerciseNumber),
+      imageUrl: exercise.imageUrl,
+    }));
+  };
+
+  // 开始等级考核
+  const handleStartExam = (stage: LevelStage) => {
+    const questions = generateExamQuestions(stage.level);
+    const config = examConfigs[stage.category];
+    
+    setExamQuestions(questions);
+    setCurrentExamQuestion(0);
+    setExamStartTime(new Date());
+    setExamTimeRemaining(config.timeLimit * 60); // 转换为秒
+    setExamInProgress(true);
+    setSelectedLevel(stage);
+    setShowExamDialog(true);
+    
+    toast({
+      title: "等级考核开始",
+      description: `需要完成${config.questionCount}题，限时${config.timeLimit}分钟`,
+    });
+  };
+
+
+
+  // 格式化考核剩余时间
+  const formatExamTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // 考核下一题
+  const handleExamNext = () => {
+    if (currentExamQuestion < examQuestions.length - 1) {
+      setCurrentExamQuestion(prev => prev + 1);
+    } else {
+      // 考核完成
+      setExamInProgress(false);
+      setShowExamDialog(false);
+      toast({
+        title: "考核完成",
+        description: "恭喜完成等级考核！",
+      });
+    }
+  };
+
+  // 结束考核
+  const handleExamFinish = () => {
+    setExamInProgress(false);
+    setShowExamDialog(false);
+    toast({
+      title: "考核结束",
+      description: "考核已结束",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-50">
       {/* User Stats Header */}
@@ -472,6 +598,28 @@ export default function Levels() {
                     <div className="text-right">
                       <div className="text-sm opacity-90">进度</div>
                       <div className="font-bold text-lg">{stage.completedExercises}/{stage.totalExercises}</div>
+                      
+                      {/* 等级考核按钮 */}
+                      {canTakeExam(stage) && (
+                        <div className="mt-2">
+                          <Button
+                            onClick={() => handleStartExam(stage)}
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-1"
+                            size="sm"
+                          >
+                            等级考核
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* 1级完成提示 */}
+                      {stage.level === 1 && stage.completed && (
+                        <div className="mt-2">
+                          <Badge className="bg-green-500 text-white text-xs">
+                            已完成
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="mt-4 bg-white/20 rounded-full h-3 overflow-hidden">
