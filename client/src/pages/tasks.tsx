@@ -221,13 +221,16 @@ export default function Tasks() {
   };
 
   const generateCoachingFeedback = async () => {
-    if (!trainingNotes.trim()) return;
+    const currentNotes = selectedSessionType === "custom" ? customTrainingNotes : guidedTrainingNotes;
+    const currentDuration = selectedSessionType === "custom" ? customElapsedTime : guidedElapsedTime;
+    
+    if (!currentNotes.trim()) return;
     
     setLoadingFeedback(true);
     try {
       const response = await apiRequest("/api/coaching-feedback", "POST", {
-        duration: elapsedTime,
-        summary: trainingNotes,
+        duration: currentDuration,
+        summary: currentNotes,
         rating: userRating,
         exerciseType: currentSession?.sessionType || "系统训练",
         level: 9 // User's current level
@@ -392,10 +395,10 @@ export default function Tasks() {
             <div className="bg-white rounded-lg p-4 border">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-2xl font-mono text-blue-600">
-                  {formatTime(elapsedTime)}
+                  {formatTime(customElapsedTime)}
                 </div>
                 <div className="flex space-x-2">
-                  {!isTraining ? (
+                  {!isCustomTraining ? (
                     <Button 
                       onClick={handleStartCustomTraining} 
                       className="bg-blue-600 hover:bg-blue-700"
@@ -406,8 +409,8 @@ export default function Tasks() {
                   ) : (
                     <>
                       <Button onClick={handlePauseTraining} variant="outline">
-                        {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-                        {isPaused ? "继续" : "暂停"}
+                        {isCustomPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                        {isCustomPaused ? "继续" : "暂停"}
                       </Button>
                       <Button onClick={handleCompleteCustomTraining} className="bg-blue-600 hover:bg-blue-700">
                         <Square className="h-4 w-4 mr-2" />
@@ -418,14 +421,14 @@ export default function Tasks() {
                 </div>
               </div>
               
-              {isTraining && (
+              {isCustomTraining && (
                 <div className="space-y-3">
                   <Label htmlFor="custom-notes">训练笔记</Label>
                   <Textarea
                     id="custom-notes"
                     placeholder="记录自主训练内容、技巧练习或心得体会..."
-                    value={trainingNotes}
-                    onChange={(e) => setTrainingNotes(e.target.value)}
+                    value={customTrainingNotes}
+                    onChange={(e) => setCustomTrainingNotes(e.target.value)}
                     className="min-h-[100px]"
                   />
                 </div>
@@ -530,7 +533,7 @@ export default function Tasks() {
           <div className="space-y-4">
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600 mb-2">
-                {formatTime(elapsedTime)}
+                {formatTime(selectedSessionType === "custom" ? customElapsedTime : guidedElapsedTime)}
               </div>
               <p className="text-gray-600">本次训练时长</p>
             </div>
@@ -538,7 +541,7 @@ export default function Tasks() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="final-notes">训练总结</Label>
-                {trainingNotes.trim() && (
+                {(selectedSessionType === "custom" ? customTrainingNotes : guidedTrainingNotes).trim() && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -553,8 +556,14 @@ export default function Tasks() {
               <Textarea
                 id="final-notes"
                 placeholder="总结本次训练的收获和感受..."
-                value={trainingNotes}
-                onChange={(e) => setTrainingNotes(e.target.value)}
+                value={selectedSessionType === "custom" ? customTrainingNotes : guidedTrainingNotes}
+                onChange={(e) => {
+                  if (selectedSessionType === "custom") {
+                    setCustomTrainingNotes(e.target.value);
+                  } else {
+                    setGuidedTrainingNotes(e.target.value);
+                  }
+                }}
                 className="min-h-[100px]"
               />
               
