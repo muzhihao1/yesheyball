@@ -861,9 +861,7 @@ export default function Levels() {
                     </div>
                   </div>
                   
-                  <div className="text-center text-xs sm:text-sm text-gray-600 bg-gray-50 px-3 sm:px-4 py-2 rounded-lg mt-3 sm:mt-4 mx-auto w-fit">
-                    {selectedLevel?.name}阶段练习第{selectedExercise?.exerciseNumber}题
-                  </div>
+
                 </div>
                 
                 {/* 练习状态和操作 */}
