@@ -56,6 +56,49 @@ export const feedbacks = pgTable("feedbacks", {
   date: timestamp("date").notNull().defaultNow(),
 });
 
+export const trainingPrograms = pgTable("training_programs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  totalDays: integer("total_days").notNull(),
+  difficulty: text("difficulty").notNull(), // "新手", "进阶", "高级"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const trainingDays = pgTable("training_days", {
+  id: serial("id").primaryKey(),
+  programId: integer("program_id").notNull().references(() => trainingPrograms.id),
+  day: integer("day").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  objectives: text("objectives").array().notNull(),
+  keyPoints: text("key_points").array(),
+  estimatedDuration: integer("estimated_duration"), // in minutes
+});
+
+export const trainingSessions = pgTable("training_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  programId: integer("program_id").references(() => trainingPrograms.id),
+  dayId: integer("day_id").references(() => trainingDays.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  notes: text("notes"),
+  duration: integer("duration"), // actual duration in minutes
+  rating: integer("rating"), // 1-5 stars
+  completed: boolean("completed").notNull().default(false),
+  sessionType: text("session_type").notNull().default("guided"), // "guided" or "custom"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const trainingNotes = pgTable("training_notes", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => trainingSessions.id),
+  content: text("content").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -80,6 +123,25 @@ export const insertFeedbackSchema = createInsertSchema(feedbacks).omit({
   id: true,
 });
 
+export const insertTrainingProgramSchema = createInsertSchema(trainingPrograms).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTrainingDaySchema = createInsertSchema(trainingDays).omit({
+  id: true,
+});
+
+export const insertTrainingSessionSchema = createInsertSchema(trainingSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTrainingNoteSchema = createInsertSchema(trainingNotes).omit({
+  id: true,
+  timestamp: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Task = typeof tasks.$inferSelect;
@@ -90,3 +152,11 @@ export type DiaryEntry = typeof diaryEntries.$inferSelect;
 export type InsertDiaryEntry = z.infer<typeof insertDiaryEntrySchema>;
 export type Feedback = typeof feedbacks.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type TrainingProgram = typeof trainingPrograms.$inferSelect;
+export type InsertTrainingProgram = z.infer<typeof insertTrainingProgramSchema>;
+export type TrainingDay = typeof trainingDays.$inferSelect;
+export type InsertTrainingDay = z.infer<typeof insertTrainingDaySchema>;
+export type TrainingSession = typeof trainingSessions.$inferSelect;
+export type InsertTrainingSession = z.infer<typeof insertTrainingSessionSchema>;
+export type TrainingNote = typeof trainingNotes.$inferSelect;
+export type InsertTrainingNote = z.infer<typeof insertTrainingNoteSchema>;
