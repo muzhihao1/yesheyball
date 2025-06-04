@@ -578,26 +578,7 @@ export default function Levels() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-50">
-      {/* User Stats Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-16 z-30">
-        <div className="max-w-lg mx-auto px-4 py-4">
-          <div className="flex items-center justify-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
-              {user.username.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex space-x-3">
-              <div className="flex items-center space-x-2 bg-white rounded-full px-4 py-2 shadow-md border border-gray-100">
-                <Star className="w-4 h-4 text-orange-400" />
-                <span className="font-bold text-gray-700">{user.exp}</span>
-              </div>
-              <div className="flex items-center space-x-2 bg-white rounded-full px-4 py-2 shadow-md border border-gray-100">
-                <Trophy className="w-4 h-4 text-yellow-500" />
-                <span className="font-bold text-gray-700">等级 {user.level}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       {/* Duolingo-style Level Map */}
       <div className="max-w-lg mx-auto px-4 pb-12 pt-6">
