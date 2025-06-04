@@ -61,6 +61,7 @@ export const trainingPrograms = pgTable("training_programs", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   totalDays: integer("total_days").notNull(),
+  currentDay: integer("current_day").notNull().default(1),
   difficulty: text("difficulty").notNull(), // "新手", "进阶", "高级"
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

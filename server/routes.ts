@@ -346,7 +346,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const beginnerProgram = programs.find(p => p.name === "新手指导计划");
       
       if (beginnerProgram) {
-        const nextDay = Math.min((beginnerProgram.currentDay || 1) + 1, 51);
+        const currentDay = beginnerProgram.currentDay || 51;
+        const nextDay = Math.min(currentDay + 1, 100); // Allow progression beyond 51
         await storage.updateTrainingProgram(beginnerProgram.id, { currentDay: nextDay });
         
         // Create new session for next episode

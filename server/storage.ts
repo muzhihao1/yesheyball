@@ -30,6 +30,7 @@ export interface IStorage {
   // Training program operations
   getAllTrainingPrograms(): Promise<TrainingProgram[]>;
   getTrainingProgram(id: number): Promise<TrainingProgram | undefined>;
+  updateTrainingProgram(id: number, updates: Partial<TrainingProgram>): Promise<TrainingProgram>;
   getTrainingDays(programId: number): Promise<TrainingDay[]>;
   getTrainingDay(programId: number, day: number): Promise<TrainingDay | undefined>;
   
@@ -189,6 +190,7 @@ export class MemStorage implements IStorage {
       name: "新手指导计划",
       description: "为期51天的系统化台球基础训练计划，从握杆、站位到实战清台的全面指导",
       totalDays: 51,
+      currentDay: 51,
       difficulty: "新手",
       createdAt: new Date()
     };
@@ -479,6 +481,17 @@ export class MemStorage implements IStorage {
 
   async getTrainingProgram(id: number): Promise<TrainingProgram | undefined> {
     return this.trainingPrograms.get(id);
+  }
+
+  async updateTrainingProgram(id: number, updates: Partial<TrainingProgram>): Promise<TrainingProgram> {
+    const program = this.trainingPrograms.get(id);
+    if (!program) {
+      throw new Error("Training program not found");
+    }
+    
+    const updatedProgram = { ...program, ...updates };
+    this.trainingPrograms.set(id, updatedProgram);
+    return updatedProgram;
   }
 
   async getTrainingDays(programId: number): Promise<TrainingDay[]> {
