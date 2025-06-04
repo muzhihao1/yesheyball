@@ -59,6 +59,47 @@ export async function generateCoachingFeedback(trainingSession: TrainingSession)
   }
 }
 
+export async function generateDiaryInsights(content: string, userLevel: number, completedTasks: number): Promise<string> {
+  const prompt = `你是一位专业的中式八球台球教练，请分析学员的训练日记并给出专业洞察：
+
+训练日记内容：${content}
+
+学员背景：
+- 当前等级：${userLevel}级
+- 已完成练习：${completedTasks}次
+
+请提供：
+1. 对训练内容的专业分析
+2. 技术改进建议
+3. 下次训练重点
+4. 鼓励性总结
+
+回复要专业、具体、激励性，控制在100-150字内。`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "你是一位专业的台球教练，擅长分析训练日记并提供有针对性的指导建议。"
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 200,
+      temperature: 0.7,
+    });
+
+    return response.choices[0].message.content || "训练记录很详细，继续保持这种认真的态度，技术会稳步提升！";
+  } catch (error) {
+    console.error("OpenAI API error:", error);
+    return "训练记录很详细，继续保持这种认真的态度，技术会稳步提升！";
+  }
+}
+
 export async function generateMotivationalMessage(userLevel: number, streak: number, totalSessions: number): Promise<string> {
   const prompt = `你是一位专业的台球教练，请根据学员的训练情况给出一句激励的话：
 

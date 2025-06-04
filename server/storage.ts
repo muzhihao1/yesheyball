@@ -240,41 +240,16 @@ export class MemStorage implements IStorage {
       { day: 20, title: "中级瞄准 锁定进球点与发力", description: "锁定注意力、动作方向、动作力量训练进球点优化", objectives: ["看着目标球进球线路，感知母球位置缺不看母球", "锁定后击球训练练习50颗", "在建立了前面两种锁定后，再练习打穿'透明'目标球练习"], keyPoints: ["注意力的锁定-进球线路", "动作的锁定-试击", "锁定注意力：看着进球线路，站在进球线的正后方趴下"], estimatedDuration: 45 },
       
       { day: 21, title: "分离角1(90度分离角训练)", description: "低杆小力走位实例", objectives: ["练习不同力量的定杆练习50颗", "练习中杆中力、中低杆中小力、低杆小力各50颗直球定杆"], keyPoints: ["定杆点位(中心偏下一点，克服台尼摩擦力)90°方向分离", "库边特性：入射角=反射角", "定杆：中线点偏下中力"], estimatedDuration: 40 },
-      { day: 22, title: "极限薄球训练", description: "训练极限角度进球准确性", objectives: ["薄球技术", "极限角度", "精确控制"], keyPoints: ["薄球处理", "极限技巧", "精度要求"], estimatedDuration: 45 },
-      { day: 23, title: "中级瞄准（锁定进球点）", description: "学习如何精准选点", objectives: ["精准选点", "进球点锁定", "瞄准升级"], keyPoints: ["选点技巧", "进球点", "瞄准精度"], estimatedDuration: 45 },
-      { day: 24, title: "分离角1（90度）", description: "90度母球目标球分离角训练", objectives: ["90度分离角", "角度控制", "分离技术"], keyPoints: ["分离角度", "90度控制", "技术要点"], estimatedDuration: 45 },
-      { day: 25, title: "分离角2（三力组合）", description: "分离角+停球+旋转协调训练", objectives: ["三力组合", "技术协调", "综合运用"], keyPoints: ["力量组合", "技术协调", "综合控制"], estimatedDuration: 50 },
+      { day: 22, title: "分离角2(三种力量配合不同击球点位训练)", description: "定杆点位90°K球前移2-3颗球位K球后移2-3颗球位", objectives: ["中杆中力，沿切线90°K球50颗", "将K球向前拿2-3颗球位置，击打母球中心点向上半颗皮头", "将K球向后拿2-3颗球位置，击打母球中心点偏下半颗皮头"], keyPoints: ["中力击打母球中心点偏下一点点，母球会沿着目标球切线的90°方向走", "中力击打母球上半部分，母球会沿着目标球切线的前方走", "中力击打母球下半部分，母球会沿着目标球切线的后方走"], estimatedDuration: 45 },
+      { day: 23, title: "分离角3 登杆", description: "直线高登杆(低登杆)练习，母球中心偏上(偏下)一点点位置大力打进目标球后", objectives: ["直线高登杆练习50颗", "直线低登杆练习50颗", "左移半颗球位置K球高登杆练习50颗"], keyPoints: ["登杆：击打母球中心偏上或者偏下一点点的位置", "使用中力击打，可以向前或者向后移动2-3个球的位置", "避免力量过小目标球跑偏"], estimatedDuration: 45 },
+      { day: 24, title: "走位训练1不吃库走位", description: "低杆(高杆)不吃库走位训练", objectives: ["中袋3颗低杆不吃库走位练习，连续成功10次", "中袋3颗推杆不吃库走位练习，连续成功10次"], keyPoints: ["走位的目的：就是要打完第一颗球后，将母球走向更方便击打第二颗球的位置", "分力越大，高低杆法效果越差，不便于走位", "最便于走位的角度是母球与目标球15°"], estimatedDuration: 45 },
+      { day: 25, title: "走位训练2一库走位及拓展", description: "底库附近3颗吃一库走位练习", objectives: ["底库附近3颗吃一库走位练习，连续成功10组", "拓展训练，置球点循环叫位，利用低杆、高杆、定杆循环练习"], keyPoints: ["母球下一颗球要停在哪里", "进球后90°切线线路在哪里，弹库后线路是否是需要的线路", "考虑击打母球使用多少力量，可以完成吃一库后到该停的位置停下"], estimatedDuration: 50 },
       
-      { day: 26, title: "分离角3 登杆", description: "学习击打登杆球的母球路线控制", objectives: ["登杆技术", "路线控制", "高级技巧"], keyPoints: ["登杆要领", "路线规划", "控制技术"], estimatedDuration: 50 },
-      { day: 27, title: "走位训练1 不吃库", description: "母球不靠库完成走位任务", objectives: ["基础走位", "不吃库技术", "位置控制"], keyPoints: ["走位基础", "库边避免", "位置精确"], estimatedDuration: 45 },
-      { day: 28, title: "走位训练2 一库拓展", description: "使用一库进行母球走位延伸", objectives: ["一库走位", "技术拓展", "路线延伸"], keyPoints: ["一库技巧", "走位拓展", "路线规划"], estimatedDuration: 50 },
-      { day: 29, title: "加塞瞄准1（身体与球杆夹角）", description: "建立出杆角度感知", objectives: ["加塞基础", "角度感知", "身体协调"], keyPoints: ["加塞要领", "角度感知", "身体配合"], estimatedDuration: 45 },
-      { day: 30, title: "加塞瞄准2（5分点训练）", description: "加塞下的目标球角度调整", objectives: ["加塞瞄准", "角度调整", "5分点应用"], keyPoints: ["加塞瞄准", "角度补偿", "点位应用"], estimatedDuration: 50 },
-      
-      { day: 31, title: "角度球加塞瞄准", description: "不同角度下的加塞命中训练", objectives: ["角度球加塞", "命中率提升", "综合应用"], keyPoints: ["角度配合", "加塞应用", "命中技巧"], estimatedDuration: 50 },
-      { day: 32, title: "加塞走位（顺塞）", description: "顺旋转方向下的母球控制", objectives: ["顺塞技术", "母球控制", "旋转应用"], keyPoints: ["顺塞要领", "旋转控制", "走位效果"], estimatedDuration: 50 },
-      { day: 33, title: "加塞走位（反塞）", description: "反旋转方向下的母球控制", objectives: ["反塞技术", "反向控制", "高级走位"], keyPoints: ["反塞技巧", "反向旋转", "控制难度"], estimatedDuration: 55 },
-      { day: 34, title: "清台思路", description: "如何规划整局球的击打顺序", objectives: ["清台规划", "顺序安排", "战术思维"], keyPoints: ["整体规划", "顺序选择", "战术布局"], estimatedDuration: 45 },
-      { day: 35, title: "实战清台1", description: "模拟实战完成一局", objectives: ["实战演练", "完整一局", "技术综合"], keyPoints: ["实战应用", "完整流程", "技术整合"], estimatedDuration: 60 },
-      
-      { day: 36, title: "实战清台2", description: "模拟实战完成第二局", objectives: ["实战强化", "技术巩固", "经验积累"], keyPoints: ["技术巩固", "实战经验", "水平提升"], estimatedDuration: 60 },
-      { day: 37, title: "实战清台3", description: "实战复盘分析错误点", objectives: ["复盘分析", "错误总结", "改进方向"], keyPoints: ["错误分析", "技术改进", "水平诊断"], estimatedDuration: 55 },
-      { day: 38, title: "实战清台4", description: "多球走位配合练习", objectives: ["多球配合", "走位连贯", "整体协调"], keyPoints: ["连续走位", "配合技巧", "整体控制"], estimatedDuration: 60 },
-      { day: 39, title: "实战清台5", description: "限时完成清台任务", objectives: ["时间压力", "效率提升", "心理素质"], keyPoints: ["时间控制", "效率优化", "压力适应"], estimatedDuration: 55 },
-      { day: 40, title: "实战清台6", description: "加塞结合实战清台", objectives: ["高级技术", "实战结合", "技术升级"], keyPoints: ["加塞实战", "技术结合", "水平突破"], estimatedDuration: 65 },
-      
-      { day: 41, title: "课外训练（弧线球）", description: "学习弧线球的原理与练习", objectives: ["弧线球理论", "实际练习", "特殊技巧"], keyPoints: ["弧线原理", "实践操作", "技巧掌握"], estimatedDuration: 50 },
-      { day: 42, title: "白球分离角原理解读", description: "理论分析母球运行角度", objectives: ["理论学习", "角度分析", "科学理解"], keyPoints: ["理论基础", "角度原理", "科学分析"], estimatedDuration: 45 },
-      { day: 43, title: "清台思路讲解", description: "多路径思路拆解与选择练习", objectives: ["思路拆解", "路径选择", "决策能力"], keyPoints: ["思路分析", "路径规划", "决策训练"], estimatedDuration: 50 },
-      { day: 44, title: "激活肌肉状态1", description: "击球前肩膀、手肘激活", objectives: ["肌肉激活", "身体准备", "状态调整"], keyPoints: ["肩膀激活", "手肘准备", "肌肉状态"], estimatedDuration: 30 },
-      { day: 45, title: "激活肌肉状态2", description: "下肢、腰部协调热身", objectives: ["下肢激活", "腰部协调", "整体热身"], keyPoints: ["下肢准备", "腰部协调", "身体热身"], estimatedDuration: 30 },
-      
-      { day: 46, title: "激活肌肉状态3", description: "握杆相关肌肉动态激活", objectives: ["握杆肌肉", "动态激活", "精细控制"], keyPoints: ["握杆准备", "肌肉激活", "精细动作"], estimatedDuration: 30 },
-      { day: 47, title: "激活肌肉状态4", description: "肩部灵活度训练", objectives: ["肩部灵活", "活动范围", "柔韧提升"], keyPoints: ["肩部训练", "灵活度", "活动能力"], estimatedDuration: 35 },
-      { day: 48, title: "激活肌肉状态5", description: "腕力增强训练", objectives: ["腕力强化", "稳定性提升", "控制能力"], keyPoints: ["腕力训练", "稳定控制", "力量增强"], estimatedDuration: 35 },
-      { day: 49, title: "激活肌肉状态6", description: "全身协调感应练习", objectives: ["全身协调", "感应训练", "整体配合"], keyPoints: ["整体协调", "感应能力", "配合训练"], estimatedDuration: 40 },
-      { day: 50, title: "掌握出杆节奏1", description: "借助节奏提升精准度（慢-快-慢）", objectives: ["节奏掌握", "精准度提升", "节奏控制"], keyPoints: ["节奏变化", "精准提升", "控制技巧"], estimatedDuration: 45 },
-      { day: 51, title: "掌握出杆节奏2", description: "强化击球节奏与心理专注度", objectives: ["节奏强化", "心理专注", "综合提升"], keyPoints: ["节奏巩固", "专注训练", "综合素质"], estimatedDuration: 50 }
+      { day: 26, title: "加塞瞄准1(身体与球杆夹角)", description: "加塞瞄准需要调整的2个因素：身体与球杆夹角、目标球角度", objectives: ["掌握加塞技术基础", "理解身体与球杆夹角调整", "练习基础加塞瞄准"], keyPoints: ["加塞瞄准原理：击打母球偏左或偏右位置", "身体角度调整：加塞时需要调整身体与球杆的角度", "瞄准补偿：加塞会改变进球角度，需要进行瞄准补偿"], estimatedDuration: 50 },
+      { day: 27, title: "加塞瞄准2(目标球角度调整)", description: "5分点目标球角度调整训练", objectives: ["掌握加塞目标球角度调整", "练习5分点加塞瞄准", "熟练加塞进球技术"], keyPoints: ["5分点理论：将目标球分为5个瞄准点", "加塞角度补偿：左加塞瞄准偏右，右加塞瞄准偏左", "目标球厚薄调整：根据加塞方向调整击球厚薄"], estimatedDuration: 45 },
+      { day: 28, title: "角度球加塞瞄准", description: "不同角度下的加塞命中训练", objectives: ["角度球加塞技术", "复杂角度瞄准", "加塞命中率提升"], keyPoints: ["角度球加塞原理", "复杂角度瞄准技巧", "加塞与角度的配合"], estimatedDuration: 50 },
+      { day: 29, title: "加塞走位(顺塞)", description: "顺旋转方向下的母球控制", objectives: ["顺塞走位技术", "母球旋转控制", "走位路线规划"], keyPoints: ["顺塞原理：与母球旋转方向一致", "顺塞走位效果", "旋转与走位的配合"], estimatedDuration: 45 },
+      { day: 30, title: "加塞走位(反塞)", description: "反旋转方向下的母球控制", objectives: ["反塞走位技术", "反向旋转控制", "高级走位技巧"], keyPoints: ["反塞原理：与母球旋转方向相反", "反塞走位难度", "高级旋转控制技术"], estimatedDuration: 50 }
     ];
 
     // Create training days
