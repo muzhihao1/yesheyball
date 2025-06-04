@@ -319,6 +319,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get training records (completed sessions) for a user
+  app.get("/api/training-records", async (req, res) => {
+    try {
+      const sessions = await storage.getUserTrainingSessions(1);
+      const completedSessions = sessions.filter(s => s.completed).map(s => ({
+        id: s.id,
+        userId: s.userId,
+        title: s.title,
+        content: s.notes || "训练已完成",
+        duration: s.duration,
+        rating: s.rating,
+        completedAt: s.completedAt,
+        sessionType: s.sessionType
+      }));
+      res.json(completedSessions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get training records" });
+    }
+  });
+
   app.post("/api/training-sessions/:sessionId/notes", async (req, res) => {
     try {
       const validatedData = insertTrainingNoteSchema.parse({
