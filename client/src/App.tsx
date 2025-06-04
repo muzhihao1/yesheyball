@@ -34,7 +34,7 @@ function App() {
           {/* Tab Navigation */}
           <nav className="bg-white border-b border-gray-200 sticky top-16 z-40">
             <div className="max-w-7xl mx-auto px-4">
-              <div className="flex justify-center space-x-4 sm:space-x-8 overflow-x-auto">
+              <div className="flex justify-between items-center">
                 <TabButton href="/tasks" icon="📝" label="每日训练" />
                 <TabButton href="/diary" icon="📖" label="练习日记" />
                 <TabButton href="/" icon="🗺️" label="关卡地图" />
