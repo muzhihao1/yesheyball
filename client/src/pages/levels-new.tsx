@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Star, Trophy, Target, Zap, Crown, Lock } from "lucide-react";
+import { Trophy, Target, Zap, Crown, Lock, Play, Pause, RotateCcw, CheckCircle, Star } from "lucide-react";
 import exerciseRequirementsData from "@/data/exerciseRequirements.json";
 import exerciseDescriptionsData from "@/data/exerciseDescriptions.json";
 
@@ -42,19 +42,39 @@ interface Exercise {
   requirement: string;
   imageUrl: string;
   completed: boolean;
-  stars: number;
 }
 
 export default function Levels() {
   const [selectedLevel, setSelectedLevel] = useState<LevelStage | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
+  const [isPracticing, setIsPracticing] = useState(false);
+  const [practiceTime, setPracticeTime] = useState(0);
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
 
   const { toast } = useToast();
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ["/api/user"],
   });
+
+  // Timer effect for practice session
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPracticing) {
+      interval = setInterval(() => {
+        setPracticeTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPracticing]);
+
+  // Format time display
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
 
 
@@ -258,8 +278,7 @@ export default function Levels() {
         description: getExerciseDescription(level, exerciseNum),
         requirement: getExerciseRequirement(level, exerciseNum),
         imageUrl: `/assessments/${level}、${levelName}/${level}、${levelName}_${imageFileNumber}.jpg`,
-        completed: i < stage.completedExercises,
-        stars: i < stage.completedExercises ? Math.floor(Math.random() * 3) + 1 : 0
+        completed: i < stage.completedExercises
       });
     }
     
@@ -283,32 +302,52 @@ export default function Levels() {
     setShowExerciseDialog(true);
   };
 
-  const handleCompleteExercise = async (exercise: Exercise) => {
+  const handleStartPractice = () => {
+    setIsPracticing(true);
+    setPracticeTime(0);
+  };
+
+  const handlePausePractice = () => {
+    setIsPracticing(false);
+  };
+
+  const handleResetPractice = () => {
+    setIsPracticing(false);
+    setPracticeTime(0);
+  };
+
+  const handleFinishPractice = () => {
+    if (isPracticing) {
+      setIsPracticing(false);
+    }
+    setShowCompletionConfirm(true);
+  };
+
+  const handleConfirmCompletion = async () => {
+    if (!selectedExercise) return;
+    
     try {
-      const stars = Math.floor(Math.random() * 3) + 1;
-      const practiceTime = Math.floor(Math.random() * 30) + 15;
+      const minutes = Math.floor(practiceTime / 60);
+      const seconds = practiceTime % 60;
       
-      const diaryContent = `完成了${exercise.title}练习，获得${stars}星评价。${
-        stars === 3 ? '表现优秀！掌握了关键技术要点。' : 
-        stars === 2 ? '进步明显，继续努力完善技巧！' : 
-        '基础掌握，需要更多练习来提高稳定性。'
-      }`;
+      const diaryContent = `完成了${selectedExercise.title}练习，用时${minutes}分${seconds}秒。通过反复练习，技术水平得到了提升。`;
       
       await apiRequest("/api/diary", "POST", {
         content: diaryContent,
-        rating: stars,
-        duration: practiceTime,
+        rating: 3,
+        duration: Math.ceil(practiceTime / 60),
       });
       
-      if (selectedExercise) {
-        selectedExercise.completed = true;
-        selectedExercise.stars = stars;
-      }
+      selectedExercise.completed = true;
       
       toast({
         title: "练习完成！",
-        description: `恭喜完成 ${exercise.title}，获得 ${stars} 星评价！练习记录已保存到日记。`,
+        description: `恭喜完成 ${selectedExercise.title}！练习记录已保存到日记。`,
       });
+      
+      setShowCompletionConfirm(false);
+      setShowExerciseDialog(false);
+      setPracticeTime(0);
       
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/diary"] });
