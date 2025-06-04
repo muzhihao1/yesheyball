@@ -405,7 +405,7 @@ export default function Tasks() {
                       className="bg-blue-600 hover:bg-blue-700"
                     >
                       <Play className="h-4 w-4 mr-2" />
-                      开始自主训练
+                      自主训练
                     </Button>
                   ) : (
                     <>
