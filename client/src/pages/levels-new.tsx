@@ -798,13 +798,12 @@ export default function Levels() {
               <DialogHeader className="space-y-3 pb-4">
                 <DialogTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                      isExerciseCompleted(selectedExercise) ? 'bg-green-500' : 'bg-blue-500'
+                    }`}>
                       {selectedExercise.exerciseNumber}
                     </div>
                     <span className="text-lg sm:text-xl truncate">{selectedExercise.title}</span>
-                    {selectedExercise.completed && (
-                      <Badge className="bg-green-500 text-white text-xs">已完成</Badge>
-                    )}
                   </div>
                   <div className="text-xs sm:text-sm text-gray-500">
                     等级 {selectedExercise.level} - {selectedLevel?.name}
