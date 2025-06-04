@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateCoachingFeedback } from "./openai";
+import { generateCoachingFeedback, generateDiaryInsights } from "./openai";
 import { upload } from "./upload";
 import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema } from "@shared/schema";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
