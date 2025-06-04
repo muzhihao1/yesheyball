@@ -991,9 +991,10 @@ export default function Levels() {
                   </div>
                 </div>
               </div>
-                
-
-              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
             </>
           )}
         </DialogContent>
