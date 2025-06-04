@@ -406,62 +406,57 @@ export default function Tasks() {
 
       {/* Custom Training Section */}
       <Card className="border-2 border-blue-200 bg-blue-50">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Plus className="h-5 w-5 mr-2 text-blue-600" />
-            自主训练
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              根据个人需要自由安排训练内容，灵活掌握练习节奏。
-            </p>
+        <CardContent className="p-6">
+          <div className="text-center space-y-6">
+            {/* Timer Display */}
+            <div className="text-3xl font-mono text-blue-600">
+              {formatTime(customElapsedTime)}
+            </div>
             
-            {/* Custom Training Timer and Controls */}
-            <div className="bg-white rounded-lg p-3 sm:p-4 border">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
-                <div className="text-xl sm:text-2xl font-mono text-blue-600 text-center sm:text-left">
-                  {formatTime(customElapsedTime)}
-                </div>
-                <div className="flex space-x-2">
-                  {!isCustomTraining ? (
-                    <Button 
-                      onClick={handleStartCustomTraining} 
-                      className="bg-blue-600 hover:bg-blue-700 touch-target h-12 sm:h-auto"
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      自主训练
-                    </Button>
-                  ) : (
-                    <>
-                      <Button onClick={handlePauseTraining} variant="outline" className="touch-target h-12 sm:h-auto">
-                        {isCustomPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-                        {isCustomPaused ? "继续" : "暂停"}
-                      </Button>
-                      <Button onClick={handleCompleteCustomTraining} className="bg-blue-600 hover:bg-blue-700 touch-target h-12 sm:h-auto">
-                        <Square className="h-4 w-4 mr-2" />
-                        完成训练
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              {isCustomTraining && (
-                <div className="space-y-3">
-                  <Label htmlFor="custom-notes">训练笔记</Label>
-                  <Textarea
-                    id="custom-notes"
-                    placeholder="记录自主训练内容、技巧练习或心得体会..."
-                    value={customTrainingNotes}
-                    onChange={(e) => setCustomTrainingNotes(e.target.value)}
-                    className="min-h-[100px]"
-                  />
+            {/* Training Button */}
+            <div className="flex justify-center">
+              {!isCustomTraining ? (
+                <Button 
+                  onClick={handleStartCustomTraining} 
+                  className="bg-blue-600 hover:bg-blue-700 touch-target h-12 px-8 w-full max-w-xs rounded-lg text-lg font-medium"
+                >
+                  <Play className="h-5 w-5 mr-3" />
+                  自主训练
+                </Button>
+              ) : (
+                <div className="flex gap-3 w-full max-w-md">
+                  <Button 
+                    onClick={handlePauseTraining} 
+                    variant="outline" 
+                    className="touch-target h-12 flex-1 rounded-lg border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                  >
+                    {isCustomPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                    {isCustomPaused ? "继续" : "暂停"}
+                  </Button>
+                  <Button 
+                    onClick={handleCompleteCustomTraining} 
+                    className="bg-blue-600 hover:bg-blue-700 touch-target h-12 flex-1 rounded-lg"
+                  >
+                    <Square className="h-4 w-4 mr-2" />
+                    完成训练
+                  </Button>
                 </div>
               )}
             </div>
           </div>
+          
+          {isCustomTraining && (
+            <div className="space-y-3 mt-6">
+              <Label htmlFor="custom-notes">训练笔记</Label>
+              <Textarea
+                id="custom-notes"
+                placeholder="记录自主训练内容、技巧练习或心得体会..."
+                value={customTrainingNotes}
+                onChange={(e) => setCustomTrainingNotes(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
