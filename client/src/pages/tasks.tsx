@@ -220,14 +220,23 @@ export default function Tasks() {
     }
   };
 
+  const handleStartCustomTraining = () => {
+    setSelectedSessionType("custom");
+    handleStartTraining();
+  };
+
+  const handleCompleteCustomTraining = () => {
+    handleCompleteTraining();
+  };
+
   const getDifficultyBadge = (day: number) => {
     if (day <= 17) return { label: "初级", color: "bg-green-100 text-green-800" };
     if (day <= 34) return { label: "中级", color: "bg-yellow-100 text-yellow-800" };
     return { label: "高级", color: "bg-red-100 text-red-800" };
   };
 
-  const beginner51Program = programs.find(p => p.name === "新手指导计划");
-  const currentDay = beginner51Program?.currentDay || 1;
+  const mainProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
+  const currentDay = mainProgram?.currentDay || 1;
   const currentEpisode = `第${currentDay}集`;
   const difficultyBadge = getDifficultyBadge(currentDay);
 
@@ -344,14 +353,49 @@ export default function Tasks() {
             <p className="text-gray-600">
               根据个人需要自由安排训练内容，灵活掌握练习节奏。
             </p>
-            <div className="flex justify-center">
-              <Button 
-                onClick={() => setShowCustomTraining(true)}
-                className="bg-blue-600 hover:bg-blue-700 flex items-center"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                开始自定义训练
-              </Button>
+            
+            {/* Custom Training Timer and Controls */}
+            <div className="bg-white rounded-lg p-4 border">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-2xl font-mono text-blue-600">
+                  {formatTime(elapsedTime)}
+                </div>
+                <div className="flex space-x-2">
+                  {!isTraining ? (
+                    <Button 
+                      onClick={handleStartCustomTraining} 
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      开始自主训练
+                    </Button>
+                  ) : (
+                    <>
+                      <Button onClick={handlePauseTraining} variant="outline">
+                        {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                        {isPaused ? "继续" : "暂停"}
+                      </Button>
+                      <Button onClick={handleCompleteCustomTraining} className="bg-blue-600 hover:bg-blue-700">
+                        <Square className="h-4 w-4 mr-2" />
+                        完成训练
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {isTraining && (
+                <div className="space-y-3">
+                  <Label htmlFor="custom-notes">训练笔记</Label>
+                  <Textarea
+                    id="custom-notes"
+                    placeholder="记录自主训练内容、技巧练习或心得体会..."
+                    value={trainingNotes}
+                    onChange={(e) => setTrainingNotes(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
