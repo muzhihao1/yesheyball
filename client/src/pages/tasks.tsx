@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { UserTask, Task } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,347 +7,457 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { DIFFICULTY_COLORS } from "@/lib/tasks";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import FeedbackModal from "@/components/feedback-modal";
 import { useToast } from "@/hooks/use-toast";
+import { Clock, Play, Pause, Square, Calendar, Star, BookOpen, Plus, Eye } from "lucide-react";
 
-interface TaskWithData extends UserTask {
-  task: Task;
-}
-
-interface TaskCompletion {
-  userTask: UserTask;
-  feedback: {
-    feedback: string;
-    encouragement: string;
-    tips: string;
-    rating: number;
-  };
-}
-
-interface DailyCourse {
-  day: number;
-  title: string;
+interface TrainingProgram {
+  id: number;
+  name: string;
   description: string;
-  week: number;
-  category: string;
-  difficulty: "初级" | "中级" | "高级";
+  totalDays: number;
+  currentDay?: number;
+}
+
+interface TrainingSession {
+  id: number;
+  userId: number;
+  programId: number | null;
+  dayId: number | null;
+  title: string;
+  description: string | null;
+  duration: number | null;
+  rating: number | null;
+  notes: string | null;
+  completed: boolean;
+  completedAt: Date | null;
+  createdAt: Date;
+  sessionType: string;
+}
+
+interface TrainingLog {
+  id: number;
+  userId: number;
+  content: string;
+  date: Date;
+  rating: number | null;
+  taskId: number | null;
 }
 
 export default function Tasks() {
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
-  const [userRating, setUserRating] = useState<number>(0);
-  const [feedbackData, setFeedbackData] = useState<any>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  
-  // Timer state
   const [isTraining, setIsTraining] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [trainingNotes, setTrainingNotes] = useState("");
   const [showTrainingComplete, setShowTrainingComplete] = useState(false);
-  
+  const [showCustomTraining, setShowCustomTraining] = useState(false);
+  const [customTitle, setCustomTitle] = useState("");
+  const [customDescription, setCustomDescription] = useState("");
+  const [userRating, setUserRating] = useState(0);
+  const [selectedSessionType, setSelectedSessionType] = useState("系统训练");
+
   const { toast } = useToast();
 
-  const { data: todayTasks, isLoading } = useQuery<TaskWithData[]>({
-    queryKey: ["/api/user/tasks/today"],
+  // Get training programs
+  const { data: programs = [] } = useQuery<TrainingProgram[]>({
+    queryKey: ["/api/training-programs"],
   });
 
-  const { data: dailyCourse, isLoading: courseLoading } = useQuery<DailyCourse>({
-    queryKey: ["/api/daily-course/today"],
+  // Get current session
+  const { data: currentSession } = useQuery<TrainingSession | null>({
+    queryKey: ["/api/training-sessions/current"],
   });
 
-  const completeTaskMutation = useMutation({
-    mutationFn: async ({ taskId, rating }: { taskId: number; rating: number }) => {
-      const response = await apiRequest(`/api/user/tasks/${taskId}/complete`, "POST", { rating });
-      return response.json() as Promise<TaskCompletion>;
-    },
-    onSuccess: (data) => {
-      setFeedbackData(data.feedback);
-      setShowFeedback(true);
-      queryClient.invalidateQueries({ queryKey: ["/api/user/tasks/today"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      toast({
-        title: "任务完成！",
-        description: "恭喜你完成了今天的训练任务！",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "完成失败",
-        description: "任务完成时出现错误，请重试。",
-        variant: "destructive",
-      });
-    },
+  // Get training sessions (history)
+  const { data: sessions = [] } = useQuery<TrainingSession[]>({
+    queryKey: ["/api/training-sessions"],
   });
 
-  const handleCompleteTask = (taskId: number) => {
-    if (userRating === 0) {
-      toast({
-        title: "请先评分",
-        description: "请为你的训练表现打分后再完成任务。",
-        variant: "destructive",
-      });
-      return;
+  // Get training logs
+  const { data: logs = [] } = useQuery<TrainingLog[]>({
+    queryKey: ["/api/training-logs"],
+  });
+
+  // Complete session mutation
+  const completeSessionMutation = useMutation({
+    mutationFn: (sessionId: number) => 
+      apiRequest(`/api/training-sessions/${sessionId}/complete`, {
+        method: "POST",
+        body: { notes: trainingNotes, rating: userRating, duration: elapsedTime }
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
+      setShowTrainingComplete(false);
+      setIsTraining(false);
+      setElapsedTime(0);
+      setTrainingNotes("");
+      setUserRating(0);
+      toast({ title: "训练完成", description: "您的训练记录已保存" });
     }
-    
-    completeTaskMutation.mutate({ taskId, rating: userRating });
-    setSelectedTaskId(null);
-    setUserRating(0);
+  });
+
+  // Start custom training mutation
+  const startCustomTrainingMutation = useMutation({
+    mutationFn: () => 
+      apiRequest("/api/training-sessions", {
+        method: "POST",
+        body: {
+          title: customTitle,
+          description: customDescription,
+          sessionType: selectedSessionType
+        }
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
+      setShowCustomTraining(false);
+      setCustomTitle("");
+      setCustomDescription("");
+      toast({ title: "训练开始", description: "自定义训练已开始" });
+    }
+  });
+
+  // Next episode mutation
+  const nextEpisodeMutation = useMutation({
+    mutationFn: () => apiRequest("/api/training-programs/next-episode", { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
+    }
+  });
+
+  // Timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isTraining && !isPaused) {
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isTraining, isPaused]);
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleStartTask = (taskId: number) => {
-    setSelectedTaskId(taskId);
-    setUserRating(0);
+  const handleStartTraining = () => {
+    setIsTraining(true);
+    setIsPaused(false);
+    setElapsedTime(0);
   };
 
-  const renderStars = (rating: number, interactive: boolean = false, taskId?: number) => {
-    return [...Array(5)].map((_, index) => (
-      <span
-        key={index}
-        className={`text-xl cursor-pointer transition-colors ${
-          index < rating ? 'text-trophy-gold' : 'text-gray-300'
-        } ${interactive ? 'hover:text-trophy-gold' : ''}`}
-        onClick={interactive ? () => setUserRating(index + 1) : undefined}
-      >
-        ⭐
-      </span>
-    ));
+  const handlePauseTraining = () => {
+    setIsPaused(!isPaused);
   };
 
-  if (isLoading || courseLoading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <div className="w-48 h-8 skeleton mx-auto mb-4"></div>
-          <div className="w-64 h-6 skeleton mx-auto"></div>
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="skeleton h-96 rounded-xl"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const handleStopTraining = () => {
+    setShowTrainingComplete(true);
+  };
 
-  if (!todayTasks) {
-    return <div className="text-center py-8">加载任务失败</div>;
-  }
+  const handleCompleteTraining = () => {
+    if (currentSession) {
+      completeSessionMutation.mutate(currentSession.id);
+    }
+  };
 
-  const completedTasks = todayTasks.filter(t => t.completed).length;
-  const progressPercentage = (completedTasks / todayTasks.length) * 100;
+  const getDifficultyBadge = (day: number) => {
+    if (day <= 17) return { label: "初级", color: "bg-green-100 text-green-800" };
+    if (day <= 34) return { label: "中级", color: "bg-yellow-100 text-yellow-800" };
+    return { label: "高级", color: "bg-red-100 text-red-800" };
+  };
+
+  const beginner51Program = programs.find(p => p.name === "新手指导计划");
+  const currentDay = beginner51Program?.currentDay || 1;
+  const currentEpisode = `第${currentDay}集`;
+  const difficultyBadge = getDifficultyBadge(currentDay);
+
+  const completedSessions = sessions.filter(s => s.completed);
+  const todayProgress = completedSessions.length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-green-700 mb-2">每日训练</h2>
-        <p className="text-gray-600">王孟52集台球教学系统训练</p>
-        <div className="inline-flex items-center bg-green-100 rounded-full px-4 py-2 mt-4">
-          <span className="mr-2">📅</span>
-          <span className="text-green-700 font-medium">{new Date().toLocaleDateString('zh-CN')}</span>
+      <div className="text-center space-y-4">
+        <h1 className="text-3xl font-bold text-green-700">训练计划</h1>
+        <p className="text-gray-600">耶氏台球学院系统教学</p>
+        <div className="flex items-center justify-center text-gray-500">
+          <Calendar className="h-5 w-5 mr-2" />
+          {new Date().toLocaleDateString('zh-CN')}
         </div>
       </div>
 
-      {/* Today's Course */}
-      {dailyCourse && (
-        <Card className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl text-green-700 flex items-center">
-                <span className="mr-2">📚</span>
-                今日课程：第{dailyCourse.day}天
-              </CardTitle>
-              <div className="flex items-center space-x-2">
-                <Badge className={DIFFICULTY_COLORS[dailyCourse.difficulty as keyof typeof DIFFICULTY_COLORS]}>
-                  {dailyCourse.difficulty}
-                </Badge>
-                <Badge variant="outline">第{dailyCourse.week}周</Badge>
+      {/* Current Episode */}
+      <Card className="border-2 border-green-200 bg-green-50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <BookOpen className="h-6 w-6 text-green-600" />
+              <span className="text-lg font-medium">今日课程：{currentEpisode}</span>
+            </div>
+            <div className="flex space-x-2">
+              <Badge className={difficultyBadge.color}>
+                {difficultyBadge.label}
+              </Badge>
+              <Badge variant="outline">
+                第8周
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h3 className="text-xl font-semibold mb-2">{currentSession?.title || `第${currentDay}集：基础技能训练`}</h3>
+            <p className="text-gray-600 mb-4">
+              {currentSession?.description || "进一步掌握基础击球技巧，提升准度和稳定性。"}
+            </p>
+            <div className="text-sm text-gray-500 mb-4">
+              课程类别：基础训练
+            </div>
+          </div>
+
+          {/* Training Controls */}
+          <div className="bg-white rounded-lg p-4 border">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-2xl font-mono text-green-600">
+                {formatTime(elapsedTime)}
+              </div>
+              <div className="flex space-x-2">
+                {!isTraining ? (
+                  <Button onClick={handleStartTraining} className="bg-green-600 hover:bg-green-700">
+                    <Play className="h-4 w-4 mr-2" />
+                    开始训练
+                  </Button>
+                ) : (
+                  <>
+                    <Button onClick={handlePauseTraining} variant="outline">
+                      {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                      {isPaused ? "继续" : "暂停"}
+                    </Button>
+                    <Button onClick={handleStopTraining} variant="destructive">
+                      <Square className="h-4 w-4 mr-2" />
+                      结束训练
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">{dailyCourse.title}</h3>
-            <p className="text-gray-700 mb-4">{dailyCourse.description}</p>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">课程类别: {dailyCourse.category}</span>
-              <Button variant="outline" size="sm">
-                观看教学视频
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Progress Summary */}
-      <Card className="mb-8">
+            {isTraining && (
+              <div className="space-y-3">
+                <Label htmlFor="notes">训练笔记</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="记录训练感受、技巧心得或遇到的问题..."
+                  value={trainingNotes}
+                  onChange={(e) => setTrainingNotes(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCustomTraining(true)}
+              className="flex items-center"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              自定义训练
+            </Button>
+            <Button variant="outline">
+              <Eye className="h-4 w-4 mr-2" />
+              观看教学视频
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Today's Progress */}
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>今日进度</span>
-            <Badge variant={completedTasks === todayTasks.length ? "default" : "secondary"}>
-              {completedTasks}/{todayTasks.length} 完成
-            </Badge>
+          <CardTitle className="flex items-center">
+            <Star className="h-5 w-5 mr-2 text-yellow-500" />
+            今日进度
+            <span className="ml-auto text-sm font-normal text-gray-500">
+              {todayProgress}/3 完成
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Progress value={progressPercentage} className="h-3 mb-4" />
-          <div className="grid grid-cols-3 gap-4 text-center text-sm">
-            <div>
-              <div className="font-bold text-trophy-gold">+{completedTasks * 15}</div>
-              <div className="text-gray-500">经验值</div>
-            </div>
-            <div>
-              <div className="font-bold text-blue-500">
-                {completedTasks > 0 ? '✓' : '○'}
+          <div className="space-y-4">
+            <Progress value={(todayProgress / 3) * 100} className="h-3" />
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-yellow-500">0</div>
+                <div className="text-sm text-gray-500">经验值</div>
               </div>
-              <div className="text-gray-500">今日打卡</div>
-            </div>
-            <div>
-              <div className="font-bold text-green-500">
-                {progressPercentage === 100 ? '+1' : '0'}
+              <div>
+                <div className="text-2xl font-bold text-blue-500">0</div>
+                <div className="text-sm text-gray-500">今日打卡</div>
               </div>
-              <div className="text-gray-500">完成奖励</div>
+              <div>
+                <div className="text-2xl font-bold text-green-500">0</div>
+                <div className="text-sm text-gray-500">完成奖励</div>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Task Cards */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        {todayTasks.map((taskData) => (
-          <Card 
-            key={taskData.id} 
-            className={`overflow-hidden hover:shadow-xl transition-shadow ${
-              taskData.completed 
-                ? 'bg-green-50 border-green-200' 
-                : selectedTaskId === taskData.id 
-                  ? 'bg-blue-50 border-blue-200' 
-                  : ''
-            }`}
-          >
-            {taskData.task.imageUrl && (
-              <img 
-                src={taskData.task.imageUrl} 
-                alt={taskData.task.title}
-                className="w-full h-48 object-cover"
-              />
-            )}
-            
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between mb-2">
-                <CardTitle className="text-lg text-green-700">
-                  {taskData.task.title}
-                </CardTitle>
-                <div className="flex">
-                  {renderStars(taskData.rating || 0)}
-                </div>
-              </div>
-              <Badge 
-                variant="secondary" 
-                className={DIFFICULTY_COLORS[taskData.task.difficulty as keyof typeof DIFFICULTY_COLORS]}
-              >
-                {taskData.task.difficulty}
-              </Badge>
-            </CardHeader>
-            
-            <CardContent>
-              <p className="text-gray-600 text-sm mb-4">
-                {taskData.task.description}
-              </p>
-              
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-xs text-gray-500 flex items-center">
-                  <span className="mr-1">🎯</span>
-                  {taskData.task.category}
-                </div>
-                <div className="text-xs text-gray-500">
-                  等级 {taskData.task.level}
-                </div>
-              </div>
-
-              {taskData.completed ? (
-                <div className="text-center">
-                  <div className="flex items-center justify-center text-green-600 mb-2">
-                    <span className="mr-2">✅</span>
-                    <span className="font-medium">已完成</span>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {taskData.completedAt && new Date(taskData.completedAt).toLocaleTimeString('zh-CN')}
-                  </div>
-                </div>
-              ) : selectedTaskId === taskData.id ? (
-                <div className="space-y-3">
-                  <div className="text-center">
-                    <p className="text-sm font-medium mb-2">为你的表现评分：</p>
-                    <div className="flex justify-center">
-                      {renderStars(userRating, true, taskData.id)}
+      {/* Training Logs */}
+      {logs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>训练记录</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {logs.slice(0, 5).map((log) => (
+                <div key={log.id} className="border-l-4 border-green-500 pl-4 py-2">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="text-gray-800">{log.content}</p>
+                      <div className="flex items-center mt-2 text-sm text-gray-500">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {new Date(log.date).toLocaleDateString('zh-CN')}
+                        {log.rating && (
+                          <div className="ml-4 flex items-center">
+                            <Star className="h-4 w-4 mr-1 text-yellow-500" />
+                            {log.rating}/5
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        setSelectedTaskId(null);
-                        setUserRating(0);
-                      }}
-                    >
-                      取消
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1 bg-billiards-green hover:bg-green-700"
-                      onClick={() => handleCompleteTask(taskData.id)}
-                      disabled={userRating === 0 || completeTaskMutation.isPending}
-                    >
-                      {completeTaskMutation.isPending ? "完成中..." : "完成"}
-                    </Button>
-                  </div>
                 </div>
-              ) : (
-                <Button
-                  className="w-full bg-billiards-green hover:bg-green-700"
-                  onClick={() => handleStartTask(taskData.id)}
-                >
-                  开始练习
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Completion Bonus */}
-      {progressPercentage === 100 && (
-        <Card className="gradient-trophy text-white">
-          <CardContent className="p-6 text-center">
-            <h3 className="text-xl font-bold mb-2">🎉 今日任务全部完成！</h3>
-            <p className="mb-4">恭喜你完成了所有训练任务，获得额外奖励！</p>
-            <div className="flex justify-center space-x-6">
-              <div className="text-center">
-                <div className="text-lg font-bold">+50</div>
-                <div className="text-xs">奖励经验</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold">+1</div>
-                <div className="text-xs">连击天数</div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Feedback Modal */}
-      <FeedbackModal
-        isOpen={showFeedback}
-        onClose={() => setShowFeedback(false)}
-        feedback={feedbackData}
-        userRating={userRating}
-        expGained={userRating * 5}
-      />
+      {/* Training Complete Dialog */}
+      <Dialog open={showTrainingComplete} onOpenChange={setShowTrainingComplete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>训练完成</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">
+                {formatTime(elapsedTime)}
+              </div>
+              <p className="text-gray-600">本次训练时长</p>
+            </div>
+            
+            <div className="space-y-3">
+              <Label htmlFor="final-notes">训练总结</Label>
+              <Textarea
+                id="final-notes"
+                placeholder="总结本次训练的收获和感受..."
+                value={trainingNotes}
+                onChange={(e) => setTrainingNotes(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label>训练评分</Label>
+              <div className="flex space-x-2">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <Button
+                    key={rating}
+                    variant={userRating >= rating ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setUserRating(rating)}
+                  >
+                    <Star className="h-4 w-4" />
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button variant="outline" onClick={() => setShowTrainingComplete(false)}>
+                继续训练
+              </Button>
+              <Button 
+                onClick={handleCompleteTraining}
+                disabled={completeSessionMutation.isPending}
+                className="flex-1"
+              >
+                保存并完成
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Training Dialog */}
+      <Dialog open={showCustomTraining} onOpenChange={setShowCustomTraining}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>创建自定义训练</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="custom-title">训练标题</Label>
+              <Input
+                id="custom-title"
+                placeholder="输入训练标题"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="custom-description">训练描述</Label>
+              <Textarea
+                id="custom-description"
+                placeholder="描述训练内容和目标..."
+                value={customDescription}
+                onChange={(e) => setCustomDescription(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>训练类型</Label>
+              <Select value={selectedSessionType} onValueChange={setSelectedSessionType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="自定义训练">自定义训练</SelectItem>
+                  <SelectItem value="技术练习">技术练习</SelectItem>
+                  <SelectItem value="体能训练">体能训练</SelectItem>
+                  <SelectItem value="心理训练">心理训练</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button variant="outline" onClick={() => setShowCustomTraining(false)}>
+                取消
+              </Button>
+              <Button 
+                onClick={() => startCustomTrainingMutation.mutate()}
+                disabled={!customTitle || startCustomTrainingMutation.isPending}
+                className="flex-1"
+              >
+                开始训练
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
