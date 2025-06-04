@@ -184,13 +184,13 @@ export class MemStorage implements IStorage {
   }
 
   private initializeTrainingPrograms() {
-    // Create the 51-day beginner program
+    // Create the 30-day beginner program
     const beginnerProgram: TrainingProgram = {
       id: this.currentTrainingProgramId++,
-      name: "新手指导计划",
-      description: "为期51天的系统化台球基础训练计划，从握杆、站位到实战清台的全面指导",
-      totalDays: 51,
-      currentDay: 51,
+      name: "耶氏台球学院系统教学",
+      description: "为期30集的系统化台球基础训练计划，从握杆、站位到实战清台的全面指导",
+      totalDays: 30,
+      currentDay: 1,
       difficulty: "新手",
       createdAt: new Date()
     };
@@ -280,9 +280,9 @@ export class MemStorage implements IStorage {
       id: this.currentTrainingSessionId++,
       userId: 1,
       programId: beginnerProgram.id,
-      dayId: Array.from(this.trainingDays.values()).find(d => d.day === 51)?.id || null,
-      title: "第51集：出杆节奏训练2",
-      description: "强化击球节奏与心理专注度",
+      dayId: Array.from(this.trainingDays.values()).find(d => d.day === 1)?.id || null,
+      title: "第1集：握杆",
+      description: "握杆姿势稳定、力度适中、手掌与手指配合",
       notes: null,
       duration: null,
       rating: null,

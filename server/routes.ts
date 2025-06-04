@@ -343,11 +343,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/training-programs/next-episode", async (req, res) => {
     try {
       const programs = await storage.getAllTrainingPrograms();
-      const beginnerProgram = programs.find(p => p.name === "新手指导计划");
+      const beginnerProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
       
       if (beginnerProgram) {
-        const currentDay = beginnerProgram.currentDay || 51;
-        const nextDay = Math.min(currentDay + 1, 100); // Allow progression beyond 51
+        const currentDay = beginnerProgram.currentDay || 1;
+        const nextDay = Math.min(currentDay + 1, 30); // Limit to 30 episodes
         await storage.updateTrainingProgram(beginnerProgram.id, { currentDay: nextDay });
         
         // Create new session for next episode
