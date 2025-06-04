@@ -185,8 +185,10 @@ export default function Tasks() {
         exerciseType: currentSession?.sessionType || "系统训练",
         level: 9 // User's current level
       });
-      setCoachingFeedback(response.feedback);
+      const data = await response.json();
+      setCoachingFeedback(data.feedback);
     } catch (error) {
+      console.error("Coaching feedback error:", error);
       toast({
         title: "获取教练反馈失败",
         description: "请稍后重试",
