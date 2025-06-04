@@ -317,8 +317,9 @@ export default function Levels() {
     setPracticeTime(0);
   };
 
-  const handlePausePractice = () => {
+  const handleAbortPractice = () => {
     setIsPracticing(false);
+    setPracticeTime(0);
   };
 
   const handleResetPractice = () => {
@@ -730,20 +731,12 @@ export default function Levels() {
                             ) : (
                               <>
                                 <Button 
-                                  onClick={isPracticing ? handlePausePractice : handleStartPractice}
+                                  onClick={isPracticing ? handleAbortPractice : handleStartPractice}
                                   variant="outline"
                                   size="sm"
                                 >
                                   {isPracticing ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-                                  {isPracticing ? '暂停' : '继续'}
-                                </Button>
-                                <Button 
-                                  onClick={handleResetPractice}
-                                  variant="outline"
-                                  size="sm"
-                                >
-                                  <RotateCcw className="w-4 h-4 mr-2" />
-                                  重置
+                                  {isPracticing ? '放弃练习' : '继续'}
                                 </Button>
                                 <Button 
                                   onClick={handleFinishPractice}
@@ -758,20 +751,6 @@ export default function Levels() {
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="space-y-2">
-                        <h4 className="text-lg font-medium text-gray-800">练习指导</h4>
-                        <p className="text-gray-600">
-                          请仔细观察球型图，理解击球要求后开始练习。完成后点击"完成练习"确认。
-                        </p>
-                      </div>
-                      
-                      <Button 
-                        variant="outline"
-                        onClick={() => setShowExerciseDialog(false)}
-                      >
-                        稍后练习
-                      </Button>
                     </div>
                   )}
                 </div>
