@@ -61,7 +61,7 @@ export default function Tasks() {
 
   const completeTaskMutation = useMutation({
     mutationFn: async ({ taskId, rating }: { taskId: number; rating: number }) => {
-      const response = await apiRequest("POST", `/api/user/tasks/${taskId}/complete`, { rating });
+      const response = await apiRequest(`/api/user/tasks/${taskId}/complete`, "POST", { rating });
       return response.json() as Promise<TaskCompletion>;
     },
     onSuccess: (data) => {
