@@ -394,6 +394,30 @@ export default function Levels() {
     }
   };
 
+  const handleNextExercise = () => {
+    if (!selectedExercise || !selectedLevel) return;
+    
+    // 获取当前等级的所有练习
+    const exercises = generateExercisesForLevel(selectedLevel.level);
+    const currentIndex = exercises.findIndex((ex: Exercise) => ex.exerciseNumber === selectedExercise.exerciseNumber);
+    
+    if (currentIndex < exercises.length - 1) {
+      // 有下一题，打开下一题
+      const nextExercise = exercises[currentIndex + 1];
+      setSelectedExercise(nextExercise);
+      // 重置练习状态
+      setIsPracticing(false);
+      setPracticeTime(0);
+    } else {
+      // 当前等级最后一题，关闭对话框
+      setShowExerciseDialog(false);
+      toast({
+        title: "等级完成！",
+        description: `恭喜完成${selectedLevel.name}等级的所有练习！`,
+      });
+    }
+  };
+
   const canTakeExam = (stage: LevelStage) => {
     return stage.level > 1 && stage.completedExercises >= stage.totalExercises;
   };
@@ -705,7 +729,7 @@ export default function Levels() {
                       </div>
                       <div className="space-x-3">
                         <Button 
-                          onClick={() => setShowExerciseDialog(false)}
+                          onClick={handleNextExercise}
                           className="bg-green-500 hover:bg-green-600 px-8"
                         >
                           继续下一题
