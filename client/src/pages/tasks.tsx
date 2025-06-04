@@ -83,9 +83,10 @@ export default function Tasks() {
   // Complete session mutation
   const completeSessionMutation = useMutation({
     mutationFn: (sessionId: number) => 
-      apiRequest(`/api/training-sessions/${sessionId}/complete`, {
-        method: "POST",
-        body: { notes: trainingNotes, rating: userRating, duration: elapsedTime }
+      apiRequest(`/api/training-sessions/${sessionId}/complete`, "POST", { 
+        notes: trainingNotes, 
+        rating: userRating, 
+        duration: elapsedTime 
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
@@ -102,13 +103,10 @@ export default function Tasks() {
   // Start custom training mutation
   const startCustomTrainingMutation = useMutation({
     mutationFn: () => 
-      apiRequest("/api/training-sessions", {
-        method: "POST",
-        body: {
-          title: customTitle,
-          description: customDescription,
-          sessionType: selectedSessionType
-        }
+      apiRequest("/api/training-sessions", "POST", {
+        title: customTitle,
+        description: customDescription,
+        sessionType: selectedSessionType
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
@@ -121,7 +119,7 @@ export default function Tasks() {
 
   // Next episode mutation
   const nextEpisodeMutation = useMutation({
-    mutationFn: () => apiRequest("/api/training-programs/next-episode", { method: "POST" }),
+    mutationFn: () => apiRequest("/api/training-programs/next-episode", "POST"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });

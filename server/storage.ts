@@ -42,6 +42,7 @@ export interface IStorage {
   
   // Training note operations
   getTrainingNotes(sessionId: number): Promise<TrainingNote[]>;
+  getAllTrainingNotes(userId: number): Promise<TrainingNote[]>;
   createTrainingNote(note: InsertTrainingNote): Promise<TrainingNote>;
 }
 
@@ -548,6 +549,10 @@ export class MemStorage implements IStorage {
   // Training note operations
   async getTrainingNotes(sessionId: number): Promise<TrainingNote[]> {
     return Array.from(this.trainingNotes.values()).filter(note => note.sessionId === sessionId);
+  }
+
+  async getAllTrainingNotes(userId: number): Promise<TrainingNote[]> {
+    return Array.from(this.trainingNotes.values()).filter(note => note.userId === userId);
   }
 
   async createTrainingNote(insertNote: InsertTrainingNote): Promise<TrainingNote> {
