@@ -258,13 +258,13 @@ export default function Tasks() {
         </div>
       </div>
 
-      {/* Current Episode */}
+      {/* Guided Training Section */}
       <Card className="border-2 border-green-200 bg-green-50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <BookOpen className="h-6 w-6 text-green-600" />
-              <span className="text-lg font-medium">今日课程：{currentEpisode}</span>
+              <span className="text-lg font-medium">系统训练：{currentEpisode}</span>
             </div>
             <div className="flex space-x-2">
               <Badge className={difficultyBadge.color}>
@@ -278,9 +278,9 @@ export default function Tasks() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="text-xl font-semibold mb-2">{currentSession?.title || `${currentEpisode}：基础技能训练`}</h3>
+            <h3 className="text-xl font-semibold mb-2">{currentSession?.title || `第${currentDay}集：基础技能训练`}</h3>
             <p className="text-gray-600 mb-4">
-              {currentSession?.description || "进一步掌握基础击球技巧，提升准度和稳定性。"}
+              {currentSession?.description || `第${currentDay}集训练内容，持续提升台球技能。`}
             </p>
             <div className="text-sm text-gray-500 mb-4">
               课程类别：基础训练
@@ -328,15 +328,31 @@ export default function Tasks() {
             )}
           </div>
 
-          <div className="flex justify-center">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowCustomTraining(true)}
-              className="flex items-center"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              自定义训练
-            </Button>
+        </CardContent>
+      </Card>
+
+      {/* Custom Training Section */}
+      <Card className="border-2 border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Plus className="h-5 w-5 mr-2 text-blue-600" />
+            自主训练
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              根据个人需要自由安排训练内容，灵活掌握练习节奏。
+            </p>
+            <div className="flex justify-center">
+              <Button 
+                onClick={() => setShowCustomTraining(true)}
+                className="bg-blue-600 hover:bg-blue-700 flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                开始自定义训练
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
