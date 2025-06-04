@@ -151,16 +151,14 @@ export default function Tasks() {
   const startCustomTrainingMutation = useMutation({
     mutationFn: () => 
       apiRequest("/api/training-sessions", "POST", {
-        title: customTitle,
-        description: customDescription,
-        sessionType: selectedSessionType
+        title: "自主训练",
+        description: "根据个人需要自由安排的训练内容",
+        sessionType: "自主训练"
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
-      setShowCustomTraining(false);
-      setCustomTitle("");
-      setCustomDescription("");
-      toast({ title: "训练开始", description: "自定义训练已开始" });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+      toast({ title: "训练开始", description: "自主训练已开始" });
     }
   });
 
@@ -260,10 +258,13 @@ export default function Tasks() {
     setIsCustomTraining(true);
     setIsCustomPaused(false);
     setCustomElapsedTime(0);
+    
+    // Create a custom training session
+    startCustomTrainingMutation.mutate();
   };
 
   const handleCompleteCustomTraining = () => {
-    handleCompleteTraining();
+    setShowTrainingComplete(true);
   };
 
   const getDifficultyBadge = (day: number) => {
