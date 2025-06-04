@@ -10,6 +10,12 @@ import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer";
 import { adaptiveLearning } from "./adaptiveLearning";
 import { requirementCorrector } from "./manualCorrection";
 import { analyzeTableBounds } from "./imageAnalysis";
+import { 
+  calculateTrainingExperience, 
+  calculateLevelExperience, 
+  calculateUserLevel,
+  getExperienceBreakdown 
+} from "./experienceSystem";
 import { z } from "zod";
 import path from "path";
 import fs from "fs";
@@ -316,9 +322,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/training-sessions/:id/complete", async (req, res) => {
     try {
       const { duration, rating, notes } = req.body;
-      const session = await storage.completeTrainingSession(parseInt(req.params.id), duration, rating, notes);
-      res.json(session);
+      const sessionId = parseInt(req.params.id);
+      
+      // Get session details before completion
+      const sessionDetails = await storage.getTrainingSession(sessionId);
+      if (!sessionDetails) {
+        return res.status(404).json({ message: "Training session not found" });
+      }
+      
+      // Get program details for difficulty calculation
+      let programDifficulty = "新手";
+      if (sessionDetails.programId) {
+        const program = await storage.getTrainingProgram(sessionDetails.programId);
+        if (program) {
+          programDifficulty = program.difficulty;
+        }
+      }
+      
+      // Calculate experience points
+      const expGained = calculateTrainingExperience({
+        sessionType: sessionDetails.sessionType as "guided" | "custom",
+        duration: duration || 0,
+        rating: rating || undefined,
+        programDifficulty
+      });
+      
+      // Complete the session
+      const session = await storage.completeTrainingSession(sessionId, duration, rating, notes);
+      
+      // Award experience to user
+      if (expGained > 0) {
+        const currentUser = await storage.getUser(sessionDetails.userId);
+        if (currentUser) {
+          const newTotalExp = currentUser.exp + expGained;
+          const levelInfo = calculateUserLevel(newTotalExp);
+          
+          await storage.updateUser(sessionDetails.userId, {
+            exp: newTotalExp,
+            level: levelInfo.level,
+            completedTasks: currentUser.completedTasks + 1,
+            totalTime: currentUser.totalTime + Math.floor((duration || 0) / 60)
+          });
+        }
+      }
+      
+      // Return session with experience info
+      res.json({
+        ...session,
+        expGained,
+        experienceBreakdown: getExperienceBreakdown({
+          sessionType: sessionDetails.sessionType as "guided" | "custom",
+          duration: duration || 0,
+          rating: rating || undefined,
+          programDifficulty
+        })
+      });
     } catch (error) {
+      console.error("Training completion error:", error);
       res.status(500).json({ message: "Failed to complete training session" });
     }
   });

@@ -98,20 +98,35 @@ export default function Tasks() {
         duration: elapsedTime 
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+      
       setShowTrainingComplete(false);
       setIsTraining(false);
       setElapsedTime(0);
       setTrainingNotes("");
       setUserRating(0);
       setCoachingFeedback("");
+      
+      // Show experience reward notification
+      const response = data as any;
+      if (response.expGained) {
+        toast({ 
+          title: "训练完成", 
+          description: `获得 ${response.expGained} 经验值！进入下一集`,
+          duration: 3000
+        });
+      } else {
+        toast({ title: "训练完成", description: "您的训练记录已保存，进入下一集" });
+      }
+      
       // Progress to next episode
       nextEpisodeMutation.mutate();
-      toast({ title: "训练完成", description: "您的训练记录已保存，进入下一集" });
     }
   });
 

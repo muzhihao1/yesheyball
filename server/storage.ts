@@ -37,6 +37,7 @@ export interface IStorage {
   // Training session operations
   getUserTrainingSessions(userId: number): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay })[]>;
   getCurrentTrainingSession(userId: number): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay }) | undefined>;
+  getTrainingSession(id: number): Promise<TrainingSession | undefined>;
   createTrainingSession(session: InsertTrainingSession): Promise<TrainingSession>;
   updateTrainingSession(id: number, updates: Partial<TrainingSession>): Promise<TrainingSession>;
   completeTrainingSession(id: number, duration: number, rating: number, notes?: string): Promise<TrainingSession>;
@@ -521,6 +522,10 @@ export class MemStorage implements IStorage {
       program: session.programId ? this.trainingPrograms.get(session.programId) : undefined,
       day: session.dayId ? this.trainingDays.get(session.dayId) : undefined
     };
+  }
+
+  async getTrainingSession(id: number): Promise<TrainingSession | undefined> {
+    return this.trainingSessions.get(id);
   }
 
   async createTrainingSession(insertSession: InsertTrainingSession): Promise<TrainingSession> {
