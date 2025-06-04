@@ -327,10 +327,36 @@ export default function Tasks() {
           <div>
             <h3 className="text-xl font-semibold mb-2">{currentSession?.title || `第${currentDay}集：基础技能训练`}</h3>
             <p className="text-gray-600 mb-4">
-              {currentSession?.description || `第${currentDay}集训练内容，持续提升台球技能。`}
+              {(currentSession as any)?.day?.description || currentSession?.description || `第${currentDay}集训练内容，持续提升台球技能。`}
             </p>
+            
+            {(currentSession as any)?.day?.objectives && (
+              <div className="mb-3">
+                <h4 className="font-medium text-sm text-gray-700 mb-2">📋 训练目标</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+                  {(currentSession as any).day.objectives.map((objective: string, index: number) => (
+                    <li key={index}>{objective}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {(currentSession as any)?.day?.keyPoints && (currentSession as any).day.keyPoints.length > 0 && (
+              <div className="mb-3">
+                <h4 className="font-medium text-sm text-gray-700 mb-2">🎯 重点要求</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+                  {(currentSession as any).day.keyPoints.map((point: string, index: number) => (
+                    <li key={index}>{point}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
             <div className="text-sm text-gray-500 mb-4">
               课程类别：基础训练
+              {(currentSession as any)?.day?.estimatedDuration && (
+                <span className="ml-4">⏱️ 建议时长：{(currentSession as any).day.estimatedDuration}分钟</span>
+              )}
             </div>
           </div>
 
