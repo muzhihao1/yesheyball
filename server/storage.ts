@@ -90,6 +90,8 @@ export class MemStorage implements IStorage {
     this.trainingDays = new Map();
     this.trainingSessions = new Map();
     this.trainingNotes = new Map();
+    this.achievements = new Map();
+    this.userAchievements = new Map();
     
     this.currentUserId = 1;
     this.currentTaskId = 1;
@@ -100,6 +102,8 @@ export class MemStorage implements IStorage {
     this.currentTrainingDayId = 1;
     this.currentTrainingSessionId = 1;
     this.currentTrainingNoteId = 1;
+    this.currentAchievementId = 1;
+    this.currentUserAchievementId = 1;
     
     this.initializeDefaultData();
   }
@@ -191,8 +195,9 @@ export class MemStorage implements IStorage {
     };
     this.diaryEntries.set(sampleDiary.id, sampleDiary);
 
-    // Initialize 51-day beginner training program
+    // Initialize training programs and achievements
     this.initializeTrainingPrograms();
+    this.initializeAchievements();
   }
 
   private initializeTrainingPrograms() {
@@ -304,6 +309,141 @@ export class MemStorage implements IStorage {
       completedAt: null
     };
     this.trainingSessions.set(currentSession.id, currentSession);
+  }
+
+  private initializeAchievements() {
+    // Predefined achievements with unlock conditions
+    const defaultAchievements: InsertAchievement[] = [
+      {
+        name: "新手上路",
+        description: "完成第一次训练",
+        icon: "🎱",
+        type: "training",
+        condition: { type: "complete_sessions", target: 1 },
+        expReward: 100,
+        category: "beginner",
+        unlocked: true
+      },
+      {
+        name: "坚持不懈",
+        description: "连续训练3天",
+        icon: "🔥",
+        type: "streak",
+        condition: { type: "daily_streak", target: 3 },
+        expReward: 200,
+        category: "beginner",
+        unlocked: true
+      },
+      {
+        name: "进步神速",
+        description: "完成10次训练",
+        icon: "⚡",
+        type: "training",
+        condition: { type: "complete_sessions", target: 10 },
+        expReward: 300,
+        category: "intermediate",
+        unlocked: false
+      },
+      {
+        name: "专注训练",
+        description: "单次训练时长超过60分钟",
+        icon: "⏰",
+        type: "time",
+        condition: { type: "session_duration", target: 60 },
+        expReward: 150,
+        category: "intermediate",
+        unlocked: false
+      },
+      {
+        name: "完美主义者",
+        description: "获得5次5星评价",
+        icon: "⭐",
+        type: "rating",
+        condition: { type: "five_star_rating", target: 5 },
+        expReward: 250,
+        category: "intermediate",
+        unlocked: false
+      },
+      {
+        name: "台球大师",
+        description: "完成所有30集训练",
+        icon: "👑",
+        type: "training",
+        condition: { type: "complete_program", target: 30 },
+        expReward: 500,
+        category: "advanced",
+        unlocked: false
+      },
+      {
+        name: "铁杆粉丝",
+        description: "连续训练30天",
+        icon: "🏆",
+        type: "streak",
+        condition: { type: "daily_streak", target: 30 },
+        expReward: 800,
+        category: "advanced",
+        unlocked: false
+      },
+      {
+        name: "时间管理大师",
+        description: "累计训练时长达到100小时",
+        icon: "⌚",
+        type: "time",
+        condition: { type: "total_time", target: 6000 },
+        expReward: 600,
+        category: "advanced",
+        unlocked: false
+      },
+      {
+        name: "传奇选手",
+        description: "达到10级",
+        icon: "🌟",
+        type: "level",
+        condition: { type: "reach_level", target: 10 },
+        expReward: 1000,
+        category: "master",
+        unlocked: false
+      },
+      {
+        name: "终极挑战者",
+        description: "完成所有等级练习",
+        icon: "💎",
+        type: "level",
+        condition: { type: "complete_all_levels", target: 8 },
+        expReward: 1500,
+        category: "master",
+        unlocked: false
+      }
+    ];
+
+    defaultAchievements.forEach(achievement => {
+      const newAchievement: Achievement = { 
+        ...achievement, 
+        id: this.currentAchievementId++,
+        createdAt: new Date()
+      };
+      this.achievements.set(newAchievement.id, newAchievement);
+    });
+
+    // Initialize some user achievements for the default user
+    const userAchievementData = [
+      { achievementId: 1, progress: 1, completed: true },  // 新手上路
+      { achievementId: 2, progress: 3, completed: true },  // 坚持不懈
+      { achievementId: 3, progress: 8, completed: false }, // 进步神速
+      { achievementId: 5, progress: 3, completed: false }  // 完美主义者
+    ];
+
+    userAchievementData.forEach(data => {
+      const userAchievement: UserAchievement = {
+        id: this.currentUserAchievementId++,
+        userId: 1,
+        achievementId: data.achievementId,
+        progress: data.progress,
+        completed: data.completed,
+        unlockedAt: new Date()
+      };
+      this.userAchievements.set(userAchievement.id, userAchievement);
+    });
   }
 
   // User operations
@@ -592,6 +732,137 @@ export class MemStorage implements IStorage {
     };
     this.trainingNotes.set(note.id, note);
     return note;
+  }
+
+  // Achievement operations
+  async getAllAchievements(): Promise<Achievement[]> {
+    return Array.from(this.achievements.values()).sort((a, b) => a.id - b.id);
+  }
+
+  async getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]> {
+    const userAchievements = Array.from(this.userAchievements.values())
+      .filter(ua => ua.userId === userId);
+    
+    return userAchievements.map(ua => {
+      const achievement = this.achievements.get(ua.achievementId);
+      return {
+        ...ua,
+        achievement: achievement!
+      };
+    });
+  }
+
+  async checkAndUnlockAchievements(userId: number): Promise<UserAchievement[]> {
+    const user = await this.getUser(userId);
+    if (!user) return [];
+
+    const unlockedAchievements: UserAchievement[] = [];
+    const userSessions = await this.getUserTrainingSessions(userId);
+    const completedSessions = userSessions.filter(s => s.completed);
+
+    for (const achievement of this.achievements.values()) {
+      // Skip if already unlocked by user
+      const existing = Array.from(this.userAchievements.values())
+        .find(ua => ua.userId === userId && ua.achievementId === achievement.id);
+      
+      if (existing?.completed) continue;
+
+      let shouldUnlock = false;
+      let progress = 0;
+
+      const condition = achievement.condition as any;
+      
+      switch (condition.type) {
+        case "complete_sessions":
+          progress = completedSessions.length;
+          shouldUnlock = progress >= condition.target;
+          break;
+        case "daily_streak":
+          progress = user.streak;
+          shouldUnlock = progress >= condition.target;
+          break;
+        case "session_duration":
+          const maxDuration = Math.max(...completedSessions.map(s => s.duration || 0));
+          progress = maxDuration;
+          shouldUnlock = progress >= condition.target;
+          break;
+        case "five_star_rating":
+          const fiveStarCount = completedSessions.filter(s => s.rating === 5).length;
+          progress = fiveStarCount;
+          shouldUnlock = progress >= condition.target;
+          break;
+        case "complete_program":
+          progress = completedSessions.filter(s => s.sessionType === "guided").length;
+          shouldUnlock = progress >= condition.target;
+          break;
+        case "total_time":
+          progress = user.totalTime;
+          shouldUnlock = progress >= condition.target;
+          break;
+        case "reach_level":
+          progress = user.level;
+          shouldUnlock = progress >= condition.target;
+          break;
+        case "complete_all_levels":
+          // This would need level completion tracking
+          progress = 0;
+          shouldUnlock = false;
+          break;
+      }
+
+      if (existing) {
+        // Update progress
+        existing.progress = progress;
+        if (shouldUnlock && !existing.completed) {
+          existing.completed = true;
+          existing.unlockedAt = new Date();
+          unlockedAchievements.push(existing);
+        }
+        this.userAchievements.set(existing.id, existing);
+      } else if (shouldUnlock) {
+        // Create new achievement
+        const newUserAchievement = await this.unlockAchievement(userId, achievement.id);
+        newUserAchievement.progress = progress;
+        unlockedAchievements.push(newUserAchievement);
+      }
+    }
+
+    return unlockedAchievements;
+  }
+
+  async unlockAchievement(userId: number, achievementId: number): Promise<UserAchievement> {
+    const userAchievement: UserAchievement = {
+      id: this.currentUserAchievementId++,
+      userId,
+      achievementId,
+      progress: 0,
+      completed: true,
+      unlockedAt: new Date()
+    };
+    this.userAchievements.set(userAchievement.id, userAchievement);
+    
+    // Award experience points
+    const achievement = this.achievements.get(achievementId);
+    if (achievement) {
+      const user = await this.getUser(userId);
+      if (user) {
+        await this.updateUser(userId, {
+          exp: user.exp + achievement.expReward
+        });
+      }
+    }
+    
+    return userAchievement;
+  }
+
+  async updateAchievementProgress(userId: number, achievementId: number, progress: number): Promise<void> {
+    const userAchievement = Array.from(this.userAchievements.values())
+      .find(ua => ua.userId === userId && ua.achievementId === achievementId);
+    
+    if (userAchievement) {
+      userAchievement.progress = progress;
+      this.userAchievements.set(userAchievement.id, userAchievement);
+    }
   }
 }
 
