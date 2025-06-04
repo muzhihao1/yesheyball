@@ -106,6 +106,16 @@ export default function GrowthPage() {
     queryKey: ["/api/training-records"],
   });
 
+  // Fetch achievements
+  const { data: achievements = [] } = useQuery<Achievement[]>({
+    queryKey: ["/api/achievements"],
+  });
+
+  // Fetch user achievements
+  const { data: userAchievements = [] } = useQuery<UserAchievement[]>({
+    queryKey: ["/api/user-achievements"],
+  });
+
   if (!user) {
     return <div>加载中...</div>;
   }
@@ -230,26 +240,33 @@ export default function GrowthPage() {
   const currentLevelExp = (user?.exp || 0) % 1000;
   const nextLevelProgress = (currentLevelExp / 1000) * 100;
 
-  // Achievement calculations
-  const getAchievements = () => {
-    const achievements = [];
-    
-    if (totalCompletedExercises >= 1) achievements.push({ name: "初次尝试", description: "完成第一个练习", earned: true });
-    if (totalCompletedExercises >= 10) achievements.push({ name: "勤奋练习", description: "完成10个练习", earned: true });
-    if (totalCompletedExercises >= 25) achievements.push({ name: "持之以恒", description: "完成25个练习", earned: true });
-    if (user?.streak && user.streak >= 7) achievements.push({ name: "一周连击", description: "连续训练7天", earned: true });
-    if (user?.streak && user.streak >= 30) achievements.push({ name: "月度坚持", description: "连续训练30天", earned: true });
-    if (totalTrainingTime >= 300) achievements.push({ name: "时间投入", description: "总训练时间超过5小时", earned: true });
-    
-    // Future achievements
-    if (totalCompletedExercises < 50) achievements.push({ name: "半百达成", description: "完成50个练习", earned: false });
-    if (!user?.streak || user.streak < 100) achievements.push({ name: "百日坚持", description: "连续训练100天", earned: false });
-    
-    return achievements;
+  // Combine achievements data with user progress
+  const combinedAchievements = achievements.map(achievement => {
+    const userAchievement = userAchievements.find(ua => ua.achievementId === achievement.id);
+    return {
+      ...achievement,
+      userProgress: userAchievement?.progress || 0,
+      completed: userAchievement?.completed || false,
+      unlockedAt: userAchievement?.unlockedAt
+    };
+  });
+
+  // Group achievements by category
+  const achievementCategories = {
+    beginner: combinedAchievements.filter(a => a.category === "beginner"),
+    intermediate: combinedAchievements.filter(a => a.category === "intermediate"),
+    advanced: combinedAchievements.filter(a => a.category === "advanced"),
+    master: combinedAchievements.filter(a => a.category === "master")
   };
 
-  const achievements = getAchievements();
-  const earnedAchievements = achievements.filter(a => a.earned);
+  const getProgressPercentage = (achievement: any) => {
+    const condition = achievement.condition;
+    if (!condition?.target) return 0;
+    return Math.min((achievement.userProgress / condition.target) * 100, 100);
+  };
+
+  const earnedAchievements = combinedAchievements.filter(a => a.completed);
+  const totalAchievements = combinedAchievements.length;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -443,49 +460,119 @@ export default function GrowthPage() {
                 <Trophy className="h-5 w-5 mr-2 text-yellow-600" />
                 成就系统
                 <span className="ml-auto text-sm font-normal text-gray-500">
-                  {earnedAchievements.length}/{achievements.length} 已获得
+                  {earnedAchievements.length}/{totalAchievements} 已获得
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {achievements.map((achievement, index) => (
-                  <div
-                    key={index}
-                    className={`p-4 rounded-lg border ${
-                      achievement.earned
-                        ? 'bg-yellow-50 border-yellow-200'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${
-                        achievement.earned ? 'bg-yellow-100' : 'bg-gray-100'
-                      }`}>
-                        {achievement.earned ? (
-                          <Award className="h-5 w-5 text-yellow-600" />
-                        ) : (
-                          <Lock className="h-5 w-5 text-gray-400" />
-                        )}
+              <div className="space-y-6">
+                {/* Achievement Categories */}
+                {Object.entries(achievementCategories).map(([category, categoryAchievements]) => {
+                  const categoryNames = {
+                    beginner: "新手成就",
+                    intermediate: "进阶成就", 
+                    advanced: "高级成就",
+                    master: "大师成就"
+                  };
+                  
+                  return (
+                    <div key={category} className="space-y-3">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                        <span className="text-2xl mr-2">
+                          {category === "beginner" && "🌟"}
+                          {category === "intermediate" && "⚡"}
+                          {category === "advanced" && "🏆"}
+                          {category === "master" && "👑"}
+                        </span>
+                        {categoryNames[category as keyof typeof categoryNames]}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {categoryAchievements.map((achievement) => {
+                          const progressPercentage = getProgressPercentage(achievement);
+                          const isLocked = !achievement.unlocked && !achievement.completed;
+                          
+                          return (
+                            <div
+                              key={achievement.id}
+                              className={`p-4 rounded-lg border transition-all duration-200 ${
+                                achievement.completed
+                                  ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 shadow-sm'
+                                  : isLocked
+                                  ? 'bg-gray-50 border-gray-200 opacity-60'
+                                  : 'bg-blue-50 border-blue-200'
+                              }`}
+                            >
+                              <div className="flex items-start space-x-3">
+                                <div className={`p-2 rounded-full text-2xl ${
+                                  achievement.completed 
+                                    ? 'bg-yellow-100' 
+                                    : isLocked
+                                    ? 'bg-gray-100 grayscale'
+                                    : 'bg-blue-100'
+                                }`}>
+                                  {achievement.completed ? (
+                                    <span>✨</span>
+                                  ) : isLocked ? (
+                                    <Lock className="h-5 w-5 text-gray-400" />
+                                  ) : (
+                                    <span>{achievement.icon}</span>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <h4 className={`font-medium truncate ${
+                                      achievement.completed 
+                                        ? 'text-gray-900' 
+                                        : isLocked
+                                        ? 'text-gray-500'
+                                        : 'text-gray-800'
+                                    }`}>
+                                      {achievement.name}
+                                    </h4>
+                                    {achievement.completed && (
+                                      <Badge className="bg-yellow-100 text-yellow-800 ml-2">
+                                        +{achievement.expReward}XP
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className={`text-sm mb-2 ${
+                                    achievement.completed 
+                                      ? 'text-gray-600' 
+                                      : isLocked
+                                      ? 'text-gray-400'
+                                      : 'text-gray-600'
+                                  }`}>
+                                    {achievement.description}
+                                  </p>
+                                  
+                                  {/* Progress Bar */}
+                                  {!achievement.completed && achievement.condition?.target && (
+                                    <div className="space-y-1">
+                                      <div className="flex justify-between text-xs text-gray-500">
+                                        <span>进度: {achievement.userProgress} / {achievement.condition.target}</span>
+                                        <span>{Math.round(progressPercentage)}%</span>
+                                      </div>
+                                      <Progress 
+                                        value={progressPercentage} 
+                                        className="h-2"
+                                      />
+                                    </div>
+                                  )}
+                                  
+                                  {achievement.completed && achievement.unlockedAt && (
+                                    <p className="text-xs text-yellow-600 mt-2">
+                                      获得时间: {new Date(achievement.unlockedAt).toLocaleDateString('zh-CN')}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div className="flex-1">
-                        <h3 className={`font-medium ${
-                          achievement.earned ? 'text-gray-900' : 'text-gray-500'
-                        }`}>
-                          {achievement.name}
-                        </h3>
-                        <p className={`text-sm ${
-                          achievement.earned ? 'text-gray-600' : 'text-gray-400'
-                        }`}>
-                          {achievement.description}
-                        </p>
-                      </div>
-                      {achievement.earned && (
-                        <Badge className="bg-yellow-100 text-yellow-800">已获得</Badge>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
