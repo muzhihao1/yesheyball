@@ -1,246 +1,573 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { getLevelName, calculateLevelProgress, getExpForNextLevel, formatDuration, ACHIEVEMENT_ICONS } from "@/lib/tasks";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { 
+  User as UserIcon, 
+  Settings, 
+  Bell, 
+  Shield, 
+  Calendar, 
+  Clock, 
+  Target,
+  Edit,
+  Save,
+  Camera,
+  Mail,
+  Phone,
+  MapPin,
+  Cake,
+  Trophy,
+  Star
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
-interface UserStats {
+interface UserProfile {
+  id: number;
+  username: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  birthday?: string;
+  bio?: string;
+  avatar?: string;
   level: number;
   exp: number;
   streak: number;
   totalDays: number;
   completedTasks: number;
   totalTime: number;
-  achievements: string[];
-  diaryCount: number;
-  averageRating: number;
+}
+
+interface UserSettings {
+  notifications: {
+    training: boolean;
+    achievements: boolean;
+    streak: boolean;
+    email: boolean;
+  };
+  privacy: {
+    showProfile: boolean;
+    showStats: boolean;
+    showAchievements: boolean;
+  };
+  preferences: {
+    theme: 'light' | 'dark' | 'auto';
+    language: 'zh-CN' | 'en-US';
+    timezone: string;
+  };
 }
 
 export default function Profile() {
-  const { data: user, isLoading: userLoading } = useQuery<User>({
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    username: '',
+    email: '',
+    phone: '',
+    location: '',
+    birthday: '',
+    bio: ''
+  });
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch user data
+  const { data: user, isLoading } = useQuery<User>({
     queryKey: ["/api/user"],
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery<UserStats>({
-    queryKey: ["/api/user/stats"],
+  // Mock settings data (in real app this would come from API)
+  const [settings, setSettings] = useState<UserSettings>({
+    notifications: {
+      training: true,
+      achievements: true,
+      streak: true,
+      email: false
+    },
+    privacy: {
+      showProfile: true,
+      showStats: true,
+      showAchievements: true
+    },
+    preferences: {
+      theme: 'light',
+      language: 'zh-CN',
+      timezone: 'Asia/Shanghai'
+    }
   });
 
-  if (userLoading || statsLoading) {
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: Partial<UserProfile>) => {
+      return apiRequest(`/api/user/${user?.id}`, 'PATCH', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({ title: "个人资料已更新" });
+      setIsEditing(false);
+    },
+    onError: () => {
+      toast({ title: "更新失败", variant: "destructive" });
+    }
+  });
+
+  // Initialize edit form when user data loads
+  if (user && !editForm.username) {
+    setEditForm({
+      username: user.username || '',
+      email: '',
+      phone: '',
+      location: '',
+      birthday: '',
+      bio: ''
+    });
+  }
+
+  if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <div className="w-48 h-8 skeleton mx-auto mb-4"></div>
-          <div className="w-64 h-6 skeleton mx-auto"></div>
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="skeleton h-96 rounded-xl"></div>
-          ))}
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="h-96 bg-gray-200 rounded"></div>
+            <div className="md:col-span-2 h-96 bg-gray-200 rounded"></div>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!user || !stats) {
+  if (!user) {
     return <div className="text-center py-8">数据加载失败</div>;
   }
 
-  const levelProgress = calculateLevelProgress(user.exp, user.level);
-  const expForNext = getExpForNextLevel(user.level);
-  const currentLevelExp = (user.level - 1) * 150;
-  const expInLevel = user.exp - currentLevelExp;
-
-  const allAchievements = [
-    { name: "新手上路", unlocked: stats.completedTasks >= 1, description: "完成第一个训练任务" },
-    { name: "连续打卡", unlocked: stats.streak >= 3, description: "连续训练3天" },
-    { name: "精准射手", unlocked: stats.averageRating >= 4, description: "平均评分达到4星" },
-    { name: "勤奋练习", unlocked: stats.totalTime >= 600, description: "累计训练10小时" },
-    { name: "完美表现", unlocked: stats.completedTasks >= 50, description: "完成50个训练任务" },
-    { name: "台球大师", unlocked: stats.level >= 5, description: "达到等级5" },
-  ];
+  const handleSaveProfile = () => {
+    updateProfileMutation.mutate(editForm);
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-green-700 mb-2">个人资料</h2>
-        <p className="text-gray-600">查看你的训练统计和成就</p>
+        <h1 className="text-3xl font-bold text-green-700 mb-2">个人档案</h1>
+        <p className="text-gray-600">管理你的账户信息和偏好设置</p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        
-        {/* User Info Card */}
-        <Card>
-          <CardContent className="text-center p-6">
-            <div className="w-20 h-20 gradient-billiards rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl">👤</span>
-            </div>
-            <h3 className="text-xl font-bold text-green-700 mb-1">{user.username}</h3>
-            <p className="text-gray-600 mb-4">台球爱好者</p>
-            
-            <div className="bg-green-50 rounded-lg p-3 mb-4">
-              <div className="text-lg font-bold text-green-700">等级 {user.level}</div>
-              <div className="text-sm text-gray-600">{getLevelName(user.level)}</div>
-            </div>
-            
-            <Button className="w-full bg-billiards-green hover:bg-green-700">
-              编辑资料
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Statistics */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-green-700">训练统计</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center">
-                <span className="mr-3 text-red-500">🔥</span>
-                <span className="text-gray-700">连续打卡</span>
-              </div>
-              <span className="font-bold text-green-600">{stats.streak}天</span>
-            </div>
-            
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center">
-                <span className="mr-3 text-blue-500">📅</span>
-                <span className="text-gray-700">总训练天数</span>
-              </div>
-              <span className="font-bold text-green-600">{stats.totalDays}天</span>
-            </div>
-            
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center">
-                <span className="mr-3 text-green-500">✅</span>
-                <span className="text-gray-700">完成任务</span>
-              </div>
-              <span className="font-bold text-green-600">{stats.completedTasks}个</span>
-            </div>
-            
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center">
-                <span className="mr-3 text-yellow-500">⭐</span>
-                <span className="text-gray-700">总经验值</span>
-              </div>
-              <span className="font-bold text-green-600">{stats.exp}</span>
-            </div>
-            
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center">
-                <span className="mr-3 text-purple-500">🕐</span>
-                <span className="text-gray-700">训练时长</span>
-              </div>
-              <span className="font-bold text-green-600">{formatDuration(stats.totalTime)}</span>
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div className="flex items-center">
-                <span className="mr-3 text-orange-500">📝</span>
-                <span className="text-gray-700">日记篇数</span>
-              </div>
-              <span className="font-bold text-green-600">{stats.diaryCount}篇</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Achievements */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-green-700">成就徽章</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              {allAchievements.map((achievement) => (
-                <div 
-                  key={achievement.name}
-                  className={`text-center p-3 rounded-lg ${
-                    achievement.unlocked 
-                      ? 'bg-gradient-to-b from-yellow-400 to-yellow-500' 
-                      : 'bg-gray-200 opacity-50'
-                  }`}
-                  title={achievement.description}
-                >
-                  <div className={`text-lg mb-1 ${achievement.unlocked ? 'text-white' : 'text-gray-400'}`}>
-                    {ACHIEVEMENT_ICONS[achievement.name as keyof typeof ACHIEVEMENT_ICONS] || '🏆'}
-                  </div>
-                  <div className={`text-xs font-medium ${achievement.unlocked ? 'text-white' : 'text-gray-400'}`}>
-                    {achievement.name}
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Profile Card */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader className="text-center">
+              <div className="relative mx-auto w-24 h-24 mb-4">
+                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
+                  <UserIcon className="h-12 w-12 text-green-600" />
                 </div>
-              ))}
-            </div>
-
-            {/* Level Progress */}
-            <div className="p-4 bg-green-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-green-700">升级进度</span>
-                <span className="text-sm text-gray-600">
-                  {expInLevel}/{expForNext - currentLevelExp} XP
-                </span>
+                <Button
+                  size="sm"
+                  className="absolute -bottom-2 -right-2 rounded-full p-2 h-8 w-8"
+                  variant="outline"
+                >
+                  <Camera className="h-3 w-3" />
+                </Button>
               </div>
-              <Progress value={levelProgress} className="h-2 mb-2" />
-              <p className="text-xs text-gray-600 text-center">
-                还需 {expForNext - user.exp} 经验值升至等级 {user.level + 1}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+              <CardTitle className="text-xl">{user.username}</CardTitle>
+              <div className="flex items-center justify-center space-x-2 mt-2">
+                <Badge variant="secondary">等级 {user.level}</Badge>
+                <Badge variant="outline">{user.exp} XP</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{user.streak}</div>
+                <div className="text-sm text-gray-500">连续训练天数</div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div>
+                  <div className="font-semibold">{user.completedTasks}</div>
+                  <div className="text-xs text-gray-500">完成任务</div>
+                </div>
+                <div>
+                  <div className="font-semibold">{Math.floor(user.totalTime / 60)}h</div>
+                  <div className="text-xs text-gray-500">训练时长</div>
+                </div>
+              </div>
+
+              <Button 
+                className="w-full" 
+                onClick={() => setIsEditing(true)}
+                disabled={isEditing}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                编辑资料
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="personal" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="personal">个人信息</TabsTrigger>
+              <TabsTrigger value="settings">设置</TabsTrigger>
+              <TabsTrigger value="privacy">隐私</TabsTrigger>
+              <TabsTrigger value="account">账户</TabsTrigger>
+            </TabsList>
+
+            {/* Personal Information */}
+            <TabsContent value="personal">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <UserIcon className="h-5 w-5 mr-2" />
+                    个人信息
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">用户名</Label>
+                      <Input
+                        id="username"
+                        value={isEditing ? editForm.username : user.username}
+                        onChange={(e) => setEditForm({...editForm, username: e.target.value})}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">邮箱</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={isEditing ? editForm.email : '未设置'}
+                        onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                        disabled={!isEditing}
+                        placeholder="请输入邮箱地址"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">手机号码</Label>
+                      <Input
+                        id="phone"
+                        value={isEditing ? editForm.phone : '未设置'}
+                        onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                        disabled={!isEditing}
+                        placeholder="请输入手机号码"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">所在地区</Label>
+                      <Input
+                        id="location"
+                        value={isEditing ? editForm.location : '未设置'}
+                        onChange={(e) => setEditForm({...editForm, location: e.target.value})}
+                        disabled={!isEditing}
+                        placeholder="请输入所在地区"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="birthday">生日</Label>
+                      <Input
+                        id="birthday"
+                        type="date"
+                        value={isEditing ? editForm.birthday : ''}
+                        onChange={(e) => setEditForm({...editForm, birthday: e.target.value})}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">个人简介</Label>
+                    <Textarea
+                      id="bio"
+                      value={isEditing ? editForm.bio : '这个人很懒，什么都没留下...'}
+                      onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                      disabled={!isEditing}
+                      placeholder="介绍一下自己吧..."
+                      rows={3}
+                    />
+                  </div>
+
+                  {isEditing && (
+                    <div className="flex space-x-2 pt-4">
+                      <Button 
+                        onClick={handleSaveProfile}
+                        disabled={updateProfileMutation.isPending}
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {updateProfileMutation.isPending ? '保存中...' : '保存'}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsEditing(false)}
+                      >
+                        取消
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Settings */}
+            <TabsContent value="settings">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Settings className="h-5 w-5 mr-2" />
+                    应用设置
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Notifications */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center">
+                      <Bell className="h-5 w-5 mr-2" />
+                      通知设置
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>训练提醒</Label>
+                          <p className="text-sm text-gray-500">每日训练计划提醒</p>
+                        </div>
+                        <Switch 
+                          checked={settings.notifications.training}
+                          onCheckedChange={(checked) => 
+                            setSettings(prev => ({
+                              ...prev,
+                              notifications: {...prev.notifications, training: checked}
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>成就通知</Label>
+                          <p className="text-sm text-gray-500">获得新成就时通知</p>
+                        </div>
+                        <Switch 
+                          checked={settings.notifications.achievements}
+                          onCheckedChange={(checked) => 
+                            setSettings(prev => ({
+                              ...prev,
+                              notifications: {...prev.notifications, achievements: checked}
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>连击提醒</Label>
+                          <p className="text-sm text-gray-500">连续训练天数提醒</p>
+                        </div>
+                        <Switch 
+                          checked={settings.notifications.streak}
+                          onCheckedChange={(checked) => 
+                            setSettings(prev => ({
+                              ...prev,
+                              notifications: {...prev.notifications, streak: checked}
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preferences */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">偏好设置</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>主题</Label>
+                        <select 
+                          className="w-full p-2 border rounded-md"
+                          value={settings.preferences.theme}
+                          onChange={(e) => 
+                            setSettings(prev => ({
+                              ...prev,
+                              preferences: {...prev.preferences, theme: e.target.value as any}
+                            }))
+                          }
+                        >
+                          <option value="light">浅色</option>
+                          <option value="dark">深色</option>
+                          <option value="auto">跟随系统</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>语言</Label>
+                        <select 
+                          className="w-full p-2 border rounded-md"
+                          value={settings.preferences.language}
+                          onChange={(e) => 
+                            setSettings(prev => ({
+                              ...prev,
+                              preferences: {...prev.preferences, language: e.target.value as any}
+                            }))
+                          }
+                        >
+                          <option value="zh-CN">简体中文</option>
+                          <option value="en-US">English</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Privacy */}
+            <TabsContent value="privacy">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Shield className="h-5 w-5 mr-2" />
+                    隐私设置
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>公开个人资料</Label>
+                        <p className="text-sm text-gray-500">允许其他用户查看你的个人资料</p>
+                      </div>
+                      <Switch 
+                        checked={settings.privacy.showProfile}
+                        onCheckedChange={(checked) => 
+                          setSettings(prev => ({
+                            ...prev,
+                            privacy: {...prev.privacy, showProfile: checked}
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>显示训练统计</Label>
+                        <p className="text-sm text-gray-500">在个人资料中显示训练数据</p>
+                      </div>
+                      <Switch 
+                        checked={settings.privacy.showStats}
+                        onCheckedChange={(checked) => 
+                          setSettings(prev => ({
+                            ...prev,
+                            privacy: {...prev.privacy, showStats: checked}
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>显示成就</Label>
+                        <p className="text-sm text-gray-500">在个人资料中显示已获得的成就</p>
+                      </div>
+                      <Switch 
+                        checked={settings.privacy.showAchievements}
+                        onCheckedChange={(checked) => 
+                          setSettings(prev => ({
+                            ...prev,
+                            privacy: {...prev.privacy, showAchievements: checked}
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Account */}
+            <TabsContent value="account">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <UserIcon className="h-5 w-5 mr-2" />
+                    账户管理
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <h3 className="font-semibold text-blue-900 mb-2">账户信息</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">用户ID:</span>
+                          <span className="font-mono">{user.id}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">注册时间:</span>
+                          <span>{new Date(user.createdAt).toLocaleDateString('zh-CN')}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">最后活跃:</span>
+                          <span>{new Date(user.lastActiveAt).toLocaleDateString('zh-CN')}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Mail className="h-4 w-4 mr-2" />
+                        修改密码
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Shield className="h-4 w-4 mr-2" />
+                        双重认证
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Target className="h-4 w-4 mr-2" />
+                        导出数据
+                      </Button>
+                    </div>
+
+                    <div className="pt-4 border-t">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="destructive" className="w-full">
+                            注销账户
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>确认注销账户</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <p className="text-gray-600">
+                              注销账户将永久删除您的所有数据，包括训练记录、成就等信息。此操作不可撤销。
+                            </p>
+                            <div className="flex space-x-2">
+                              <Button variant="destructive" className="flex-1">
+                                确认注销
+                              </Button>
+                              <Button variant="outline" className="flex-1">
+                                取消
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-
-      {/* Performance Overview */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle className="text-green-700">表现概览</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">
-                {stats.averageRating.toFixed(1)}
-              </div>
-              <div className="text-sm text-gray-600">平均评分</div>
-              <div className="flex justify-center mt-1">
-                {[...Array(5)].map((_, i) => (
-                  <span 
-                    key={i}
-                    className={`text-sm ${i < Math.round(stats.averageRating) ? 'text-yellow-500' : 'text-gray-300'}`}
-                  >
-                    ⭐
-                  </span>
-                ))}
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">
-                {Math.round((stats.completedTasks / Math.max(stats.totalDays, 1)) * 10) / 10}
-              </div>
-              <div className="text-sm text-gray-600">日均任务</div>
-              <div className="text-xs text-gray-500 mt-1">个/天</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600 mb-2">
-                {Math.round(stats.totalTime / Math.max(stats.totalDays, 1))}
-              </div>
-              <div className="text-sm text-gray-600">日均时长</div>
-              <div className="text-xs text-gray-500 mt-1">分钟/天</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-3xl font-bold text-orange-600 mb-2">
-                {Math.round((stats.diaryCount / Math.max(stats.totalDays, 1)) * 100)}%
-              </div>
-              <div className="text-sm text-gray-600">日记记录率</div>
-              <div className="text-xs text-gray-500 mt-1">写日记的天数占比</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
