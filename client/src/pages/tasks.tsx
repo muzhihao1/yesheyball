@@ -189,7 +189,7 @@ export default function Tasks() {
       {/* Header */}
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold text-green-700">训练计划</h1>
-        <p className="text-gray-600">耶氏台球学院系统教学</p>
+        <p className="text-gray-600">耶氏台球学院系统教学 · 共30集</p>
         <div className="flex items-center justify-center text-gray-500">
           <Calendar className="h-5 w-5 mr-2" />
           {new Date().toLocaleDateString('zh-CN')}
@@ -209,7 +209,7 @@ export default function Tasks() {
                 {difficultyBadge.label}
               </Badge>
               <Badge variant="outline">
-                第8周
+                第{Math.ceil(currentDay / 7)}周
               </Badge>
             </div>
           </div>
