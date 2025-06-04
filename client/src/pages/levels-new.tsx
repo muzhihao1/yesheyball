@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Trophy, Target, Zap, Crown, Lock, Play, Pause, RotateCcw, CheckCircle, Star } from "lucide-react";
-import exerciseRequirementsData from "@/data/exerciseRequirements.json";
-import exerciseDescriptionsData from "@/data/exerciseDescriptions.json";
+
+// Lazy load JSON data to improve initial page load
+const loadExerciseData = async () => {
+  const [requirements, descriptions] = await Promise.all([
+    import("@/data/exerciseRequirements.json"),
+    import("@/data/exerciseDescriptions.json")
+  ]);
+  return {
+    exerciseRequirementsData: requirements.default,
+    exerciseDescriptionsData: descriptions.default
+  };
+};
 
 interface TableBounds {
   top: number;
@@ -77,6 +87,12 @@ export default function Levels() {
   const [examStartTime, setExamStartTime] = useState<Date | null>(null);
   const [examTimeRemaining, setExamTimeRemaining] = useState(0);
   const [examInProgress, setExamInProgress] = useState(false);
+  
+  // Exercise data state
+  const [exerciseData, setExerciseData] = useState<{
+    exerciseRequirementsData: any;
+    exerciseDescriptionsData: any;
+  } | null>(null);
 
   const { toast } = useToast();
 
@@ -90,6 +106,11 @@ export default function Levels() {
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ["/api/user"],
   });
+
+  // Load exercise data on component mount
+  useEffect(() => {
+    loadExerciseData().then(setExerciseData);
+  }, []);
 
   // Timer effect for practice session
   useEffect(() => {
@@ -289,13 +310,15 @@ export default function Levels() {
   };
 
   const getExerciseRequirement = (level: number, exerciseNumber: number): string => {
+    if (!exerciseData) return "连续完成5次不失误";
     const key = `${level}-${exerciseNumber}`;
-    return exerciseRequirementsData[key as keyof typeof exerciseRequirementsData] || "连续完成5次不失误";
+    return exerciseData.exerciseRequirementsData[key] || "连续完成5次不失误";
   };
 
   const getExerciseDescription = (level: number, exerciseNumber: number): string => {
+    if (!exerciseData) return `第${exerciseNumber}题练习`;
     const key = `${level}-${exerciseNumber}`;
-    const specificDescription = exerciseDescriptionsData[key as keyof typeof exerciseDescriptionsData];
+    const specificDescription = exerciseData.exerciseDescriptionsData[key];
     
     if (specificDescription) {
       return specificDescription;
