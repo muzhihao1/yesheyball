@@ -37,12 +37,11 @@ function App() {
           {/* Tab Navigation */}
           <nav className="bg-white border-b border-gray-200 sticky top-16 z-40">
             <div className="max-w-7xl mx-auto px-4">
-              <div className="flex space-x-8">
+              <div className="flex justify-center space-x-4 sm:space-x-8 overflow-x-auto">
                 <TabButton href="/tasks" icon="📝" label="每日训练" />
                 <TabButton href="/diary" icon="📖" label="练习日记" />
                 <TabButton href="/" icon="🗺️" label="关卡地图" />
                 <TabButton href="/test" icon="🏆" label="等级考核" />
-
                 <TabButton href="/profile" icon="👤" label="个人资料" />
               </div>
             </div>
@@ -65,14 +64,14 @@ function TabButton({ href, icon, label }: { href: string; icon: string; label: s
   return (
     <a
       href={href}
-      className={`py-4 px-2 border-b-2 font-medium transition-colors ${
+      className={`py-4 px-3 sm:px-4 border-b-2 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
         isActive
-          ? "border-billiards-green text-green-600"
+          ? "border-green-500 text-green-600"
           : "border-transparent text-gray-500 hover:text-gray-700"
       }`}
     >
-      <span className="mr-2">{icon}</span>
-      {label}
+      <span className="mr-1 sm:mr-2">{icon}</span>
+      <span className="hidden xs:inline sm:inline">{label}</span>
     </a>
   );
 }
