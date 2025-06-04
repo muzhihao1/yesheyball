@@ -598,28 +598,6 @@ export default function Levels() {
                     <div className="text-right">
                       <div className="text-sm opacity-90">进度</div>
                       <div className="font-bold text-lg">{stage.completedExercises}/{stage.totalExercises}</div>
-                      
-                      {/* 等级考核按钮 */}
-                      {canTakeExam(stage) && (
-                        <div className="mt-2">
-                          <Button
-                            onClick={() => handleStartExam(stage)}
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-1"
-                            size="sm"
-                          >
-                            等级考核
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* 1级完成提示 */}
-                      {stage.level === 1 && stage.completed && (
-                        <div className="mt-2">
-                          <Badge className="bg-green-500 text-white text-xs">
-                            已完成
-                          </Badge>
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="mt-4 bg-white/20 rounded-full h-3 overflow-hidden">
@@ -775,13 +753,23 @@ export default function Levels() {
                   })}
                 </div>
 
-                {/* Level Complete Badge */}
+                {/* Level Complete Badge or Exam Button */}
                 {stage.completed && (
                   <div className="flex justify-center mt-8">
-                    <div className={`${levelColors.node} rounded-2xl px-6 py-3 text-white shadow-lg flex items-center space-x-2`}>
-                      <Trophy className="w-5 h-5" />
-                      <span className="font-bold">等级完成</span>
-                    </div>
+                    {canTakeExam(stage) ? (
+                      <Button
+                        onClick={() => handleStartExam(stage)}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white rounded-2xl px-6 py-3 shadow-lg flex items-center space-x-2"
+                      >
+                        <Trophy className="w-5 h-5" />
+                        <span className="font-bold">等级考核</span>
+                      </Button>
+                    ) : stage.level === 1 ? (
+                      <div className={`${levelColors.node} rounded-2xl px-6 py-3 text-white shadow-lg flex items-center space-x-2`}>
+                        <Trophy className="w-5 h-5" />
+                        <span className="font-bold">等级完成</span>
+                      </div>
+                    ) : null}
                   </div>
                 )}
 
