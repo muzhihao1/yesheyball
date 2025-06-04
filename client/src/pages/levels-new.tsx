@@ -535,19 +535,13 @@ export default function Levels() {
                                 {!isUnlocked ? (
                                   <Lock className="w-7 h-7" />
                                 ) : exercise.completed ? (
-                                  <Star className="w-10 h-10 fill-white" />
+                                  <CheckCircle className="w-10 h-10 fill-white" />
                                 ) : (
                                   <div className={`w-4 h-4 rounded-full ${levelColors.border.replace('border-', 'bg-')}`}></div>
                                 )}
                               </div>
                             )}
-                            
-                            {/* Stars Badge */}
-                            {exercise.completed && exercise.stars > 0 && !isMilestone && (
-                              <div className="absolute -top-3 -right-3 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-                                {exercise.stars}
-                              </div>
-                            )}
+
                           </div>
                           
 
@@ -674,11 +668,8 @@ export default function Levels() {
                   {selectedExercise?.completed ? (
                     <div className="text-center space-y-4">
                       <div className="inline-flex items-center space-x-2 bg-green-100 text-green-700 px-6 py-3 rounded-full">
-                        <span className="text-xl">✅</span>
+                        <CheckCircle className="w-5 h-5" />
                         <span className="font-medium">已完成此练习</span>
-                      </div>
-                      <div className="text-yellow-600 text-lg">
-                        获得 {'⭐'.repeat(selectedExercise?.stars || 0)} 星评价
                       </div>
                       <div className="space-x-3">
                         <Button 
@@ -689,39 +680,76 @@ export default function Levels() {
                         </Button>
                         <Button 
                           variant="outline"
-                          onClick={() => selectedExercise && handleCompleteExercise(selectedExercise)}
+                          onClick={handleResetPractice}
                         >
                           重新练习
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center space-y-4">
+                    <div className="text-center space-y-6">
+                      {/* 练习计时器 */}
+                      <div className="bg-gray-50 rounded-lg p-6">
+                        <div className="text-center space-y-4">
+                          <div className="text-3xl font-mono font-bold text-gray-800">
+                            {formatTime(practiceTime)}
+                          </div>
+                          
+                          {/* 练习控制按钮 */}
+                          <div className="flex justify-center space-x-3">
+                            {!isPracticing && practiceTime === 0 ? (
+                              <Button 
+                                onClick={handleStartPractice}
+                                className="bg-blue-500 hover:bg-blue-600 px-8"
+                              >
+                                <Play className="w-4 h-4 mr-2" />
+                                开始练习
+                              </Button>
+                            ) : (
+                              <>
+                                <Button 
+                                  onClick={isPracticing ? handlePausePractice : handleStartPractice}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  {isPracticing ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                                  {isPracticing ? '暂停' : '继续'}
+                                </Button>
+                                <Button 
+                                  onClick={handleResetPractice}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  <RotateCcw className="w-4 h-4 mr-2" />
+                                  重置
+                                </Button>
+                                <Button 
+                                  onClick={handleFinishPractice}
+                                  className="bg-green-500 hover:bg-green-600"
+                                  size="sm"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  完成练习
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
                       <div className="space-y-2">
-                        <h4 className="text-lg font-medium text-gray-800">准备开始练习？</h4>
+                        <h4 className="text-lg font-medium text-gray-800">练习指导</h4>
                         <p className="text-gray-600">
-                          请仔细观察球型图，理解击球要求后开始练习
+                          请仔细观察球型图，理解击球要求后开始练习。完成后点击"完成练习"确认。
                         </p>
                       </div>
                       
-                      <div className="flex justify-center space-x-3">
-                        <Button 
-                          onClick={() => selectedExercise && handleCompleteExercise(selectedExercise)}
-                          className="bg-blue-500 hover:bg-blue-600 px-8"
-                        >
-                          开始练习
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={() => setShowExerciseDialog(false)}
-                        >
-                          稍后练习
-                        </Button>
-                      </div>
-                      
-                      <div className="text-xs text-gray-500 mt-2">
-                        💡 提示：按照图示要求完成练习后点击完成
-                      </div>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setShowExerciseDialog(false)}
+                      >
+                        稍后练习
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -740,6 +768,53 @@ export default function Levels() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Completion Confirmation Dialog */}
+      <Dialog open={showCompletionConfirm} onOpenChange={setShowCompletionConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>确认完成练习</DialogTitle>
+            <DialogDescription>
+              请确认您已完成过关要求，点击确认将记录此次练习。
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* 过关要求确认 */}
+            <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
+              <h4 className="font-bold text-orange-700 mb-2">过关要求</h4>
+              <p className="text-gray-700 text-sm">
+                {selectedExercise && getExerciseRequirement(selectedExercise.level, selectedExercise.exerciseNumber)}
+              </p>
+            </div>
+            
+            {/* 练习用时 */}
+            <div className="text-center py-2">
+              <span className="text-sm text-gray-600">本次练习用时：</span>
+              <span className="text-lg font-mono font-bold text-gray-800 ml-2">
+                {formatTime(practiceTime)}
+              </span>
+            </div>
+            
+            {/* 确认按钮 */}
+            <div className="flex space-x-3 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCompletionConfirm(false)}
+                className="flex-1"
+              >
+                继续练习
+              </Button>
+              <Button 
+                onClick={handleConfirmCompletion}
+                className="bg-green-500 hover:bg-green-600 flex-1"
+              >
+                确认完成
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
