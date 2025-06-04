@@ -9,7 +9,7 @@ import Tasks from "@/pages/tasks";
 import Test from "@/pages/test";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
-import AdaptiveLearning from "@/pages/adaptive-learning";
+
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,7 +20,7 @@ function Router() {
       <Route path="/tasks" component={Tasks} />
       <Route path="/test" component={Test} />
       <Route path="/diary" component={Diary} />
-      <Route path="/adaptive" component={AdaptiveLearning} />
+
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
@@ -42,7 +42,7 @@ function App() {
                 <TabButton href="/diary" icon="📖" label="练习日记" />
                 <TabButton href="/" icon="🗺️" label="关卡地图" />
                 <TabButton href="/test" icon="🏆" label="等级考核" />
-                <TabButton href="/adaptive" icon="🧠" label="智能学习" />
+
                 <TabButton href="/profile" icon="👤" label="个人资料" />
               </div>
             </div>
