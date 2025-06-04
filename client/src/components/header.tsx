@@ -57,28 +57,28 @@ export default function Header() {
             </div>
           </div>
           
-          <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6 flex-shrink-0">
+          <div className="flex items-center space-x-3 sm:space-x-5 lg:space-x-8 flex-shrink-0">
             <div className="text-center hidden sm:block">
-              <div className="text-sm sm:text-lg font-bold text-red-500 flex items-center justify-center">
-                <span className="mr-1">🔥</span>
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-red-500 flex items-center justify-center">
+                <span className="mr-1 text-xl">🔥</span>
                 {user.streak}
               </div>
-              <div className="text-xs text-gray-500">连续天数</div>
+              <div className="text-sm text-gray-500">连续天数</div>
             </div>
             <div className="text-center">
-              <div className="text-sm sm:text-lg font-bold text-trophy-gold flex items-center justify-center">
-                <span className="mr-1">⭐</span>
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-trophy-gold flex items-center justify-center">
+                <span className="mr-1 text-xl">⭐</span>
                 {user.exp}
               </div>
-              <div className="text-xs text-gray-500 hidden sm:block">经验值</div>
+              <div className="text-sm text-gray-500 hidden sm:block">经验值</div>
             </div>
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 gradient-billiards rounded-full flex items-center justify-center">
-                <span className="text-white text-xs sm:text-sm font-bold">{user.level}</span>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 gradient-billiards rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-white text-sm sm:text-base lg:text-lg font-bold">{user.level}</span>
               </div>
               <div className="text-left hidden sm:block">
-                <div className="text-sm font-medium text-green-700">{user.username}</div>
-                <div className="text-xs text-gray-500">{getLevelName(user.level)}</div>
+                <div className="text-base lg:text-lg font-medium text-green-700">{user.username}</div>
+                <div className="text-sm text-gray-500">{getLevelName(user.level)}</div>
               </div>
             </div>
           </div>
