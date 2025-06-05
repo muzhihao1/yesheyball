@@ -202,6 +202,7 @@ export default function Tasks() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({ title: "训练记录已删除" });
     },
     onError: () => {
