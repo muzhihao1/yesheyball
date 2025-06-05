@@ -83,6 +83,7 @@ export default function Tasks() {
   // Notes and session data
   const [guidedTrainingNotes, setGuidedTrainingNotes] = useState("");
   const [customTrainingNotes, setCustomTrainingNotes] = useState("");
+  const [specialTrainingNotes, setSpecialTrainingNotes] = useState("");
   const [selectedSessionType, setSelectedSessionType] = useState<string>("");
   
   // Special training states
@@ -400,6 +401,7 @@ export default function Tasks() {
     setSpecialElapsedTime(0);
     setGuidedTrainingNotes("");
     setCustomTrainingNotes("");
+    setSpecialTrainingNotes("");
     setCurrentSpecialTraining(null);
     setSelectedSessionType("");
     
@@ -907,12 +909,14 @@ export default function Tasks() {
               <Label>训练总结</Label>
               <Textarea
                 placeholder="记录本次训练的收获、遇到的问题或心得体会..."
-                value={isGuidedTraining ? guidedTrainingNotes : isCustomTraining ? customTrainingNotes : ""}
+                value={isGuidedTraining ? guidedTrainingNotes : isCustomTraining ? customTrainingNotes : isSpecialTraining ? specialTrainingNotes : ""}
                 onChange={(e) => {
                   if (isGuidedTraining) {
                     setGuidedTrainingNotes(e.target.value);
                   } else if (isCustomTraining) {
                     setCustomTrainingNotes(e.target.value);
+                  } else if (isSpecialTraining) {
+                    setSpecialTrainingNotes(e.target.value);
                   }
                 }}
                 className="min-h-[80px] text-sm"
@@ -947,7 +951,8 @@ export default function Tasks() {
                   }
                   
                   const notes = isGuidedTraining ? guidedTrainingNotes : 
-                               isCustomTraining ? customTrainingNotes : "";
+                               isCustomTraining ? customTrainingNotes : 
+                               isSpecialTraining ? specialTrainingNotes : "";
                   
                   completeSessionMutation.mutate({
                     rating: parseInt(completionRating),
