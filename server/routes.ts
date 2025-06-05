@@ -451,6 +451,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update training record notes
+  app.patch("/api/training-records/:id", async (req, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const { notes } = req.body;
+      
+      if (!notes && notes !== "") {
+        return res.status(400).json({ message: "Notes field is required" });
+      }
+      
+      const updatedSession = await storage.updateTrainingSession(sessionId, { notes });
+      res.json({
+        id: updatedSession.id,
+        userId: updatedSession.userId,
+        title: updatedSession.title,
+        content: updatedSession.notes || "训练已完成",
+        duration: updatedSession.duration,
+        rating: updatedSession.rating,
+        completedAt: updatedSession.completedAt,
+        sessionType: updatedSession.sessionType
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update training record" });
+    }
+  });
+
+  // Delete training record
+  app.delete("/api/training-records/:id", async (req, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      await storage.deleteTrainingSession(sessionId);
+      res.json({ message: "Training record deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete training record" });
+    }
+  });
+
   // Progress to next episode
   app.post("/api/training-programs/next-episode", async (req, res) => {
     try {

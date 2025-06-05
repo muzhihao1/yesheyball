@@ -41,6 +41,7 @@ export interface IStorage {
   createTrainingSession(session: InsertTrainingSession): Promise<TrainingSession>;
   updateTrainingSession(id: number, updates: Partial<TrainingSession>): Promise<TrainingSession>;
   completeTrainingSession(id: number, duration: number, rating: number, notes?: string): Promise<TrainingSession>;
+  deleteTrainingSession(id: number): Promise<void>;
   
   // Training note operations
   getTrainingNotes(sessionId: number): Promise<TrainingNote[]>;
@@ -687,6 +688,21 @@ export class MemStorage implements IStorage {
     };
     this.trainingSessions.set(id, updatedSession);
     return updatedSession;
+  }
+
+  async deleteTrainingSession(id: number): Promise<void> {
+    const session = this.trainingSessions.get(id);
+    if (!session) throw new Error("Training session not found");
+    
+    this.trainingSessions.delete(id);
+    
+    // Also delete associated training notes
+    const associatedNotes = Array.from(this.trainingNotes.values())
+      .filter(note => note.sessionId === id);
+    
+    associatedNotes.forEach(note => {
+      this.trainingNotes.delete(note.id);
+    });
   }
 
   // Training note operations
