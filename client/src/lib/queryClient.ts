@@ -1,18 +1,9 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { createUserError, logError, getErrorCodeFromStatus } from "./errorHandler";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
-    const errorCode = getErrorCodeFromStatus(res.status);
-    const error = new Error(`${res.status}: ${text}`) as any;
-    error.status = res.status;
-    error.code = errorCode;
-    
-    const userError = createUserError(error);
-    logError(userError);
-    
-    throw error;
+    throw new Error(`${res.status}: ${text}`);
   }
 }
 
