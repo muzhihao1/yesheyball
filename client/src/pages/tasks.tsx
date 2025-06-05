@@ -95,6 +95,8 @@ export default function Tasks() {
   const [editingRecord, setEditingRecord] = useState<TrainingRecord | null>(null);
   const [editNotes, setEditNotes] = useState("");
   const [completionRating, setCompletionRating] = useState<string>("");
+  const [aiCoachingFeedback, setAiCoachingFeedback] = useState("");
+  const [showAiFeedback, setShowAiFeedback] = useState(false);
 
   // Generate power training combinations
   const generatePowerTrainingCombinations = (): TrainingCombination[] => {
@@ -233,11 +235,18 @@ export default function Tasks() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+      
+      // Show AI feedback immediately if available
+      if (data.aiFeedback) {
+        setAiCoachingFeedback(data.aiFeedback);
+        setShowAiFeedback(true);
+      }
+      
       handleCancelTraining();
-      toast({ title: "训练记录已保存，AI教练反馈生成中..." });
+      toast({ title: "训练记录已保存" });
     },
     onError: () => {
       toast({ 
@@ -777,6 +786,40 @@ export default function Tasks() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Coaching Feedback Dialog */}
+      <Dialog open={showAiFeedback} onOpenChange={setShowAiFeedback}>
+        <DialogContent className="max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-bold">AI</span>
+              </div>
+              <span>教练反馈</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Chat-style AI feedback */}
+            <div className="bg-blue-50 rounded-lg p-4 relative">
+              <div className="absolute top-3 left-[-8px] w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-r-8 border-r-blue-50"></div>
+              <div className="text-blue-800 text-sm leading-relaxed whitespace-pre-line">
+                {aiCoachingFeedback}
+              </div>
+            </div>
+            
+            <div className="text-xs text-gray-500 text-center">
+              基于你的训练表现，AI教练为你提供个性化建议
+            </div>
+            
+            <Button 
+              onClick={() => setShowAiFeedback(false)}
+              className="w-full"
+            >
+              继续训练
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
