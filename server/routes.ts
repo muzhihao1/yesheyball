@@ -17,8 +17,14 @@ import {
   getExperienceBreakdown 
 } from "./experienceSystem";
 import { z } from "zod";
+import OpenAI from "openai";
 import path from "path";
 import fs from "fs";
+
+// Initialize OpenAI client
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY 
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   

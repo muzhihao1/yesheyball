@@ -658,6 +658,7 @@ export class MemStorage implements IStorage {
       rating: insertSession.rating || null,
       completed: insertSession.completed || false,
       sessionType: insertSession.sessionType || "custom",
+      aiFeedback: insertSession.aiFeedback || null,
       createdAt: new Date(),
       completedAt: insertSession.completedAt || null
     };
