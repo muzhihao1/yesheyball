@@ -898,8 +898,49 @@ export default function Tasks() {
                             {/* 开球线 */}
                             <div className="absolute bottom-8 left-2 right-2 h-0.5 bg-white opacity-60"></div>
                             
-                            {/* 主球位置 - 开球区域（发球线和底边之间） */}
-                            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white rounded-full border border-gray-600"></div>
+                            {/* 主球位置 - 根据目标球和袋口计算击球线 */}
+                            {(() => {
+                              const targetPocket = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint;
+                              const ballPosition = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique;
+                              
+                              // 根据目标袋口调整主球位置，形成正确的击球线
+                              let cueBallStyle = {};
+                              
+                              if (ballPosition === '中央正位') {
+                                switch(targetPocket) {
+                                  case '左上角袋':
+                                    cueBallStyle = { bottom: '12px', left: '60%', transform: 'translateX(-50%)' };
+                                    break;
+                                  case '右上角袋':
+                                    cueBallStyle = { bottom: '12px', left: '40%', transform: 'translateX(-50%)' };
+                                    break;
+                                  case '左下角袋':
+                                    cueBallStyle = { bottom: '12px', left: '60%', transform: 'translateX(-50%)' };
+                                    break;
+                                  case '右下角袋':
+                                    cueBallStyle = { bottom: '12px', left: '40%', transform: 'translateX(-50%)' };
+                                    break;
+                                  case '顶边中袋':
+                                    cueBallStyle = { bottom: '12px', left: '50%', transform: 'translateX(-50%)' };
+                                    break;
+                                  case '底边中袋':
+                                    cueBallStyle = { bottom: '12px', left: '50%', transform: 'translateX(-50%)' };
+                                    break;
+                                  default:
+                                    cueBallStyle = { bottom: '12px', left: '50%', transform: 'translateX(-50%)' };
+                                }
+                              } else {
+                                // 对于其他球位，主球也需要相应调整
+                                cueBallStyle = { bottom: '12px', left: '50%', transform: 'translateX(-50%)' };
+                              }
+                              
+                              return (
+                                <div 
+                                  className="absolute w-3 h-3 bg-white rounded-full border border-gray-600"
+                                  style={cueBallStyle}
+                                ></div>
+                              );
+                            })()}
                           </div>
                           
                           <div className="mt-2 text-xs text-center">
