@@ -696,16 +696,13 @@ export default function Levels() {
                             {isMilestone ? (
                               // Medal milestone design for every 5th exercise
                               <div className="relative">
-                                {/* Current exercise indicator ring for milestone */}
+                                {/* Current exercise indicator for milestone */}
                                 {isCurrentExercise && isUnlocked && (
-                                  <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-pulse z-10"
-                                       style={{ 
-                                         width: '110px', 
-                                         height: '110px',
-                                         left: '-5px',
-                                         top: '-5px'
-                                       }}
-                                  />
+                                  <div className="absolute -top-2 -right-2 z-20">
+                                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
+                                      <div className="w-3 h-3 bg-white rounded-full"></div>
+                                    </div>
+                                  </div>
                                 )}
                                 <div 
                                   className={`cursor-pointer transition-all duration-300 ${
