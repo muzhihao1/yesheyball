@@ -140,6 +140,11 @@ export default function GrowthPage() {
     queryKey: ["/api/user/streak"],
   });
 
+  // Fetch training program data
+  const { data: trainingProgram } = useQuery<{id: number; name: string; description: string; totalDays: number; currentDay: number; difficulty: string; createdAt: string}>({
+    queryKey: ["/api/training-programs/1"],
+  });
+
   // Edit training record mutation
   const editRecordMutation = useMutation({
     mutationFn: ({ id, notes }: { id: number; notes: string }) =>
@@ -379,7 +384,7 @@ export default function GrowthPage() {
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">{systematicTrainingCount}</div>
             <div className="text-sm text-gray-500">系统训练</div>
-            <div className="text-xs text-gray-400 mt-1">共30集课程</div>
+            <div className="text-xs text-gray-400 mt-1">共{trainingProgram?.totalDays || 30}集课程</div>
           </CardContent>
         </Card>
 
