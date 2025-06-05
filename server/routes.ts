@@ -598,6 +598,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get training records (completed sessions) for a user
   app.get("/api/training-records", async (req, res) => {
     try {
+      // Prevent caching to ensure fresh data after deletions
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const sessions = await storage.getUserTrainingSessions(1);
       const completedSessions = sessions.filter(s => s.completed).map(s => ({
         id: s.id,
