@@ -68,7 +68,10 @@ export default function Levels() {
   // 基于实际完成的训练数据计算练习数量
   const getActualCompletedExercises = (): number => {
     // 直接返回用户已完成的任务数量，这是真实数据
-    return user.completedTasks || 0;
+    const result = user.completedTasks || 0;
+    console.log('getActualCompletedExercises返回值:', result);
+    console.log('用户数据:', user);
+    return result;
   };
 
   const levelStages: LevelStage[] = [
@@ -374,7 +377,7 @@ export default function Levels() {
                   </div>
                   <div className="text-right">
                     <div className="text-xs opacity-90">进度</div>
-                    <div className="font-bold">{stage.completedExercises}/{stage.totalExercises - 2}</div>
+                    <div className="font-bold">{console.log('显示的stage数据:', stage) || stage.completedExercises}/{stage.totalExercises - 2}</div>
                   </div>
                 </div>
                 <Progress value={stage.progress} className="mt-2 h-1 bg-white/20" />
