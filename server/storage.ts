@@ -109,17 +109,17 @@ export class MemStorage implements IStorage {
   }
 
   private initializeDefaultData() {
-    // Create default user
+    // Create default user with consistent experience system
     const defaultUser: User = {
       id: this.currentUserId++,
       username: "liangqi",
-      level: 9,
+      level: 10, // Corrected: 9000 XP = level 10 (9000/1000 + 1)
       exp: 9000,
       streak: 100,
       totalDays: 365,
       completedTasks: 411,
       totalTime: 15000, // 250 hours in minutes
-      achievements: ["新手上路", "连续打卡", "精准射手", "大师级", "完美主义者", "专业选手"],
+      achievements: ["新手上路", "坚持不懈", "进步神速", "专注训练", "完美主义者", "台球大师", "铁杆粉丝", "时间管理大师", "传奇选手"],
       createdAt: new Date(),
       lastActiveAt: new Date(),
     };
@@ -393,8 +393,15 @@ export class MemStorage implements IStorage {
 
     defaultAchievements.forEach(achievement => {
       const newAchievement: Achievement = { 
-        ...achievement, 
         id: this.currentAchievementId++,
+        name: achievement.name,
+        description: achievement.description,
+        icon: achievement.icon,
+        type: achievement.type,
+        condition: achievement.condition,
+        expReward: achievement.expReward || 0,
+        category: achievement.category,
+        unlocked: achievement.unlocked || false,
         createdAt: new Date()
       };
       this.achievements.set(newAchievement.id, newAchievement);
@@ -432,8 +439,15 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const user: User = {
-      ...insertUser,
       id: this.currentUserId++,
+      username: insertUser.username,
+      level: insertUser.level || 1,
+      exp: insertUser.exp || 0,
+      streak: insertUser.streak || 0,
+      totalDays: insertUser.totalDays || 0,
+      completedTasks: insertUser.completedTasks || 0,
+      totalTime: insertUser.totalTime || 0,
+      achievements: insertUser.achievements || [],
       createdAt: new Date(),
       lastActiveAt: new Date(),
     };
@@ -481,7 +495,15 @@ export class MemStorage implements IStorage {
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const task: Task = { ...insertTask, id: this.currentTaskId++ };
+    const task: Task = { 
+      id: this.currentTaskId++,
+      level: insertTask.level,
+      title: insertTask.title,
+      description: insertTask.description,
+      difficulty: insertTask.difficulty,
+      imageUrl: insertTask.imageUrl || null,
+      category: insertTask.category
+    };
     this.tasks.set(task.id, task);
     return task;
   }
@@ -536,8 +558,12 @@ export class MemStorage implements IStorage {
 
   async createUserTask(insertUserTask: InsertUserTask): Promise<UserTask> {
     const userTask: UserTask = {
-      ...insertUserTask,
       id: this.currentUserTaskId++,
+      userId: insertUserTask.userId,
+      taskId: insertUserTask.taskId,
+      rating: insertUserTask.rating || null,
+      completed: insertUserTask.completed || false,
+      completedAt: insertUserTask.completedAt || null,
       createdAt: new Date(),
     };
     this.userTasks.set(userTask.id, userTask);
