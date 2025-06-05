@@ -99,7 +99,8 @@ interface TrainingRecord {
   content: string;
   duration: number | null;
   rating: number | null;
-  completedAt: Date;
+  completedAt: Date | null;
+  createdAt?: string;
 }
 
 export default function GrowthPage() {
@@ -559,7 +560,8 @@ export default function GrowthPage() {
                           )}
                           <div className="flex items-center mt-2 text-sm text-gray-500">
                             <Calendar className="h-4 w-4 mr-1" />
-                            {new Date(record.completedAt).toLocaleDateString('zh-CN')}
+                            {record.createdAt ? new Date(record.createdAt).toLocaleDateString('zh-CN') : 
+                             (record.completedAt ? new Date(record.completedAt).toLocaleDateString('zh-CN') : '未知日期')}
                             {record.duration && (
                               <div className="ml-4 flex items-center">
                                 <Clock className="h-4 w-4 mr-1" />
