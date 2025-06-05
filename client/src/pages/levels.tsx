@@ -65,7 +65,23 @@ export default function Levels() {
     return <div className="text-center py-8">数据加载失败</div>;
   }
 
-  // 正确的等级关卡配置，基于1000经验值per level
+  // 重新设计的经验系统：每个练习约为 28-30 经验值
+  // Level 1: 0-999 exp (约35个练习)
+  // Level 2: 1000-1999 exp (约35个练习)
+  const getCompletedExercisesForLevel = (level: number, currentExp: number): number => {
+    const expPerExercise = 28; // 每个练习约28经验值
+    
+    if (level === 1) {
+      return Math.min(Math.floor(currentExp / expPerExercise), 35);
+    } else if (level === user.level) {
+      const levelStartExp = (level - 1) * 1000;
+      const expInCurrentLevel = currentExp - levelStartExp;
+      const exercisesForLevel = level <= 3 ? 35 : level <= 6 ? 60 : 55;
+      return Math.min(Math.floor(expInCurrentLevel / expPerExercise), exercisesForLevel);
+    }
+    return 0;
+  };
+
   const levelStages: LevelStage[] = [
     {
       level: 1,
@@ -76,29 +92,29 @@ export default function Levels() {
       unlocked: true,
       completed: user.level > 1,
       progress: user.level > 1 ? 100 : Math.min((user.exp / 1000) * 100, 95),
-      completedExercises: user.level > 1 ? 35 : Math.floor((user.exp / 1000) * 35)
+      completedExercises: user.level > 1 ? 35 : getCompletedExercisesForLevel(1, user.exp)
     },
     {
       level: 2,
       name: "小有所成",
-      totalExercises: 40,
+      totalExercises: 35,
       category: "启明星",
       description: "台球技术基础框架搭建",
       unlocked: user.level >= 2,
       completed: user.level > 2,
       progress: user.level > 2 ? 100 : user.level === 2 ? Math.min(((user.exp - 1000) / 1000) * 100, 95) : 0,
-      completedExercises: user.level > 2 ? 40 : user.level === 2 ? Math.floor(((user.exp - 1000) / 1000) * 40) : 0
+      completedExercises: user.level > 2 ? 35 : user.level === 2 ? getCompletedExercisesForLevel(2, user.exp) : 0
     },
     {
       level: 3,
       name: "渐入佳境",
-      totalExercises: 50,
+      totalExercises: 35,
       category: "启明星",
       description: "掌握基本走位与控球技巧",
       unlocked: user.level >= 3,
       completed: user.level > 3,
       progress: user.level > 3 ? 100 : user.level === 3 ? Math.min(((user.exp - 2000) / 1000) * 100, 95) : 0,
-      completedExercises: user.level > 3 ? 50 : user.level === 3 ? Math.floor(((user.exp - 2000) / 1000) * 50) : 0
+      completedExercises: user.level > 3 ? 35 : user.level === 3 ? getCompletedExercisesForLevel(3, user.exp) : 0
     },
     {
       level: 4,
@@ -109,7 +125,7 @@ export default function Levels() {
       unlocked: user.level >= 4,
       completed: user.level > 4,
       progress: user.level > 4 ? 100 : user.level === 4 ? Math.min(((user.exp - 3000) / 1000) * 100, 95) : 0,
-      completedExercises: user.level > 4 ? 60 : user.level === 4 ? Math.floor(((user.exp - 3000) / 1000) * 60) : 0
+      completedExercises: user.level > 4 ? 60 : user.level === 4 ? getCompletedExercisesForLevel(4, user.exp) : 0
     },
     {
       level: 5,
@@ -120,7 +136,7 @@ export default function Levels() {
       unlocked: user.level >= 5,
       completed: user.level > 5,
       progress: user.level > 5 ? 100 : user.level === 5 ? Math.min(((user.exp - 4000) / 1000) * 100, 95) : 0,
-      completedExercises: user.level > 5 ? 60 : user.level === 5 ? Math.floor(((user.exp - 4000) / 1000) * 60) : 0
+      completedExercises: user.level > 5 ? 60 : user.level === 5 ? getCompletedExercisesForLevel(5, user.exp) : 0
     },
     {
       level: 6,
@@ -131,7 +147,7 @@ export default function Levels() {
       unlocked: user.level >= 6,
       completed: user.level > 6,
       progress: user.level > 6 ? 100 : user.level === 6 ? Math.min(((user.exp - 5000) / 1000) * 100, 95) : 0,
-      completedExercises: user.level > 6 ? 60 : user.level === 6 ? Math.floor(((user.exp - 5000) / 1000) * 60) : 0
+      completedExercises: user.level > 6 ? 60 : user.level === 6 ? getCompletedExercisesForLevel(6, user.exp) : 0
     },
     {
       level: 7,
@@ -142,7 +158,7 @@ export default function Levels() {
       unlocked: user.level >= 7,
       completed: user.level > 7,
       progress: user.level > 7 ? 100 : user.level === 7 ? Math.min(((user.exp - 6000) / 1000) * 100, 95) : 0,
-      completedExercises: user.level > 7 ? 55 : user.level === 7 ? Math.floor(((user.exp - 6000) / 1000) * 55) : 0
+      completedExercises: user.level > 7 ? 55 : user.level === 7 ? getCompletedExercisesForLevel(7, user.exp) : 0
     },
     {
       level: 8,
@@ -153,18 +169,18 @@ export default function Levels() {
       unlocked: user.level >= 8,
       completed: user.level > 8,
       progress: user.level > 8 ? 100 : user.level === 8 ? Math.min(((user.exp - 7000) / 1000) * 100, 95) : 0,
-      completedExercises: user.level > 8 ? 55 : user.level === 8 ? Math.floor(((user.exp - 7000) / 1000) * 55) : 0
+      completedExercises: user.level > 8 ? 55 : user.level === 8 ? getCompletedExercisesForLevel(8, user.exp) : 0
     },
     {
       level: 9,
       name: "人杆合一",
-      totalExercises: 72,
+      totalExercises: 55,
       category: "智子星",
       description: "台球的最高境界",
       unlocked: user.level >= 9,
       completed: false,
       progress: user.level === 9 ? Math.min(((user.exp - 8000) / 1000) * 100, 100) : 0,
-      completedExercises: user.level === 9 ? Math.floor(((user.exp - 8000) / 1000) * 72) : 0
+      completedExercises: user.level === 9 ? getCompletedExercisesForLevel(9, user.exp) : 0
     }
   ];
 
