@@ -579,7 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           dayId: nextDay,
           title: `第${nextDay}集：${nextDay <= 17 ? '基础技能训练' : nextDay <= 34 ? '中级技术提升' : '高级技巧掌握'}`,
           description: `第${nextDay}集训练内容，持续提升台球技能。`,
-          sessionType: "系统训练"
+          sessionType: "guided"
         });
         
         res.json(newSession);
