@@ -798,7 +798,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#6B7280' 
-                                            : exercise.completed 
+                                            : isExerciseCompleted(exercise)
                                               ? levelColors.node.includes('emerald') ? '#059669'
                                                 : levelColors.node.includes('blue') ? '#2563EB' 
                                                 : levelColors.node.includes('purple') ? '#7C3AED'
@@ -832,7 +832,7 @@ export default function Levels() {
                                 className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
                                   !isUnlocked 
                                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-lg' 
-                                    : exercise.completed 
+                                    : isExerciseCompleted(exercise)
                                       ? `${levelColors.node} text-white shadow-2xl` 
                                       : `bg-white border-4 ${levelColors.border} text-gray-700 hover:scale-105 shadow-xl hover:shadow-2xl`
                                 }`}
