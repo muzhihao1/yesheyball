@@ -109,17 +109,17 @@ export class MemStorage implements IStorage {
   }
 
   private initializeDefaultData() {
-    // Create default user with consistent experience system
+    // Create fresh new user starting from scratch
     const defaultUser: User = {
       id: this.currentUserId++,
       username: "liangqi",
-      level: 10, // Corrected: 9000 XP = level 10 (9000/1000 + 1)
-      exp: 9000,
-      streak: 100,
-      totalDays: 365,
-      completedTasks: 411,
-      totalTime: 15000, // 250 hours in minutes
-      achievements: ["新手上路", "坚持不懈", "进步神速", "专注训练", "完美主义者", "台球大师", "铁杆粉丝", "时间管理大师", "传奇选手"],
+      level: 1,
+      exp: 0,
+      streak: 0,
+      totalDays: 0,
+      completedTasks: 0,
+      totalTime: 0,
+      achievements: [],
       createdAt: new Date(),
       lastActiveAt: new Date(),
     };
@@ -182,18 +182,7 @@ export class MemStorage implements IStorage {
       this.tasks.set(newTask.id, newTask);
     });
 
-    // Create sample diary entry
-    const sampleDiary: DiaryEntry = {
-      id: this.currentDiaryId++,
-      userId: 1,
-      content: "今天主要练习了直线击球，感觉握杆的稳定性有了明显提升。瞄准时需要更加专注，不能急于出杆。",
-      duration: 60,
-      rating: 4,
-      imageUrl: null,
-      date: new Date(),
-      createdAt: new Date(),
-    };
-    this.diaryEntries.set(sampleDiary.id, sampleDiary);
+    // No initial diary entries for fresh start
 
     // Initialize training programs and achievements
     this.initializeTrainingPrograms();
@@ -201,7 +190,7 @@ export class MemStorage implements IStorage {
   }
 
   private initializeTrainingPrograms() {
-    // Create the 30-day beginner program
+    // Create the 30-day beginner program starting fresh
     const beginnerProgram: TrainingProgram = {
       id: this.currentTrainingProgramId++,
       name: "耶氏台球学院系统教学",
@@ -267,23 +256,7 @@ export class MemStorage implements IStorage {
       this.trainingDays.set(trainingDay.id, trainingDay);
     });
 
-    // Create current training session for the user
-    const currentSession: TrainingSession = {
-      id: this.currentTrainingSessionId++,
-      userId: 1,
-      programId: beginnerProgram.id,
-      dayId: Array.from(this.trainingDays.values()).find(d => d.day === 1)?.id || null,
-      title: "第1集：握杆",
-      description: "握杆姿势稳定、力度适中、手掌与手指配合",
-      notes: null,
-      duration: null,
-      rating: null,
-      completed: false,
-      sessionType: "guided",
-      createdAt: new Date(),
-      completedAt: null
-    };
-    this.trainingSessions.set(currentSession.id, currentSession);
+    // No initial training session - user will start fresh
   }
 
   private initializeAchievements() {
@@ -407,25 +380,7 @@ export class MemStorage implements IStorage {
       this.achievements.set(newAchievement.id, newAchievement);
     });
 
-    // Initialize some user achievements for the default user
-    const userAchievementData = [
-      { achievementId: 1, progress: 1, completed: true },  // 新手上路
-      { achievementId: 2, progress: 3, completed: true },  // 坚持不懈
-      { achievementId: 3, progress: 8, completed: false }, // 进步神速
-      { achievementId: 5, progress: 3, completed: false }  // 完美主义者
-    ];
-
-    userAchievementData.forEach(data => {
-      const userAchievement: UserAchievement = {
-        id: this.currentUserAchievementId++,
-        userId: 1,
-        achievementId: data.achievementId,
-        progress: data.progress,
-        completed: data.completed,
-        unlockedAt: new Date()
-      };
-      this.userAchievements.set(userAchievement.id, userAchievement);
-    });
+    // No initial user achievements - user will earn them fresh
   }
 
   // User operations
