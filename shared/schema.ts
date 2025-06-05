@@ -13,6 +13,10 @@ export const users = pgTable("users", {
   completedTasks: integer("completed_tasks").notNull().default(0),
   totalTime: integer("total_time").notNull().default(0), // in minutes
   achievements: jsonb("achievements").default([]),
+  // Sequential exercise progression tracking
+  currentLevel: integer("current_level").notNull().default(1), // Current exercise level
+  currentExercise: integer("current_exercise").notNull().default(1), // Next exercise to complete
+  completedExercises: jsonb("completed_exercises").default({}), // { "1": 3, "2": 0 } = level 1 has 3 completed, level 2 has 0
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastActiveAt: timestamp("last_active_at").notNull().defaultNow(),
 });

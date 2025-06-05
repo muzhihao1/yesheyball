@@ -353,9 +353,34 @@ export default function Levels() {
     const exercises: Exercise[] = [];
     const levelName = stage.name;
     
+    // 获取该等级实际完成的练习数量（包括override状态）
+    const getCompletedCount = (): number => {
+      let count = 0;
+      for (let i = 1; i <= stage.totalExercises; i++) {
+        const overrideKey = `${level}-${i}`;
+        if (exerciseOverride[overrideKey] === true) {
+          count++;
+        } else if (exerciseOverride[overrideKey] === undefined && i <= stage.completedExercises) {
+          count++;
+        }
+      }
+      return count;
+    };
+    
+    const actualCompletedCount = getCompletedCount();
+    
     for (let i = 0; i < stage.totalExercises; i++) {
       const exerciseNum = i + 1;
       const imageFileNumber = (exerciseNum + 1).toString().padStart(2, '0'); // 图片文件从02开始
+      const overrideKey = `${level}-${exerciseNum}`;
+      
+      // 练习完成状态：必须按顺序完成
+      let isCompleted = false;
+      if (exerciseOverride[overrideKey] === true) {
+        isCompleted = true;
+      } else if (exerciseOverride[overrideKey] === undefined) {
+        isCompleted = exerciseNum <= stage.completedExercises;
+      }
       
       exercises.push({
         id: `${level}-${exerciseNum}`,
@@ -365,7 +390,7 @@ export default function Levels() {
         description: getExerciseDescription(level, exerciseNum),
         requirement: getExerciseRequirement(level, exerciseNum),
         imageUrl: `/assessments/${level}、${levelName}/${level}、${levelName}_${imageFileNumber}.jpg`,
-        completed: i < stage.completedExercises
+        completed: isCompleted
       });
     }
     
@@ -617,7 +642,12 @@ export default function Levels() {
                 <div className="relative">
                   {exercises.map((exercise, exerciseIndex) => {
                     const positionInGroup = exerciseIndex % 5; // 0-4 within each group
-                    const isUnlocked = stage.unlocked && (exercise.completed || exerciseIndex === 0 || exercises[exerciseIndex - 1]?.completed);
+                    // 练习解锁逻辑：必须按顺序完成
+                    const isUnlocked = stage.unlocked && (
+                      exerciseIndex === 0 || // 第一个练习总是解锁的
+                      (exerciseIndex < stage.completedExercises) || // 已完成的练习
+                      (exerciseIndex === stage.completedExercises) // 下一个待完成的练习
+                    );
                     const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
