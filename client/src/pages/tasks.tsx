@@ -136,26 +136,20 @@ export default function Tasks() {
 
   // Generate accuracy training combinations (五分点练习)
   const generateAccuracyTrainingCombinations = (): TrainingCombination[] => {
-    // 五分点练习：目标球固定在中心点，向六个袋口进球
-    const targetPockets = [
-      '左上角袋', '右上角袋', '左下角袋', '右下角袋', '顶边中袋', '底边中袋'
-    ];
-    
+    // 五分点练习：目标球固定在中心点，袋口由用户自行安排
     const combinations: TrainingCombination[] = [];
     let id = 1;
     
-    // 每个袋口练习5次，总共30球
-    for (const pocket of targetPockets) {
-      for (let i = 1; i <= 5; i++) {
-        combinations.push({
-          id: id++,
-          technique: '中央正位',
-          cuePoint: pocket,
-          power: `第${i}球`,
-          completed: false,
-          result: undefined
-        });
-      }
+    // 30球练习，袋口由用户自选
+    for (let i = 1; i <= 30; i++) {
+      combinations.push({
+        id: id++,
+        technique: '五分点练习',
+        cuePoint: '用户自选袋口',
+        power: `第${i}球`,
+        completed: false,
+        result: undefined
+      });
     }
     
     return combinations;
@@ -180,7 +174,7 @@ export default function Tasks() {
     return {
       id: 'accuracy-training',
       name: '准度特训',
-      description: '五分点练习：目标球置于中心点，主球放在开球线上，与目标球和袋口呈一条直线',
+      description: '五分点练习：目标球置于中心点，主球放在开球线上，袋口由用户自行安排',
       type: 'accuracy',
       combinations: generateAccuracyTrainingCombinations(),
       currentRound: 1,
@@ -357,7 +351,18 @@ export default function Tasks() {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Check if any training is active
+  const isAnyTrainingActive = isGuidedTraining || isCustomTraining || isSpecialTraining || !!currentSession;
+
   const handleStartTraining = () => {
+    if (isAnyTrainingActive) {
+      toast({ 
+        title: "无法开始训练", 
+        description: "请先完成或取消当前训练",
+        variant: "destructive"
+      });
+      return;
+    }
     setSelectedSessionType("系统训练");
     setIsGuidedTraining(true);
     setIsGuidedPaused(false);
@@ -440,6 +445,14 @@ export default function Tasks() {
   };
 
   const handleStartCustomTraining = () => {
+    if (isAnyTrainingActive) {
+      toast({ 
+        title: "无法开始训练", 
+        description: "请先完成或取消当前训练",
+        variant: "destructive"
+      });
+      return;
+    }
     setSelectedSessionType("custom");
     setIsCustomTraining(true);
     setIsCustomPaused(false);
