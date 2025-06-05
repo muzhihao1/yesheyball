@@ -313,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create diary entry
   app.post("/api/diary", upload.single('image'), async (req, res) => {
     try {
-      const { content, duration, rating } = req.body;
+      const { content, duration, rating, exerciseCompleted } = req.body;
       
       const entryData = {
         userId: 1,
@@ -326,6 +326,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertDiaryEntrySchema.parse(entryData);
       const entry = await storage.createDiaryEntry(validatedData);
+      
+      // Award experience and update user progress if this is an exercise completion
+      if (exerciseCompleted && rating) {
+        const user = await storage.getUser(1);
+        if (user) {
+          // Calculate experience based on exercise completion
+          const expGained = calculateTrainingExperience({
+            sessionType: "custom",
+            duration: (duration || 1) * 60, // Convert minutes to seconds
+            rating: parseInt(rating),
+            difficulty: "初级"
+          });
+          
+          const newExp = user.exp + expGained;
+          const newCompletedTasks = user.completedTasks + 1;
+          
+          // Calculate new level based on experience
+          const levelInfo = calculateUserLevel(newExp);
+          
+          // Update user data
+          await storage.updateUser(1, {
+            exp: newExp,
+            level: levelInfo.level,
+            completedTasks: newCompletedTasks
+          });
+          
+          console.log(`Exercise completed! User gained ${expGained} exp. New total: ${newExp} exp, Level: ${levelInfo.level}`);
+        }
+      }
       
       // Generate AI insights for the diary content
       if (content && content.length > 10) {

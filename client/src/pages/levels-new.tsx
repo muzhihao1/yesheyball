@@ -444,6 +444,7 @@ export default function Levels() {
         content: diaryContent,
         rating: 3,
         duration: Math.ceil(practiceTime / 60),
+        exerciseCompleted: true
       });
       
       const overrideKey = `${selectedExercise.level}-${selectedExercise.exerciseNumber}`;
