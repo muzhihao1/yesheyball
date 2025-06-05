@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -199,3 +200,97 @@ export type Achievement = typeof achievements.$inferSelect;
 export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  userTasks: many(userTasks),
+  diaryEntries: many(diaryEntries),
+  feedbacks: many(feedbacks),
+  trainingSessions: many(trainingSessions),
+  userAchievements: many(userAchievements),
+}));
+
+export const tasksRelations = relations(tasks, ({ many }) => ({
+  userTasks: many(userTasks),
+  feedbacks: many(feedbacks),
+}));
+
+export const userTasksRelations = relations(userTasks, ({ one }) => ({
+  user: one(users, {
+    fields: [userTasks.userId],
+    references: [users.id],
+  }),
+  task: one(tasks, {
+    fields: [userTasks.taskId],
+    references: [tasks.id],
+  }),
+}));
+
+export const diaryEntriesRelations = relations(diaryEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [diaryEntries.userId],
+    references: [users.id],
+  }),
+}));
+
+export const feedbacksRelations = relations(feedbacks, ({ one }) => ({
+  user: one(users, {
+    fields: [feedbacks.userId],
+    references: [users.id],
+  }),
+  task: one(tasks, {
+    fields: [feedbacks.taskId],
+    references: [tasks.id],
+  }),
+}));
+
+export const trainingProgramsRelations = relations(trainingPrograms, ({ many }) => ({
+  trainingDays: many(trainingDays),
+  trainingSessions: many(trainingSessions),
+}));
+
+export const trainingDaysRelations = relations(trainingDays, ({ one, many }) => ({
+  program: one(trainingPrograms, {
+    fields: [trainingDays.programId],
+    references: [trainingPrograms.id],
+  }),
+  trainingSessions: many(trainingSessions),
+}));
+
+export const trainingSessionsRelations = relations(trainingSessions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [trainingSessions.userId],
+    references: [users.id],
+  }),
+  program: one(trainingPrograms, {
+    fields: [trainingSessions.programId],
+    references: [trainingPrograms.id],
+  }),
+  day: one(trainingDays, {
+    fields: [trainingSessions.dayId],
+    references: [trainingDays.id],
+  }),
+  trainingNotes: many(trainingNotes),
+}));
+
+export const trainingNotesRelations = relations(trainingNotes, ({ one }) => ({
+  session: one(trainingSessions, {
+    fields: [trainingNotes.sessionId],
+    references: [trainingSessions.id],
+  }),
+}));
+
+export const achievementsRelations = relations(achievements, ({ many }) => ({
+  userAchievements: many(userAchievements),
+}));
+
+export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
+  user: one(users, {
+    fields: [userAchievements.userId],
+    references: [users.id],
+  }),
+  achievement: one(achievements, {
+    fields: [userAchievements.achievementId],
+    references: [achievements.id],
+  }),
+}));
