@@ -542,20 +542,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Complete the session
       const session = await storage.completeTrainingSession(sessionId, duration, rating, notes);
       
-      // Award experience to user
-      if (expGained > 0) {
-        const currentUser = await storage.getUser(sessionDetails.userId);
-        if (currentUser) {
-          const newTotalExp = currentUser.exp + expGained;
-          const levelInfo = calculateUserLevel(newTotalExp);
-          
-          await storage.updateUser(sessionDetails.userId, {
-            exp: newTotalExp,
-            level: levelInfo.level,
-            completedTasks: currentUser.completedTasks + 1,
-            totalTime: currentUser.totalTime + Math.floor((duration || 0) / 60)
-          });
-        }
+      // Award experience and update user stats
+      const currentUser = await storage.getUser(sessionDetails.userId);
+      if (currentUser) {
+        const newTotalExp = currentUser.exp + expGained;
+        const levelInfo = calculateUserLevel(newTotalExp);
+        
+        await storage.updateUser(sessionDetails.userId, {
+          exp: newTotalExp,
+          level: levelInfo.level,
+          completedTasks: currentUser.completedTasks + 1,
+          totalTime: currentUser.totalTime + Math.floor((duration || 0) / 60)
+        });
+        
+        // Check and unlock achievements after updating user stats
+        await storage.checkAndUnlockAchievements(sessionDetails.userId);
       }
       
       // Return session with experience info
