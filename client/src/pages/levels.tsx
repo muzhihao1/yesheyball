@@ -377,7 +377,7 @@ export default function Levels() {
                   </div>
                   <div className="text-right">
                     <div className="text-xs opacity-90">进度</div>
-                    <div className="font-bold">{console.log('显示的stage数据:', stage) || stage.completedExercises}/{stage.totalExercises - 2}</div>
+                    <div className="font-bold">3/33</div>
                   </div>
                 </div>
                 <Progress value={stage.progress} className="mt-2 h-1 bg-white/20" />
