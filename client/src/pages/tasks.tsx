@@ -94,6 +94,7 @@ export default function Tasks() {
   const [selectedRecord, setSelectedRecord] = useState<TrainingRecord | null>(null);
   const [editingRecord, setEditingRecord] = useState<TrainingRecord | null>(null);
   const [editNotes, setEditNotes] = useState("");
+  const [completionRating, setCompletionRating] = useState<string>("");
 
   // Generate power training combinations
   const generatePowerTrainingCombinations = (): TrainingCombination[] => {
@@ -191,6 +192,58 @@ export default function Tasks() {
   // Get completed training records
   const { data: trainingRecords = [] } = useQuery<TrainingRecord[]>({
     queryKey: ["/api/training-records"],
+  });
+
+  // Complete session mutation
+  const completeSessionMutation = useMutation({
+    mutationFn: async ({ rating, notes }: { rating: number; notes: string }) => {
+      const duration = isGuidedTraining ? guidedElapsedTime : 
+                      isCustomTraining ? customElapsedTime : 
+                      specialElapsedTime;
+      
+      const sessionType = isGuidedTraining ? "系统训练" :
+                         isCustomTraining ? "自主训练" :
+                         "特训模式";
+      
+      const title = isGuidedTraining ? `第${currentDay}集：${currentDayTraining?.title || "握杆"}` :
+                   isCustomTraining ? "自主训练" :
+                   currentSpecialTraining?.name || "特训模式";
+
+      const response = await fetch("/api/training-sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          duration,
+          rating,
+          notes,
+          sessionType,
+          programId: isGuidedTraining ? mainProgram?.id : null,
+          dayId: isGuidedTraining ? currentDayTraining?.id : null
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to save training session");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+      handleCancelTraining();
+      toast({ title: "训练记录已保存，AI教练反馈生成中..." });
+    },
+    onError: () => {
+      toast({ 
+        title: "保存失败", 
+        description: "请重试",
+        variant: "destructive"
+      });
+    }
   });
 
   // Timer effects
@@ -674,7 +727,7 @@ export default function Tasks() {
             
             <div className="space-y-3">
               <Label>训练评分</Label>
-              <Select>
+              <Select value={completionRating} onValueChange={setCompletionRating}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择训练感受" />
                 </SelectTrigger>
@@ -723,13 +776,29 @@ export default function Tasks() {
               </Button>
               <Button 
                 onClick={() => {
+                  if (!completionRating) {
+                    toast({ 
+                      title: "请选择训练评分", 
+                      variant: "destructive" 
+                    });
+                    return;
+                  }
+                  
+                  const notes = isGuidedTraining ? guidedTrainingNotes : 
+                               isCustomTraining ? customTrainingNotes : "";
+                  
+                  completeSessionMutation.mutate({
+                    rating: parseInt(completionRating),
+                    notes
+                  });
+                  
                   setShowTrainingComplete(false);
-                  handleCancelTraining();
-                  toast({ title: "训练记录已保存，AI教练反馈生成中..." });
+                  setCompletionRating("");
                 }}
+                disabled={completeSessionMutation.isPending}
                 className="flex-1"
               >
-                保存记录
+                {completeSessionMutation.isPending ? "保存中..." : "保存记录"}
               </Button>
             </div>
           </div>
