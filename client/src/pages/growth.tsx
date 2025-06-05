@@ -365,7 +365,7 @@ export default function GrowthPage() {
       </div>
 
       {/* Progress Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">{completedLevels.length}</div>
@@ -382,16 +382,7 @@ export default function GrowthPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-500 flex items-center justify-center">
-              <span className="mr-1">🔥</span>
-              {streakData?.currentStreak || 0}
-            </div>
-            <div className="text-sm text-gray-500">连续天数</div>
-            <div className="text-xs text-gray-400 mt-1">总{streakData?.totalDays || 0}天</div>
-          </CardContent>
-        </Card>
+
 
         <Card>
           <CardContent className="p-4 text-center">
