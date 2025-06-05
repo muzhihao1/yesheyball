@@ -327,6 +327,11 @@ export default function Tasks() {
   
   // Get current day training details
   const currentDayTraining = trainingDays.find(day => day.day === currentDay);
+  
+  // Debug logging
+  console.log('Debug - currentDay:', currentDay);
+  console.log('Debug - trainingDays:', trainingDays);
+  console.log('Debug - currentDayTraining:', currentDayTraining);
 
   return (
     <div className="p-4 space-y-6 pb-24">
