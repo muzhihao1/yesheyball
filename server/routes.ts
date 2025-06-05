@@ -73,7 +73,7 @@ function calculateTrainingStreak(completedSessions: any[]): {
 
   uniqueDates.forEach(dateStr => {
     const date = new Date(dateStr);
-    if (prevDate && (date.getTime() - prevDate.getTime()) <= 24 * 60 * 60 * 1000 + 1000) {
+    if (prevDate && Math.abs(date.getTime() - prevDate.getTime()) <= 25 * 60 * 60 * 1000) {
       tempStreak++;
     } else {
       tempStreak = 1;
@@ -615,6 +615,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { duration, rating, notes } = req.body;
       const sessionId = parseInt(req.params.id);
       
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ message: "Invalid session ID" });
+      }
+      
+      if (duration && (isNaN(duration) || duration < 0)) {
+        return res.status(400).json({ message: "Invalid duration" });
+      }
+      
+      if (rating && (isNaN(rating) || rating < 1 || rating > 5)) {
+        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      }
+      
       // Get session details before completion
       const sessionDetails = await storage.getTrainingSession(sessionId);
       if (!sessionDetails) {
@@ -656,8 +668,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const updateData = {
           exp: newTotalExp,
           level: levelInfo.level,
-          completedTasks: currentUser.completedTasks + 1,
-          totalTime: currentUser.totalTime + Math.floor((duration || 0) / 60)
+          completedTasks: (currentUser.completedTasks || 0) + 1,
+          totalTime: (currentUser.totalTime || 0) + Math.floor((duration || 0) / 60)
         };
         
         console.log('Updating user with data:', updateData);

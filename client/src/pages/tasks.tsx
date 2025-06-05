@@ -281,35 +281,41 @@ export default function Tasks() {
     }
   });
 
-  // Timer effects
+  // Timer effects with proper cleanup
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | null = null;
     if (isGuidedTraining && !isGuidedPaused) {
       interval = setInterval(() => {
         setGuidedElapsedTime(prev => prev + 1);
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isGuidedTraining, isGuidedPaused]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | null = null;
     if (isCustomTraining && !isCustomPaused) {
       interval = setInterval(() => {
         setCustomElapsedTime(prev => prev + 1);
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isCustomTraining, isCustomPaused]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | null = null;
     if (isSpecialTraining && !isSpecialPaused) {
       interval = setInterval(() => {
         setSpecialElapsedTime(prev => prev + 1);
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isSpecialTraining, isSpecialPaused]);
 
   // Format time display
