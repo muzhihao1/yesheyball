@@ -603,9 +603,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/training-sessions/:id", async (req, res) => {
     try {
       const sessionId = parseInt(req.params.id);
+      
+      // Get session details before deletion to check if we need to update program progress
+      const sessionDetails = await storage.getTrainingSession(sessionId);
+      
       await storage.deleteTrainingSession(sessionId);
+      
+      // Update training program progress if this was a guided session
+      if (sessionDetails && sessionDetails.programId && sessionDetails.sessionType === "guided") {
+        const userId = sessionDetails.userId;
+        const programId = sessionDetails.programId;
+        
+        // Get all remaining completed guided sessions for this program
+        const allSessions = await storage.getUserTrainingSessions(userId);
+        const completedGuidedSessions = allSessions.filter(s => 
+          s.completed && 
+          s.sessionType === "guided" && 
+          s.programId === programId
+        );
+        
+        // Find the highest completed day, or reset to day 1 if no sessions remain
+        let maxCompletedDay = 0;
+        completedGuidedSessions.forEach(session => {
+          if (session.dayId && session.dayId > maxCompletedDay) {
+            maxCompletedDay = session.dayId;
+          }
+        });
+        
+        // Set current day to the next day after the highest completed day
+        const newCurrentDay = maxCompletedDay + 1;
+        await storage.updateTrainingProgram(programId, { currentDay: newCurrentDay });
+        
+        console.log(`Updated training program ${programId} current day to ${newCurrentDay} after session deletion`);
+      }
+      
       res.json({ message: "Training session deleted successfully" });
     } catch (error) {
+      console.error("Delete session error:", error);
       res.status(500).json({ message: "Failed to delete training session" });
     }
   });
@@ -800,10 +834,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/training-records/:id", async (req, res) => {
     try {
       const sessionId = parseInt(req.params.id);
+      
+      // Get session details before deletion to check if we need to update program progress
+      const sessionDetails = await storage.getTrainingSession(sessionId);
+      
       await storage.deleteTrainingSession(sessionId);
+      
+      // Update training program progress if this was a guided session
+      if (sessionDetails && sessionDetails.programId && sessionDetails.sessionType === "guided") {
+        const userId = sessionDetails.userId;
+        const programId = sessionDetails.programId;
+        
+        // Get all remaining completed guided sessions for this program
+        const allSessions = await storage.getUserTrainingSessions(userId);
+        const completedGuidedSessions = allSessions.filter(s => 
+          s.completed && 
+          s.sessionType === "guided" && 
+          s.programId === programId
+        );
+        
+        // Find the highest completed day, or reset to day 1 if no sessions remain
+        let maxCompletedDay = 0;
+        completedGuidedSessions.forEach(session => {
+          if (session.dayId && session.dayId > maxCompletedDay) {
+            maxCompletedDay = session.dayId;
+          }
+        });
+        
+        // Set current day to the next day after the highest completed day
+        const newCurrentDay = maxCompletedDay + 1;
+        await storage.updateTrainingProgram(programId, { currentDay: newCurrentDay });
+        
+        console.log(`Updated training program ${programId} current day to ${newCurrentDay} after record deletion`);
+      }
+      
       res.json({ message: "Training record deleted successfully" });
     } catch (error) {
+      console.error("Delete training record error:", error);
       res.status(500).json({ message: "Failed to delete training record" });
+    }
+  });
+
+  // Reset training program progress
+  app.post("/api/training-programs/:id/reset-progress", async (req, res) => {
+    try {
+      const programId = parseInt(req.params.id);
+      const userId = 1; // Current user
+      
+      // Get all remaining completed guided sessions for this program
+      const allSessions = await storage.getUserTrainingSessions(userId);
+      const completedGuidedSessions = allSessions.filter(s => 
+        s.completed && 
+        s.sessionType === "guided" && 
+        s.programId === programId
+      );
+      
+      // Find the highest completed day, or reset to day 1 if no sessions remain
+      let maxCompletedDay = 0;
+      completedGuidedSessions.forEach(session => {
+        if (session.dayId && session.dayId > maxCompletedDay) {
+          maxCompletedDay = session.dayId;
+        }
+      });
+      
+      // Set current day to the next day after the highest completed day
+      const newCurrentDay = maxCompletedDay + 1;
+      const updatedProgram = await storage.updateTrainingProgram(programId, { currentDay: newCurrentDay });
+      
+      console.log(`Reset training program ${programId} current day to ${newCurrentDay}`);
+      
+      res.json({ 
+        message: "Training program progress reset successfully",
+        program: updatedProgram,
+        newCurrentDay
+      });
+    } catch (error) {
+      console.error("Reset training program error:", error);
+      res.status(500).json({ message: "Failed to reset training program progress" });
     }
   });
 
