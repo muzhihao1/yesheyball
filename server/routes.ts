@@ -149,6 +149,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user (defaulting to user ID 1 for demo)
   app.get("/api/user", async (req, res) => {
     try {
+      // Prevent caching to ensure fresh data after training completions
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const user = await storage.getUser(1);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -387,6 +392,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/user-achievements", async (req, res) => {
     try {
+      // Prevent caching to ensure fresh achievement data
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const userAchievements = await storage.getUserAchievements(1);
       res.json(userAchievements);
     } catch (error) {
