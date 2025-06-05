@@ -165,15 +165,7 @@ export default function Levels() {
       const levelCompleted = exercises[exercise.level.toString()] || 0;
       const isCompleted = exercise.exerciseNumber <= levelCompleted;
       
-      // Debug logging for milestone exercises
-      if (exercise.exerciseNumber === 5) {
-        console.log(`Exercise 5 completion check:`, {
-          exerciseNumber: exercise.exerciseNumber,
-          levelCompleted,
-          isCompleted,
-          user: user.completedExercises
-        });
-      }
+
       
       return isCompleted;
     }
@@ -675,6 +667,7 @@ export default function Levels() {
                     const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
+                    const isCurrentExercise = exerciseIndex === stage.completedExercises; // Next exercise to complete
                     
                     // Position exercises - first 4 further to the left
                     let paddingLeft = 60; // Move milestone center position to the left
@@ -703,6 +696,17 @@ export default function Levels() {
                             {isMilestone ? (
                               // Medal milestone design for every 5th exercise
                               <div className="relative">
+                                {/* Current exercise indicator ring for milestone */}
+                                {isCurrentExercise && isUnlocked && (
+                                  <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-pulse z-10"
+                                       style={{ 
+                                         width: '110px', 
+                                         height: '110px',
+                                         left: '-5px',
+                                         top: '-5px'
+                                       }}
+                                  />
+                                )}
                                 <div 
                                   className={`cursor-pointer transition-all duration-300 ${
                                     !isUnlocked 
