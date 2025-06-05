@@ -497,6 +497,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const sessionWithAI = { ...validatedData, aiFeedback };
       const session = await storage.createTrainingSession(sessionWithAI);
+      
+      // If session is completed, update user stats and check achievements
+      if (validatedData.completed) {
+        console.log('Session completed, updating user stats...');
+        
+        // Get program details for difficulty calculation
+        let programDifficulty = "新手";
+        if (validatedData.programId) {
+          const program = await storage.getTrainingProgram(validatedData.programId);
+          if (program) {
+            programDifficulty = program.difficulty;
+          }
+        }
+        
+        // Calculate experience points
+        const expGained = calculateTrainingExperience({
+          sessionType: validatedData.sessionType || "custom",
+          duration: validatedData.duration || 0,
+          rating: validatedData.rating || undefined,
+          programDifficulty
+        });
+        
+        console.log('Experience gained:', expGained);
+        
+        // Award experience and update user stats
+        const currentUser = await storage.getUser(validatedData.userId);
+        if (currentUser) {
+          const newTotalExp = currentUser.exp + expGained;
+          const levelInfo = calculateUserLevel(newTotalExp);
+          
+          console.log('Before update - Current user stats:', {
+            exp: currentUser.exp,
+            completedTasks: currentUser.completedTasks,
+            totalTime: currentUser.totalTime
+          });
+          
+          const updateData = {
+            exp: newTotalExp,
+            level: levelInfo.level,
+            completedTasks: currentUser.completedTasks + 1,
+            totalTime: currentUser.totalTime + Math.floor((validatedData.duration || 0) / 60)
+          };
+          
+          console.log('Updating user with data:', updateData);
+          
+          const updatedUser = await storage.updateUser(validatedData.userId, updateData);
+          
+          console.log('After update - User stats:', {
+            exp: updatedUser.exp,
+            completedTasks: updatedUser.completedTasks,
+            totalTime: updatedUser.totalTime
+          });
+          
+          // Check and unlock achievements after updating user stats
+          await storage.checkAndUnlockAchievements(validatedData.userId);
+        }
+      }
+      
       res.json(session);
     } catch (error) {
       console.error('Training session validation error:', error);
