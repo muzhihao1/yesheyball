@@ -382,8 +382,6 @@ export default function GrowthPage() {
           </CardContent>
         </Card>
 
-
-
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-purple-600">{earnedAchievements.length}</div>
