@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -64,8 +64,5 @@ function TabButton({ href, icon, label }: { href: string; icon: string; label: s
     </a>
   );
 }
-
-// Need to import useLocation at the top level
-import { useLocation } from "wouter";
 
 export default App;
