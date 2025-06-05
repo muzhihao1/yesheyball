@@ -497,7 +497,7 @@ export class MemStorage implements IStorage {
   async createTask(insertTask: InsertTask): Promise<Task> {
     const task: Task = { 
       id: this.currentTaskId++,
-      level: insertTask.level,
+      level: insertTask.level || 1,
       title: insertTask.title,
       description: insertTask.description,
       difficulty: insertTask.difficulty,
@@ -603,8 +603,13 @@ export class MemStorage implements IStorage {
 
   async createDiaryEntry(insertEntry: InsertDiaryEntry): Promise<DiaryEntry> {
     const entry: DiaryEntry = {
-      ...insertEntry,
       id: this.currentDiaryId++,
+      userId: insertEntry.userId,
+      content: insertEntry.content,
+      date: insertEntry.date || new Date(),
+      imageUrl: insertEntry.imageUrl || null,
+      rating: insertEntry.rating || null,
+      duration: insertEntry.duration || null,
       createdAt: new Date(),
     };
     this.diaryEntries.set(entry.id, entry);
@@ -614,8 +619,12 @@ export class MemStorage implements IStorage {
   // Feedback operations
   async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
     const feedback: Feedback = {
-      ...insertFeedback,
       id: this.currentFeedbackId++,
+      userId: insertFeedback.userId,
+      content: insertFeedback.content,
+      date: insertFeedback.date || new Date(),
+      taskId: insertFeedback.taskId || null,
+      rating: insertFeedback.rating || null,
     };
     this.feedbacks.set(feedback.id, feedback);
     return feedback;
@@ -682,10 +691,19 @@ export class MemStorage implements IStorage {
 
   async createTrainingSession(insertSession: InsertTrainingSession): Promise<TrainingSession> {
     const session: TrainingSession = {
-      ...insertSession,
       id: this.currentTrainingSessionId++,
+      userId: insertSession.userId,
+      programId: insertSession.programId || null,
+      dayId: insertSession.dayId || null,
+      title: insertSession.title,
+      description: insertSession.description || null,
+      notes: insertSession.notes || null,
+      duration: insertSession.duration || null,
+      rating: insertSession.rating || null,
+      completed: insertSession.completed || false,
+      sessionType: insertSession.sessionType || "custom",
       createdAt: new Date(),
-      completedAt: null
+      completedAt: insertSession.completedAt || null
     };
     this.trainingSessions.set(session.id, session);
     return session;
@@ -722,7 +740,7 @@ export class MemStorage implements IStorage {
   }
 
   async getAllTrainingNotes(userId: number): Promise<TrainingNote[]> {
-    return Array.from(this.trainingNotes.values()).filter(note => note.userId === userId);
+    return Array.from(this.trainingNotes.values()).filter(note => note.sessionId !== undefined);
   }
 
   async createTrainingNote(insertNote: InsertTrainingNote): Promise<TrainingNote> {
@@ -761,7 +779,7 @@ export class MemStorage implements IStorage {
     const userSessions = await this.getUserTrainingSessions(userId);
     const completedSessions = userSessions.filter(s => s.completed);
 
-    for (const achievement of this.achievements.values()) {
+    for (const achievement of Array.from(this.achievements.values())) {
       // Skip if already unlocked by user
       const existing = Array.from(this.userAchievements.values())
         .find(ua => ua.userId === userId && ua.achievementId === achievement.id);
