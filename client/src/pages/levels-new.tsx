@@ -207,8 +207,8 @@ export default function Levels() {
       description: "在启明星教准轨道，让台球成为你的第一颗卫星！台球技术基础框架搭建",
       unlocked: true,
       completed: user.level > 1,
-      progress: user.level > 1 ? 100 : Math.min((user.exp / 100) * 100, 95),
-      completedExercises: user.level > 1 ? 35 : Math.floor((user.exp / 100) * 35)
+      progress: user.level > 1 ? 100 : Math.min((user.exp / 1000) * 100, 95),
+      completedExercises: user.level > 1 ? 35 : (user.completedTasks || 0)
     },
     {
       level: 2,
@@ -218,8 +218,8 @@ export default function Levels() {
       description: "台球技术基础框架搭建",
       unlocked: user.level >= 2,
       completed: user.level > 2,
-      progress: user.level > 2 ? 100 : user.level === 2 ? Math.min((user.exp / 200) * 100, 95) : 0,
-      completedExercises: user.level > 2 ? 40 : user.level === 2 ? Math.floor((user.exp / 200) * 40) : 0
+      progress: user.level > 2 ? 100 : user.level === 2 ? Math.min(((user.exp - 1000) / 1000) * 100, 95) : 0,
+      completedExercises: 0
     },
     {
       level: 3,
@@ -229,8 +229,8 @@ export default function Levels() {
       description: "掌握基本走位与控球技巧",
       unlocked: user.level >= 3,
       completed: user.level > 3,
-      progress: user.level > 3 ? 100 : user.level === 3 ? Math.min((user.exp / 300) * 100, 95) : 0,
-      completedExercises: user.level > 3 ? 50 : user.level === 3 ? Math.floor((user.exp / 300) * 50) : 0
+      progress: user.level > 3 ? 100 : user.level === 3 ? Math.min(((user.exp - 2000) / 1000) * 100, 95) : 0,
+      completedExercises: 0
     },
     {
       level: 4,
