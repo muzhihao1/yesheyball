@@ -138,6 +138,7 @@ export function calculateUserLevel(totalExp: number): {
 } {
   const { expPerLevel, maxLevel } = experienceConfig;
   
+  // Fixed calculation: Level 1 starts at 0 XP, Level 2 at 1000 XP, etc.
   const level = Math.min(
     Math.floor(totalExp / expPerLevel) + 1,
     maxLevel
@@ -145,7 +146,7 @@ export function calculateUserLevel(totalExp: number): {
   
   const currentLevelExp = totalExp % expPerLevel;
   const nextLevelExp = expPerLevel;
-  const progress = (currentLevelExp / nextLevelExp) * 100;
+  const progress = level >= maxLevel ? 100 : (currentLevelExp / nextLevelExp) * 100;
   
   return {
     level,
