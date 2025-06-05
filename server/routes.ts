@@ -331,28 +331,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (exerciseCompleted && rating) {
         const user = await storage.getUser(1);
         if (user) {
-          // Calculate experience based on exercise completion
-          const expGained = calculateTrainingExperience({
-            sessionType: "custom",
-            duration: (duration || 1) * 60, // Convert minutes to seconds
-            rating: parseInt(rating),
-            difficulty: "初级"
-          });
+          // Extract exercise info from diary content
+          const exerciseMatch = content.match(/第(\d+)题练习/);
+          const exerciseNumber = exerciseMatch ? parseInt(exerciseMatch[1]) : null;
           
-          const newExp = user.exp + expGained;
-          const newCompletedTasks = user.completedTasks + 1;
-          
-          // Calculate new level based on experience
-          const levelInfo = calculateUserLevel(newExp);
-          
-          // Update user data
-          await storage.updateUser(1, {
-            exp: newExp,
-            level: levelInfo.level,
-            completedTasks: newCompletedTasks
-          });
-          
-          console.log(`Exercise completed! User gained ${expGained} exp. New total: ${newExp} exp, Level: ${levelInfo.level}`);
+          if (exerciseNumber) {
+            // Calculate experience based on exercise completion
+            const expGained = calculateTrainingExperience({
+              sessionType: "custom",
+              duration: (duration || 1) * 60, // Convert minutes to seconds
+              rating: parseInt(rating),
+              difficulty: "初级"
+            });
+            
+            const newExp = user.exp + expGained;
+            const newCompletedTasks = user.completedTasks + 1;
+            
+            // Update sequential exercise progression
+            const currentLevel = user.currentLevel || 1;
+            const completedExercises = (user.completedExercises as Record<string, number>) || {};
+            const currentLevelCompleted = completedExercises[currentLevel.toString()] || 0;
+            
+            // Only update if this is the next sequential exercise
+            if (exerciseNumber === currentLevelCompleted + 1) {
+              const newCompletedExercises = {
+                ...completedExercises,
+                [currentLevel.toString()]: exerciseNumber
+              };
+              
+              // Calculate new level based on experience
+              const levelInfo = calculateUserLevel(newExp);
+              
+              // Update user data with sequential progression
+              await storage.updateUser(1, {
+                exp: newExp,
+                level: levelInfo.level,
+                completedTasks: newCompletedTasks,
+                currentExercise: exerciseNumber + 1,
+                completedExercises: newCompletedExercises
+              });
+              
+              console.log(`Exercise ${exerciseNumber} completed sequentially! User gained ${expGained} exp. Level ${currentLevel} progress: ${exerciseNumber} exercises completed.`);
+            } else {
+              // Just award experience for practice, don't update sequential progression
+              const levelInfo = calculateUserLevel(newExp);
+              
+              await storage.updateUser(1, {
+                exp: newExp,
+                level: levelInfo.level,
+                completedTasks: newCompletedTasks
+              });
+              
+              console.log(`Exercise ${exerciseNumber} completed as practice! User gained ${expGained} exp. Sequential progression unchanged.`);
+            }
+          }
         }
       }
       
