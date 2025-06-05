@@ -553,6 +553,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Check and unlock achievements after updating user stats
           await storage.checkAndUnlockAchievements(validatedData.userId);
+          
+          // Auto-progress to next episode if this was a guided session from training program
+          if (validatedData.programId && validatedData.dayId && validatedData.sessionType === "guided") {
+            try {
+              const program = await storage.getTrainingProgram(validatedData.programId);
+              if (program && program.name === "耶氏台球学院系统教学") {
+                const currentDay = validatedData.dayId;
+                const nextDay = currentDay + 1;
+                
+                if (nextDay <= 30) { // Only progress if within 30-day program
+                  // Update program current day
+                  await storage.updateTrainingProgram(validatedData.programId, { currentDay: nextDay });
+                  console.log(`Auto-progressed from day ${currentDay} to day ${nextDay} of training program`);
+                }
+              }
+            } catch (error) {
+              console.error("Failed to auto-progress training program:", error);
+              // Don't fail the whole request if auto-progress fails
+            }
+          }
         }
       }
       
