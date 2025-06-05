@@ -898,40 +898,52 @@ export default function Tasks() {
                             {/* 开球线 */}
                             <div className="absolute bottom-8 left-2 right-2 h-0.5 bg-white opacity-60"></div>
                             
-                            {/* 主球位置 - 根据目标球和袋口计算击球线 */}
+                            {/* 主球位置 - 与目标球和目标袋口成一条直线 */}
                             {(() => {
                               const targetPocket = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint;
                               const ballPosition = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique;
                               
-                              // 根据目标袋口调整主球位置，形成正确的击球线
+                              // 计算主球位置，使其与目标球和目标袋口在一条直线上
                               let cueBallStyle = {};
                               
-                              if (ballPosition === '中央正位') {
-                                switch(targetPocket) {
-                                  case '左上角袋':
-                                    cueBallStyle = { bottom: '12px', left: '60%', transform: 'translateX(-50%)' };
-                                    break;
-                                  case '右上角袋':
-                                    cueBallStyle = { bottom: '12px', left: '40%', transform: 'translateX(-50%)' };
-                                    break;
-                                  case '左下角袋':
-                                    cueBallStyle = { bottom: '12px', left: '60%', transform: 'translateX(-50%)' };
-                                    break;
-                                  case '右下角袋':
-                                    cueBallStyle = { bottom: '12px', left: '40%', transform: 'translateX(-50%)' };
-                                    break;
-                                  case '顶边中袋':
-                                    cueBallStyle = { bottom: '12px', left: '50%', transform: 'translateX(-50%)' };
-                                    break;
-                                  case '底边中袋':
-                                    cueBallStyle = { bottom: '12px', left: '50%', transform: 'translateX(-50%)' };
-                                    break;
-                                  default:
-                                    cueBallStyle = { bottom: '12px', left: '50%', transform: 'translateX(-50%)' };
-                                }
-                              } else {
-                                // 对于其他球位，主球也需要相应调整
-                                cueBallStyle = { bottom: '12px', left: '50%', transform: 'translateX(-50%)' };
+                              // 目标球位置（中央正位时为50%, 50%）
+                              const targetBallX = 50; // 中央
+                              const targetBallY = 50; // 中央
+                              
+                              // 根据目标袋口计算延长线上的主球位置
+                              switch(targetPocket) {
+                                case '左上角袋':
+                                  // 袋口在左上角(0%, 0%)，目标球在中央(50%, 50%)
+                                  // 主球应该在延长线的右下方
+                                  cueBallStyle = { bottom: '15px', right: '25%', transform: 'translate(50%, 50%)' };
+                                  break;
+                                case '右上角袋':
+                                  // 袋口在右上角(100%, 0%)，目标球在中央(50%, 50%)
+                                  // 主球应该在延长线的左下方
+                                  cueBallStyle = { bottom: '15px', left: '25%', transform: 'translate(-50%, 50%)' };
+                                  break;
+                                case '左下角袋':
+                                  // 袋口在左下角(0%, 100%)，目标球在中央(50%, 50%)
+                                  // 主球应该在延长线的右上方
+                                  cueBallStyle = { top: '25%', right: '25%', transform: 'translate(50%, -50%)' };
+                                  break;
+                                case '右下角袋':
+                                  // 袋口在右下角(100%, 100%)，目标球在中央(50%, 50%)
+                                  // 主球应该在延长线的左上方
+                                  cueBallStyle = { top: '25%', left: '25%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '顶边中袋':
+                                  // 袋口在顶边中央(50%, 0%)，目标球在中央(50%, 50%)
+                                  // 主球应该在正下方
+                                  cueBallStyle = { bottom: '15px', left: '50%', transform: 'translateX(-50%)' };
+                                  break;
+                                case '底边中袋':
+                                  // 袋口在底边中央(50%, 100%)，目标球在中央(50%, 50%)
+                                  // 主球应该在正上方
+                                  cueBallStyle = { top: '25%', left: '50%', transform: 'translateX(-50%)' };
+                                  break;
+                                default:
+                                  cueBallStyle = { bottom: '15px', left: '50%', transform: 'translateX(-50%)' };
                               }
                               
                               return (
