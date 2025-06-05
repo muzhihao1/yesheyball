@@ -796,6 +796,119 @@ export default function Tasks() {
                       <div className="text-xs text-purple-600 mt-1">
                         进度: {currentSpecialTraining.currentCombination + 1} / {currentSpecialTraining.combinations.length}
                       </div>
+                      
+                      {/* 准度特训图示 */}
+                      {currentSpecialTraining.type === 'accuracy' && (
+                        <div className="mt-4 bg-white rounded-lg p-3 border">
+                          <div className="text-xs text-gray-600 mb-3 text-center">球桌示意图</div>
+                          <div className="relative bg-green-100 rounded-lg border-2 border-brown-500" style={{aspectRatio: '2/1', height: '120px'}}>
+                            {/* 台球桌边框 */}
+                            <div className="absolute inset-0 border-4 border-brown-600 rounded-lg"></div>
+                            
+                            {/* 六个袋口 */}
+                            <div className="absolute -top-2 -left-2 w-4 h-4 bg-black rounded-full"></div>
+                            <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-black rounded-full"></div>
+                            <div className="absolute -top-2 -right-2 w-4 h-4 bg-black rounded-full"></div>
+                            <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-black rounded-full"></div>
+                            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-black rounded-full"></div>
+                            <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-black rounded-full"></div>
+                            
+                            {/* 目标球位置 */}
+                            {(() => {
+                              const position = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique;
+                              let ballStyle = {};
+                              
+                              switch(position) {
+                                case '中央正位':
+                                  ballStyle = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '左侧15度':
+                                  ballStyle = { top: '50%', left: '35%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '右侧15度':
+                                  ballStyle = { top: '50%', left: '65%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '左侧30度':
+                                  ballStyle = { top: '40%', left: '25%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '右侧30度':
+                                  ballStyle = { top: '40%', left: '75%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '左侧45度':
+                                  ballStyle = { top: '30%', left: '20%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '右侧45度':
+                                  ballStyle = { top: '30%', left: '80%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '左侧60度':
+                                  ballStyle = { top: '25%', left: '15%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '右侧60度':
+                                  ballStyle = { top: '25%', left: '85%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                case '直线远台':
+                                  ballStyle = { top: '20%', left: '50%', transform: 'translate(-50%, -50%)' };
+                                  break;
+                                default:
+                                  ballStyle = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+                              }
+                              
+                              return (
+                                <div 
+                                  className="absolute w-3 h-3 bg-red-500 rounded-full border border-red-700"
+                                  style={ballStyle}
+                                ></div>
+                              );
+                            })()}
+                            
+                            {/* 目标袋口高亮 */}
+                            {(() => {
+                              const targetPocket = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint;
+                              let pocketStyle = {};
+                              
+                              switch(targetPocket) {
+                                case '左上角袋':
+                                  pocketStyle = { top: '-8px', left: '-8px' };
+                                  break;
+                                case '右上角袋':
+                                  pocketStyle = { top: '-8px', right: '-8px' };
+                                  break;
+                                case '左下角袋':
+                                  pocketStyle = { bottom: '-8px', left: '-8px' };
+                                  break;
+                                case '右下角袋':
+                                  pocketStyle = { bottom: '-8px', right: '-8px' };
+                                  break;
+                                case '顶边中袋':
+                                  pocketStyle = { top: '-8px', left: '50%', transform: 'translateX(-50%)' };
+                                  break;
+                                case '底边中袋':
+                                  pocketStyle = { bottom: '-8px', left: '50%', transform: 'translateX(-50%)' };
+                                  break;
+                              }
+                              
+                              return (
+                                <div 
+                                  className="absolute w-4 h-4 bg-yellow-400 rounded-full border-2 border-yellow-600 animate-pulse"
+                                  style={pocketStyle}
+                                ></div>
+                              );
+                            })()}
+                            
+                            {/* 主球位置 */}
+                            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white rounded-full border border-gray-600"></div>
+                          </div>
+                          
+                          <div className="mt-2 text-xs text-center">
+                            <span className="inline-block w-2 h-2 bg-red-500 rounded-full mr-1"></span>
+                            目标球
+                            <span className="inline-block w-2 h-2 bg-white border border-gray-600 rounded-full ml-3 mr-1"></span>
+                            主球
+                            <span className="inline-block w-2 h-2 bg-yellow-400 rounded-full ml-3 mr-1"></span>
+                            目标袋口
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Control Buttons */}
