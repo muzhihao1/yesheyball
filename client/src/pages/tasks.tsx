@@ -257,6 +257,8 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/streak"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-achievements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
       
       // Show AI feedback immediately if available
       if (data.aiFeedback) {
