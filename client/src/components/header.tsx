@@ -76,7 +76,7 @@ export default function Header() {
             <div className="text-center hidden sm:block">
               <div className="text-lg sm:text-xl lg:text-2xl font-bold text-red-500 flex items-center justify-center">
                 <span className="mr-1 text-xl">🔥</span>
-                {user.streak}
+                {streakData?.currentStreak || 0}
               </div>
               <div className="text-sm text-gray-500">连续天数</div>
             </div>
