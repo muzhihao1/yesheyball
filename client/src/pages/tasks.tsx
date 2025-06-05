@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -764,6 +764,7 @@ export default function Tasks() {
         <DialogContent className="max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>训练记录详情</DialogTitle>
+            <DialogDescription>查看您的训练记录详细信息</DialogDescription>
           </DialogHeader>
           {selectedRecord && (
             <div className="space-y-4">
@@ -838,6 +839,7 @@ export default function Tasks() {
               </div>
               <span>教练反馈</span>
             </DialogTitle>
+            <DialogDescription>AI教练为您提供个性化训练建议</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {/* Chat-style AI feedback */}
@@ -867,6 +869,7 @@ export default function Tasks() {
         <DialogContent className="max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>训练完成</DialogTitle>
+            <DialogDescription>记录您的训练成果和感受</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="text-center">
