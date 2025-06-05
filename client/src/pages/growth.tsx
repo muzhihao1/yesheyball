@@ -82,7 +82,7 @@ interface TrainingSession {
   userId: number;
   title: string;
   description: string | null;
-  notes?: string;
+  notes: string;
   duration: number | null;
   rating: number | null;
   completed: boolean;
