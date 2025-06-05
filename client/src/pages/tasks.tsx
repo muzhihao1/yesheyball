@@ -239,6 +239,7 @@ export default function Tasks() {
   const startSpecialTrainingMutation = useMutation({
     mutationFn: (trainingData: { title: string; description: string }) => 
       apiRequest("/api/training-sessions", "POST", {
+        userId: 1,
         title: trainingData.title,
         description: trainingData.description,
         sessionType: "特训"
@@ -348,6 +349,25 @@ export default function Tasks() {
     if (currentSession) {
       completeSessionMutation.mutate(currentSession.id);
     }
+    
+    // Reset state based on training type
+    if (selectedSessionType === "特训") {
+      setIsSpecialTraining(false);
+      setIsSpecialPaused(false);
+      setCurrentSpecialTraining(null);
+      setSpecialElapsedTime(0);
+      setSpecialTrainingNotes("");
+    } else if (selectedSessionType === "custom") {
+      setIsCustomTraining(false);
+      setIsCustomPaused(false);
+      setCustomElapsedTime(0);
+      setCustomTrainingNotes("");
+    } else {
+      setIsGuidedTraining(false);
+      setIsGuidedPaused(false);
+      setGuidedElapsedTime(0);
+      setGuidedTrainingNotes("");
+    }
   };
 
   const handleStartCustomTraining = () => {
@@ -421,9 +441,6 @@ export default function Tasks() {
 
   const handleCompleteSpecialTraining = () => {
     setSelectedSessionType("特训");
-    setIsSpecialTraining(false);
-    setIsSpecialPaused(false);
-    setCurrentSpecialTraining(null);
     setShowTrainingComplete(true);
   };
 
@@ -720,6 +737,19 @@ export default function Tasks() {
                   </div>
                 )}
               </>
+            )}
+            
+            {isSpecialTraining && (
+              <div className="space-y-3 mt-6">
+                <Label htmlFor="special-notes">训练笔记</Label>
+                <Textarea
+                  id="special-notes"
+                  placeholder="记录特训心得、技巧要点或改进建议..."
+                  value={specialTrainingNotes}
+                  onChange={(e) => setSpecialTrainingNotes(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
             )}
           </div>
         </CardContent>
