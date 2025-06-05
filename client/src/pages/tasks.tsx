@@ -174,7 +174,7 @@ export default function Tasks() {
   // Get training days for the main program
   const mainProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
   const { data: trainingDays = [] } = useQuery<TrainingDay[]>({
-    queryKey: ["/api/training-programs", mainProgram?.id, "days"],
+    queryKey: [`/api/training-programs/${mainProgram?.id}/days`],
     enabled: !!mainProgram?.id,
   });
 
