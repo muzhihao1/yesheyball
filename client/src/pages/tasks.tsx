@@ -48,6 +48,26 @@ interface TrainingRecord {
   sessionType: string;
 }
 
+// Special Training Types
+interface SpecialTraining {
+  id: string;
+  name: string;
+  description: string;
+  type: 'power' | 'positioning';
+  combinations: TrainingCombination[];
+  currentRound: number;
+  currentCombination: number;
+  totalRounds: number;
+}
+
+interface TrainingCombination {
+  id: number;
+  technique: string; // 打、点、推
+  cuePoint: string; // 低杆、中杆、高杆、低杆左塞等
+  power: string; // 大力、中力、小力
+  completed: boolean;
+}
+
 export default function Tasks() {
   // Guided training states
   const [isGuidedTraining, setIsGuidedTraining] = useState(false);
@@ -61,6 +81,13 @@ export default function Tasks() {
   const [customElapsedTime, setCustomElapsedTime] = useState(0);
   const [customTrainingNotes, setCustomTrainingNotes] = useState("");
   
+  // Special training states
+  const [isSpecialTraining, setIsSpecialTraining] = useState(false);
+  const [isSpecialPaused, setIsSpecialPaused] = useState(false);
+  const [specialElapsedTime, setSpecialElapsedTime] = useState(0);
+  const [currentSpecialTraining, setCurrentSpecialTraining] = useState<SpecialTraining | null>(null);
+  const [showSpecialTrainingDetail, setShowSpecialTrainingDetail] = useState(false);
+  
   // Shared states
   const [showTrainingComplete, setShowTrainingComplete] = useState(false);
   const [showCustomTraining, setShowCustomTraining] = useState(false);
@@ -72,6 +99,51 @@ export default function Tasks() {
   const [loadingFeedback, setLoadingFeedback] = useState(false);
 
   const { toast } = useToast();
+
+  // Generate power training combinations
+  const generatePowerTrainingCombinations = (): TrainingCombination[] => {
+    const techniques = ['打', '点', '推'];
+    const cuePoints = [
+      '低杆', '中杆', '高杆',
+      '低杆左塞', '低杆右塞',
+      '中杆左塞', '中杆右塞',
+      '高杆左塞', '高杆右塞'
+    ];
+    const powers = ['大力', '中力', '小力'];
+    
+    const combinations: TrainingCombination[] = [];
+    let id = 1;
+    
+    for (const technique of techniques) {
+      for (const cuePoint of cuePoints) {
+        for (const power of powers) {
+          combinations.push({
+            id: id++,
+            technique,
+            cuePoint,
+            power,
+            completed: false
+          });
+        }
+      }
+    }
+    
+    return combinations;
+  };
+
+  // Initialize power training
+  const initializePowerTraining = (): SpecialTraining => {
+    return {
+      id: 'power-training',
+      name: '发力特训',
+      description: '通过不同打法、打点和力度的组合训练，提升击球技巧和力度控制',
+      type: 'power',
+      combinations: generatePowerTrainingCombinations(),
+      currentRound: 1,
+      currentCombination: 0,
+      totalRounds: 3
+    };
+  };
 
   // Get training programs
   const { data: programs = [] } = useQuery<TrainingProgram[]>({
@@ -192,6 +264,16 @@ export default function Tasks() {
     return () => clearInterval(interval);
   }, [isCustomTraining, isCustomPaused]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isSpecialTraining && !isSpecialPaused) {
+      interval = setInterval(() => {
+        setSpecialElapsedTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isSpecialTraining, isSpecialPaused]);
+
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -264,6 +346,59 @@ export default function Tasks() {
   };
 
   const handleCompleteCustomTraining = () => {
+    setShowTrainingComplete(true);
+  };
+
+  const handleStartSpecialTraining = (type: 'power' | 'positioning') => {
+    if (type === 'power') {
+      const powerTraining = initializePowerTraining();
+      setCurrentSpecialTraining(powerTraining);
+      setIsSpecialTraining(true);
+      setIsSpecialPaused(false);
+      setSpecialElapsedTime(0);
+      setSelectedSessionType("特训");
+      toast({ title: "特训开始", description: "发力特训已开始" });
+    }
+  };
+
+  const handlePauseSpecialTraining = () => {
+    setIsSpecialPaused(!isSpecialPaused);
+  };
+
+  const handleCompleteCurrentCombination = () => {
+    if (!currentSpecialTraining) return;
+    
+    const updatedTraining = { ...currentSpecialTraining };
+    const currentCombo = updatedTraining.combinations[updatedTraining.currentCombination];
+    
+    if (currentCombo) {
+      currentCombo.completed = true;
+      
+      // Move to next combination
+      if (updatedTraining.currentCombination < updatedTraining.combinations.length - 1) {
+        updatedTraining.currentCombination++;
+      } else {
+        // All combinations completed, start new round
+        updatedTraining.currentRound++;
+        updatedTraining.currentCombination = 0;
+        
+        // Reset all combinations for new round
+        updatedTraining.combinations.forEach(combo => combo.completed = false);
+      }
+      
+      setCurrentSpecialTraining(updatedTraining);
+      
+      const combo = currentCombo;
+      toast({ 
+        title: "组合完成", 
+        description: `${combo.cuePoint} + ${combo.technique} + ${combo.power} 完成！`,
+        duration: 2000
+      });
+    }
+  };
+
+  const handleCompleteSpecialTraining = () => {
+    setSelectedSessionType("特训");
     setShowTrainingComplete(true);
   };
 
