@@ -67,16 +67,22 @@ export default function Levels() {
 
   // 简化的经验系统计算
   const calculateExercisesCompleted = (userLevel: number, userExp: number, targetLevel: number, totalExercises: number): number => {
+    console.log(`计算练习数量: userLevel=${userLevel}, userExp=${userExp}, targetLevel=${targetLevel}, totalExercises=${totalExercises}`);
+    
     if (userLevel < targetLevel) {
+      console.log(`等级未解锁: ${userLevel} < ${targetLevel}`);
       return 0; // 未解锁的等级显示0
     } else if (userLevel > targetLevel) {
+      console.log(`等级已完成: ${userLevel} > ${targetLevel}`);
       return totalExercises; // 已完成的等级显示全部
     } else {
       // 当前等级：基于经验值在当前等级的进度
       const levelStartExp = (targetLevel - 1) * 1000;
       const expInCurrentLevel = userExp - levelStartExp;
       const progressRatio = Math.max(0, expInCurrentLevel) / 1000;
-      return Math.floor(progressRatio * totalExercises);
+      const result = Math.floor(progressRatio * totalExercises);
+      console.log(`当前等级计算: levelStartExp=${levelStartExp}, expInCurrentLevel=${expInCurrentLevel}, progressRatio=${progressRatio}, result=${result}`);
+      return result;
     }
   };
 
