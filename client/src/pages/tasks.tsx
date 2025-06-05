@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Play, Pause, Square, Calendar, Star, BookOpen, Plus, Eye } from "lucide-react";
+import { Clock, Play, Pause, Square, Calendar, Star, BookOpen, Plus, Eye, Trash2 } from "lucide-react";
 
 import type { TrainingProgram, TrainingDay } from "@shared/schema";
 
@@ -194,6 +194,23 @@ export default function Tasks() {
   // Get completed training records
   const { data: trainingRecords = [] } = useQuery<TrainingRecord[]>({
     queryKey: ["/api/training-records"],
+  });
+
+  // Delete training record mutation
+  const deleteRecordMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/training-sessions/${id}`, "DELETE"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+      toast({ title: "训练记录已删除" });
+    },
+    onError: () => {
+      toast({ 
+        title: "删除失败", 
+        description: "请稍后重试",
+        variant: "destructive"
+      });
+    }
   });
 
   // Complete session mutation
@@ -703,16 +720,31 @@ export default function Tasks() {
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRecord(record);
-                      setShowRecordDetails(true);
-                    }}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
+                  <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedRecord(record);
+                        setShowRecordDetails(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("确定要删除这条训练记录吗？")) {
+                          deleteRecordMutation.mutate(record.id);
+                        }
+                      }}
+                      disabled={deleteRecordMutation.isPending}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
