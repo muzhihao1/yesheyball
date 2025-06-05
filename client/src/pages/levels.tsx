@@ -65,7 +65,7 @@ export default function Levels() {
     return <div className="text-center py-8">数据加载失败</div>;
   }
 
-  // 基于assessments文件夹的等级关卡配置
+  // 正确的等级关卡配置，基于1000经验值per level
   const levelStages: LevelStage[] = [
     {
       level: 1,
@@ -75,8 +75,8 @@ export default function Levels() {
       description: "在启明星教准轨道，让台球成为你的第一颗卫星！台球技术基础框架搭建",
       unlocked: true,
       completed: user.level > 1,
-      progress: user.level > 1 ? 100 : Math.min((user.exp / 100) * 100, 95),
-      completedExercises: user.level > 1 ? 35 : Math.floor((user.exp / 100) * 35)
+      progress: user.level > 1 ? 100 : Math.min((user.exp / 1000) * 100, 95),
+      completedExercises: user.level > 1 ? 35 : Math.floor((user.exp / 1000) * 35)
     },
     {
       level: 2,
@@ -86,8 +86,8 @@ export default function Levels() {
       description: "台球技术基础框架搭建",
       unlocked: user.level >= 2,
       completed: user.level > 2,
-      progress: user.level > 2 ? 100 : user.level === 2 ? Math.min((user.exp / 200) * 100, 95) : 0,
-      completedExercises: user.level > 2 ? 40 : user.level === 2 ? Math.floor((user.exp / 200) * 40) : 0
+      progress: user.level > 2 ? 100 : user.level === 2 ? Math.min(((user.exp - 1000) / 1000) * 100, 95) : 0,
+      completedExercises: user.level > 2 ? 40 : user.level === 2 ? Math.floor(((user.exp - 1000) / 1000) * 40) : 0
     },
     {
       level: 3,
@@ -97,8 +97,8 @@ export default function Levels() {
       description: "掌握基本走位与控球技巧",
       unlocked: user.level >= 3,
       completed: user.level > 3,
-      progress: user.level > 3 ? 100 : user.level === 3 ? Math.min((user.exp / 300) * 100, 95) : 0,
-      completedExercises: user.level > 3 ? 50 : user.level === 3 ? Math.floor((user.exp / 300) * 50) : 0
+      progress: user.level > 3 ? 100 : user.level === 3 ? Math.min(((user.exp - 2000) / 1000) * 100, 95) : 0,
+      completedExercises: user.level > 3 ? 50 : user.level === 3 ? Math.floor(((user.exp - 2000) / 1000) * 50) : 0
     },
     {
       level: 4,
@@ -108,8 +108,8 @@ export default function Levels() {
       description: "在超新星的引力场中，精准控制每一次撞击！",
       unlocked: user.level >= 4,
       completed: user.level > 4,
-      progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
-      completedExercises: user.level > 4 ? 60 : user.level === 4 ? Math.floor((user.exp / 400) * 60) : 0
+      progress: user.level > 4 ? 100 : user.level === 4 ? Math.min(((user.exp - 3000) / 1000) * 100, 95) : 0,
+      completedExercises: user.level > 4 ? 60 : user.level === 4 ? Math.floor(((user.exp - 3000) / 1000) * 60) : 0
     },
     {
       level: 5,
@@ -119,8 +119,8 @@ export default function Levels() {
       description: "技术日臻成熟，走位精准",
       unlocked: user.level >= 5,
       completed: user.level > 5,
-      progress: user.level > 5 ? 100 : user.level === 5 ? Math.min((user.exp / 500) * 100, 95) : 0,
-      completedExercises: user.level > 5 ? 60 : user.level === 5 ? Math.floor((user.exp / 500) * 60) : 0
+      progress: user.level > 5 ? 100 : user.level === 5 ? Math.min(((user.exp - 4000) / 1000) * 100, 95) : 0,
+      completedExercises: user.level > 5 ? 60 : user.level === 5 ? Math.floor(((user.exp - 4000) / 1000) * 60) : 0
     },
     {
       level: 6,
@@ -130,8 +130,8 @@ export default function Levels() {
       description: "精确走位与复杂球局",
       unlocked: user.level >= 6,
       completed: user.level > 6,
-      progress: user.level > 6 ? 100 : user.level === 6 ? Math.min((user.exp / 600) * 100, 95) : 0,
-      completedExercises: user.level > 6 ? 60 : user.level === 6 ? Math.floor((user.exp / 600) * 60) : 0
+      progress: user.level > 6 ? 100 : user.level === 6 ? Math.min(((user.exp - 5000) / 1000) * 100, 95) : 0,
+      completedExercises: user.level > 6 ? 60 : user.level === 6 ? Math.floor(((user.exp - 5000) / 1000) * 60) : 0
     },
     {
       level: 7,
@@ -141,8 +141,8 @@ export default function Levels() {
       description: "在智子星的宏观维度，用一杆终结所有因果链！台球桌上的战略思维",
       unlocked: user.level >= 7,
       completed: user.level > 7,
-      progress: user.level > 7 ? 100 : user.level === 7 ? Math.min((user.exp / 700) * 100, 95) : 0,
-      completedExercises: user.level > 7 ? 55 : user.level === 7 ? Math.floor((user.exp / 700) * 55) : 0
+      progress: user.level > 7 ? 100 : user.level === 7 ? Math.min(((user.exp - 6000) / 1000) * 100, 95) : 0,
+      completedExercises: user.level > 7 ? 55 : user.level === 7 ? Math.floor(((user.exp - 6000) / 1000) * 55) : 0
     },
     {
       level: 8,
@@ -152,8 +152,8 @@ export default function Levels() {
       description: "超越技巧的艺术境界",
       unlocked: user.level >= 8,
       completed: user.level > 8,
-      progress: user.level > 8 ? 100 : user.level === 8 ? Math.min((user.exp / 800) * 100, 95) : 0,
-      completedExercises: user.level > 8 ? 55 : user.level === 8 ? Math.floor((user.exp / 800) * 55) : 0
+      progress: user.level > 8 ? 100 : user.level === 8 ? Math.min(((user.exp - 7000) / 1000) * 100, 95) : 0,
+      completedExercises: user.level > 8 ? 55 : user.level === 8 ? Math.floor(((user.exp - 7000) / 1000) * 55) : 0
     },
     {
       level: 9,
@@ -163,8 +163,8 @@ export default function Levels() {
       description: "台球的最高境界",
       unlocked: user.level >= 9,
       completed: false,
-      progress: user.level === 9 ? Math.min((user.exp / 900) * 100, 100) : 0,
-      completedExercises: user.level === 9 ? Math.floor((user.exp / 900) * 72) : 0
+      progress: user.level === 9 ? Math.min(((user.exp - 8000) / 1000) * 100, 100) : 0,
+      completedExercises: user.level === 9 ? Math.floor(((user.exp - 8000) / 1000) * 72) : 0
     }
   ];
 
