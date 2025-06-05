@@ -65,13 +65,10 @@ export default function Levels() {
     return <div className="text-center py-8">数据加载失败</div>;
   }
 
-  // 直接计算练习完成数量 - 基于120经验值应该显示4/35
-  const getExerciseCount = (level: number): number => {
-    if (level === 1) {
-      // Level 1: 120 exp ÷ 28 exp/exercise = 4.28 → 4 exercises
-      return Math.floor(user.exp / 28);
-    }
-    return 0; // 其他等级暂时返回0
+  // 基于实际完成的训练数据计算练习数量
+  const getActualCompletedExercises = (): number => {
+    // 直接返回用户已完成的任务数量，这是真实数据
+    return user.completedTasks || 0;
   };
 
   const levelStages: LevelStage[] = [
@@ -84,7 +81,7 @@ export default function Levels() {
       unlocked: true,
       completed: user.level > 1,
       progress: user.level > 1 ? 100 : Math.min((user.exp / 1000) * 100, 95),
-      completedExercises: getExerciseCount(1)
+      completedExercises: getActualCompletedExercises()
     },
     {
       level: 2,
@@ -95,7 +92,7 @@ export default function Levels() {
       unlocked: user.level >= 2,
       completed: user.level > 2,
       progress: user.level > 2 ? 100 : user.level === 2 ? Math.min(((user.exp - 1000) / 1000) * 100, 95) : 0,
-      completedExercises: getExerciseCount(2)
+      completedExercises: 0
     },
     {
       level: 3,
@@ -106,7 +103,7 @@ export default function Levels() {
       unlocked: user.level >= 3,
       completed: user.level > 3,
       progress: user.level > 3 ? 100 : user.level === 3 ? Math.min(((user.exp - 2000) / 1000) * 100, 95) : 0,
-      completedExercises: getExerciseCount(3)
+      completedExercises: 0
     },
     {
       level: 4,
@@ -117,7 +114,7 @@ export default function Levels() {
       unlocked: user.level >= 4,
       completed: user.level > 4,
       progress: user.level > 4 ? 100 : user.level === 4 ? Math.min(((user.exp - 3000) / 1000) * 100, 95) : 0,
-      completedExercises: getExerciseCount(4)
+      completedExercises: 0
     },
     {
       level: 5,
@@ -128,7 +125,7 @@ export default function Levels() {
       unlocked: user.level >= 5,
       completed: user.level > 5,
       progress: user.level > 5 ? 100 : user.level === 5 ? Math.min(((user.exp - 4000) / 1000) * 100, 95) : 0,
-      completedExercises: getExerciseCount(5)
+      completedExercises: 0
     },
     {
       level: 6,
@@ -139,7 +136,7 @@ export default function Levels() {
       unlocked: user.level >= 6,
       completed: user.level > 6,
       progress: user.level > 6 ? 100 : user.level === 6 ? Math.min(((user.exp - 5000) / 1000) * 100, 95) : 0,
-      completedExercises: getExerciseCount(6)
+      completedExercises: 0
     },
     {
       level: 7,
@@ -150,7 +147,7 @@ export default function Levels() {
       unlocked: user.level >= 7,
       completed: user.level > 7,
       progress: user.level > 7 ? 100 : user.level === 7 ? Math.min(((user.exp - 6000) / 1000) * 100, 95) : 0,
-      completedExercises: getExerciseCount(7)
+      completedExercises: 0
     },
     {
       level: 8,
@@ -161,7 +158,7 @@ export default function Levels() {
       unlocked: user.level >= 8,
       completed: user.level > 8,
       progress: user.level > 8 ? 100 : user.level === 8 ? Math.min(((user.exp - 7000) / 1000) * 100, 95) : 0,
-      completedExercises: getExerciseCount(8)
+      completedExercises: 0
     },
     {
       level: 9,
@@ -172,7 +169,7 @@ export default function Levels() {
       unlocked: user.level >= 9,
       completed: false,
       progress: user.level === 9 ? Math.min(((user.exp - 8000) / 1000) * 100, 100) : 0,
-      completedExercises: getExerciseCount(9)
+      completedExercises: 0
     }
   ];
 
