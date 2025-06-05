@@ -26,6 +26,44 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY 
 });
 
+// Generate AI coaching feedback
+async function generateAICoachingFeedback(sessionData: {
+  title: string;
+  sessionType: string;
+  duration: number;
+  rating: number;
+  notes?: string;
+}): Promise<string> {
+  try {
+    const prompt = `作为一位专业的中式八球台球教练，请为以下训练内容提供简洁的反馈建议（100字以内）：
+
+训练项目：${sessionData.title}
+训练类型：${sessionData.sessionType === 'guided' ? '系统训练' : sessionData.sessionType === 'custom' ? '自主训练' : '特训模式'}
+训练时长：${sessionData.duration}分钟
+自我评分：${sessionData.rating}/5星
+训练笔记：${sessionData.notes || '无'}
+
+请提供：
+1. 针对性的技术建议
+2. 下次训练重点
+3. 鼓励性总结
+
+回复要专业、简洁、实用。`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 200,
+      temperature: 0.7,
+    });
+
+    return response.choices[0]?.message?.content || "训练完成！继续保持努力，技术会持续提升。";
+  } catch (error) {
+    console.error('AI feedback generation error:', error);
+    return "训练完成！继续保持努力，技术会持续提升。";
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serve assessment images as static files
@@ -339,7 +377,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Training session request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertTrainingSessionSchema.parse(req.body);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
-      const session = await storage.createTrainingSession(validatedData);
+      
+      // Generate AI coaching feedback if session is completed
+      let aiFeedback = null;
+      if (validatedData.completed && validatedData.rating && validatedData.duration) {
+        aiFeedback = await generateAICoachingFeedback({
+          title: validatedData.title,
+          sessionType: validatedData.sessionType,
+          duration: validatedData.duration,
+          rating: validatedData.rating,
+          notes: validatedData.notes || undefined
+        });
+      }
+      
+      const sessionWithAI = { ...validatedData, aiFeedback };
+      const session = await storage.createTrainingSession(sessionWithAI);
       res.json(session);
     } catch (error) {
       console.error('Training session validation error:', error);
