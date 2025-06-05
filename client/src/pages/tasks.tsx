@@ -215,11 +215,14 @@ export default function Tasks() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          userId: 1,
           title,
           duration,
           rating,
           notes,
           sessionType,
+          completed: true,
+          completedAt: new Date().toISOString(),
           programId: isGuidedTraining ? mainProgram?.id : null,
           dayId: isGuidedTraining ? currentDayTraining?.id : null
         })
