@@ -327,11 +327,6 @@ export default function Tasks() {
   
   // Get current day training details
   const currentDayTraining = trainingDays.find(day => day.day === currentDay);
-  
-  // Debug logging
-  console.log('Debug - currentDay:', currentDay);
-  console.log('Debug - trainingDays:', trainingDays);
-  console.log('Debug - currentDayTraining:', currentDayTraining);
 
   return (
     <div className="p-4 space-y-6 pb-24">
@@ -663,7 +658,7 @@ export default function Tasks() {
 
       {/* Training Complete Dialog */}
       <Dialog open={showTrainingComplete} onOpenChange={setShowTrainingComplete}>
-        <DialogContent>
+        <DialogContent className="max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>训练完成</DialogTitle>
           </DialogHeader>
@@ -692,6 +687,31 @@ export default function Tasks() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-3">
+              <Label>训练总结</Label>
+              <Textarea
+                placeholder="记录本次训练的收获、遇到的问题或心得体会..."
+                value={isGuidedTraining ? guidedTrainingNotes : isCustomTraining ? customTrainingNotes : ""}
+                onChange={(e) => {
+                  if (isGuidedTraining) {
+                    setGuidedTrainingNotes(e.target.value);
+                  } else if (isCustomTraining) {
+                    setCustomTrainingNotes(e.target.value);
+                  }
+                }}
+                className="min-h-[80px] text-sm"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-bold">AI</span>
+              </div>
+              <div className="text-sm text-blue-800">
+                保存后将自动生成AI教练反馈
+              </div>
+            </div>
             
             <div className="flex space-x-3">
               <Button 
@@ -705,7 +725,7 @@ export default function Tasks() {
                 onClick={() => {
                   setShowTrainingComplete(false);
                   handleCancelTraining();
-                  toast({ title: "训练记录已保存" });
+                  toast({ title: "训练记录已保存，AI教练反馈生成中..." });
                 }}
                 className="flex-1"
               >
