@@ -132,6 +132,11 @@ export default function GrowthPage() {
     queryKey: ["/api/user-achievements"],
   });
 
+  // Fetch streak data
+  const { data: streakData } = useQuery<{currentStreak: number; longestStreak: number; totalDays: number}>({
+    queryKey: ["/api/user/streak"],
+  });
+
   // Edit training record mutation
   const editRecordMutation = useMutation({
     mutationFn: ({ id, notes }: { id: number; notes: string }) =>
@@ -352,7 +357,7 @@ export default function GrowthPage() {
       </div>
 
       {/* Progress Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">{completedLevels.length}</div>
@@ -363,12 +368,34 @@ export default function GrowthPage() {
 
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{user.completedTasks || 0}</div>
+            <div className="text-2xl font-bold text-green-600">{totalCompletedExercises}</div>
             <div className="text-sm text-gray-500">完成练习</div>
-            <div className="text-xs text-gray-400 mt-1">练习进度 {user.completedTasks > 0 ? Math.round((user.completedTasks / 30) * 100) : 0}%</div>
+            <div className="text-xs text-gray-400 mt-1">进度 {completionRate}%</div>
           </CardContent>
         </Card>
 
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-red-500 flex items-center justify-center">
+              <span className="mr-1">🔥</span>
+              {streakData?.currentStreak || 0}
+            </div>
+            <div className="text-sm text-gray-500">连续天数</div>
+            <div className="text-xs text-gray-400 mt-1">总{streakData?.totalDays || 0}天</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">{earnedAchievements.length}</div>
+            <div className="text-sm text-gray-500">获得成就</div>
+            <div className="text-xs text-gray-400 mt-1">共{achievements.length}个成就</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Training Activity Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">{completedTraining.length}</div>
@@ -379,9 +406,19 @@ export default function GrowthPage() {
 
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{earnedAchievements.length}</div>
-            <div className="text-sm text-gray-500">获得成就</div>
-            <div className="text-xs text-gray-400 mt-1">共{achievements.length}个成就</div>
+            <div className="text-2xl font-bold text-indigo-600">
+              {Math.floor(totalTrainingTime / 3600)}h {Math.floor((totalTrainingTime % 3600) / 60)}m
+            </div>
+            <div className="text-sm text-gray-500">训练时长</div>
+            <div className="text-xs text-gray-400 mt-1">累计练习时间</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-teal-600">{trainingRecords.length}</div>
+            <div className="text-sm text-gray-500">训练笔记</div>
+            <div className="text-xs text-gray-400 mt-1">学习记录</div>
           </CardContent>
         </Card>
       </div>
