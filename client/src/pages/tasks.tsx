@@ -895,7 +895,7 @@ export default function Tasks() {
                               );
                             })()}
                             
-                            {/* 开球线 */}
+                            {/* 发球线 */}
                             <div className="absolute bottom-8 left-2 right-2 h-0.5 bg-white opacity-60"></div>
                             
                             {/* 主球位置 - 根据击球线原理计算 */}
@@ -957,44 +957,83 @@ export default function Tasks() {
                               );
                             })()}
                             
-                            {/* 击球线指示 */}
+                            {/* 击球线指示 - 从主球通过目标球到袋口的直线 */}
                             {currentSpecialTraining.type === 'accuracy' && (() => {
                               const targetPocket = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint;
+                              const ballPosition = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique;
                               
-                              // 绘制从目标球到袋口的直线
+                              if (ballPosition !== '中央正位') return null;
+                              
+                              // 绘制击球线：主球→目标球→袋口的直线
                               let lineStyle = {};
-                              let lineClass = "absolute border-dashed border-gray-400 opacity-60";
                               
                               switch(targetPocket) {
                                 case '左上角袋':
-                                  // 从中央到左上角的线
+                                  // 从右下角主球位置到左上角袋口的直线
                                   lineStyle = { 
-                                    top: '0', 
-                                    left: '0', 
-                                    width: '50%', 
-                                    height: '50%',
-                                    background: 'linear-gradient(135deg, transparent 48%, #9ca3af 48%, #9ca3af 52%, transparent 52%)'
+                                    bottom: '15px',
+                                    right: '15px',
+                                    width: '75%',
+                                    height: '75%',
+                                    background: 'linear-gradient(135deg, transparent 49%, #ef4444 49%, #ef4444 51%, transparent 51%)',
+                                    opacity: 0.6
                                   };
                                   break;
                                 case '右上角袋':
-                                  // 从中央到右上角的线
+                                  // 从左下角主球位置到右上角袋口的直线
                                   lineStyle = { 
-                                    top: '0', 
-                                    right: '0', 
-                                    width: '50%', 
-                                    height: '50%',
-                                    background: 'linear-gradient(45deg, transparent 48%, #9ca3af 48%, #9ca3af 52%, transparent 52%)'
+                                    bottom: '15px',
+                                    left: '15px',
+                                    width: '75%',
+                                    height: '75%',
+                                    background: 'linear-gradient(45deg, transparent 49%, #ef4444 49%, #ef4444 51%, transparent 51%)',
+                                    opacity: 0.6
                                   };
                                   break;
                                 case '顶边中袋':
-                                  // 从中央到顶边中央的垂直线
+                                  // 从底部主球位置到顶边中袋的垂直线
                                   lineStyle = { 
-                                    top: '0', 
-                                    left: '50%', 
-                                    width: '2px', 
-                                    height: '50%',
-                                    backgroundColor: '#9ca3af',
-                                    transform: 'translateX(-50%)'
+                                    bottom: '15px',
+                                    left: '50%',
+                                    width: '2px',
+                                    height: '85%',
+                                    backgroundColor: '#ef4444',
+                                    transform: 'translateX(-50%)',
+                                    opacity: 0.6
+                                  };
+                                  break;
+                                case '底边中袋':
+                                  // 从顶部主球位置到底边中袋的垂直线
+                                  lineStyle = { 
+                                    top: '15px',
+                                    left: '50%',
+                                    width: '2px',
+                                    height: '85%',
+                                    backgroundColor: '#ef4444',
+                                    transform: 'translateX(-50%)',
+                                    opacity: 0.6
+                                  };
+                                  break;
+                                case '左下角袋':
+                                  // 从右上角主球位置到左下角袋口的直线
+                                  lineStyle = { 
+                                    top: '15px',
+                                    right: '15px',
+                                    width: '75%',
+                                    height: '75%',
+                                    background: 'linear-gradient(45deg, transparent 49%, #ef4444 49%, #ef4444 51%, transparent 51%)',
+                                    opacity: 0.6
+                                  };
+                                  break;
+                                case '右下角袋':
+                                  // 从左上角主球位置到右下角袋口的直线
+                                  lineStyle = { 
+                                    top: '15px',
+                                    left: '15px',
+                                    width: '75%',
+                                    height: '75%',
+                                    background: 'linear-gradient(135deg, transparent 49%, #ef4444 49%, #ef4444 51%, transparent 51%)',
+                                    opacity: 0.6
                                   };
                                   break;
                               }
