@@ -99,6 +99,10 @@ interface TrainingRecord {
 
 export default function GrowthPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [editingRecord, setEditingRecord] = useState<TrainingRecord | null>(null);
+  const [editNotes, setEditNotes] = useState<string>("");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch user data
   const { data: user } = useQuery<User>({
@@ -124,6 +128,58 @@ export default function GrowthPage() {
   const { data: userAchievements = [] } = useQuery<UserAchievement[]>({
     queryKey: ["/api/user-achievements"],
   });
+
+  // Edit training record mutation
+  const editRecordMutation = useMutation({
+    mutationFn: ({ id, notes }: { id: number; notes: string }) =>
+      apiRequest(`/api/training-sessions/${id}`, "PATCH", { notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
+      setEditingRecord(null);
+      setEditNotes("");
+      toast({ title: "训练记录已更新", description: "笔记已成功保存" });
+    },
+    onError: () => {
+      toast({ 
+        title: "更新失败", 
+        description: "请稍后重试",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete training record mutation
+  const deleteRecordMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/training-sessions/${id}`, "DELETE"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
+      toast({ title: "训练记录已删除" });
+    },
+    onError: () => {
+      toast({ 
+        title: "删除失败", 
+        description: "请稍后重试",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleEditRecord = (record: TrainingRecord) => {
+    setEditingRecord(record);
+    setEditNotes(record.content);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingRecord) {
+      editRecordMutation.mutate({ id: editingRecord.id, notes: editNotes });
+    }
+  };
+
+  const handleDeleteRecord = (id: number) => {
+    if (confirm("确定要删除这条训练记录吗？")) {
+      deleteRecordMutation.mutate(id);
+    }
+  };
 
   if (!user) {
     return <div>加载中...</div>;
@@ -434,7 +490,37 @@ export default function GrowthPage() {
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-800">{record.title}</h4>
-                          <p className="text-gray-600 mt-1 text-sm">{record.content}</p>
+                          {editingRecord?.id === record.id ? (
+                            <div className="mt-2 space-y-2">
+                              <Textarea
+                                value={editNotes}
+                                onChange={(e) => setEditNotes(e.target.value)}
+                                className="min-h-[60px]"
+                                placeholder="编辑训练笔记..."
+                              />
+                              <div className="flex space-x-2">
+                                <Button 
+                                  size="sm" 
+                                  onClick={handleSaveEdit}
+                                  disabled={editRecordMutation.isPending}
+                                >
+                                  保存
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => {
+                                    setEditingRecord(null);
+                                    setEditNotes("");
+                                  }}
+                                >
+                                  取消
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-600 mt-1 text-sm">{record.content}</p>
+                          )}
                           <div className="flex items-center mt-2 text-sm text-gray-500">
                             <Calendar className="h-4 w-4 mr-1" />
                             {new Date(record.completedAt).toLocaleDateString('zh-CN')}
@@ -451,6 +537,24 @@ export default function GrowthPage() {
                               </div>
                             )}
                           </div>
+                        </div>
+                        <div className="flex space-x-1 ml-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEditRecord(record)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteRecord(record.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
