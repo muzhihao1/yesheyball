@@ -13,40 +13,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Clock, Play, Pause, Square, Calendar, Star, BookOpen, Plus, Eye } from "lucide-react";
 
-interface TrainingProgram {
-  id: number;
-  name: string;
-  description: string;
-  totalDays: number;
-  currentDay?: number;
-}
+import type { TrainingProgram, TrainingDay } from "@shared/schema";
 
-interface TrainingSession {
-  id: number;
-  userId: number;
-  programId: number | null;
-  dayId: number | null;
-  title: string;
-  description: string | null;
-  duration: number | null;
-  rating: number | null;
-  notes: string | null;
-  completed: boolean;
-  completedAt: Date | null;
-  createdAt: Date;
-  sessionType: string;
-}
 
-interface TrainingRecord {
-  id: number;
-  userId: number;
-  title: string;
-  content: string;
-  duration: number | null;
-  rating: number | null;
-  completedAt: Date;
-  sessionType: string;
-}
 
 // Special Training Types
 interface SpecialTraining {
@@ -188,18 +157,25 @@ export default function Tasks() {
     queryKey: ["/api/training-programs"],
   });
 
+  // Get training days for the main program
+  const mainProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
+  const { data: trainingDays = [] } = useQuery<TrainingDay[]>({
+    queryKey: ["/api/training-programs", mainProgram?.id, "days"],
+    enabled: !!mainProgram?.id,
+  });
+
   // Get current session
-  const { data: currentSession } = useQuery<TrainingSession | null>({
+  const { data: currentSession } = useQuery<any>({
     queryKey: ["/api/training-sessions/current"],
   });
 
   // Get training sessions (history)
-  const { data: sessions = [] } = useQuery<TrainingSession[]>({
+  const { data: sessions = [] } = useQuery<any[]>({
     queryKey: ["/api/training-sessions"],
   });
 
   // Get completed training records
-  const { data: trainingRecords = [] } = useQuery<TrainingRecord[]>({
+  const { data: trainingRecords = [] } = useQuery<any[]>({
     queryKey: ["/api/training-records"],
   });
 
@@ -614,10 +590,12 @@ export default function Tasks() {
     return { label: "高级", color: "bg-red-100 text-red-800" };
   };
 
-  const mainProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
   const currentDay = mainProgram?.currentDay || 1;
   const currentEpisode = `第${currentDay}集`;
   const difficultyBadge = getDifficultyBadge(currentDay);
+  
+  // Get current day training details
+  const currentDayTraining = trainingDays.find(day => day.day === currentDay);
 
   const completedSessions = sessions.filter(s => s.completed);
   const todayCompletedSessions = completedSessions.filter(session => 
