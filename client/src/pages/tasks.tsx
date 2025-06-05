@@ -53,7 +53,7 @@ interface SpecialTraining {
   id: string;
   name: string;
   description: string;
-  type: 'power' | 'positioning';
+  type: 'power' | 'accuracy';
   combinations: TrainingCombination[];
   currentRound: number;
   currentCombination: number;
@@ -62,9 +62,9 @@ interface SpecialTraining {
 
 interface TrainingCombination {
   id: number;
-  technique: string; // 打、点、推
-  cuePoint: string; // 低杆、中杆、高杆、低杆左塞等
-  power: string; // 大力、中力、小力
+  technique: string; // 打、点、推 OR 球位描述
+  cuePoint: string; // 低杆、中杆、高杆、低杆左塞等 OR 目标袋口
+  power: string; // 大力、中力、小力 OR 难度等级
   completed: boolean;
 }
 
@@ -133,6 +133,37 @@ export default function Tasks() {
     return combinations;
   };
 
+  // Generate accuracy training combinations (五分点练习)
+  const generateAccuracyTrainingCombinations = (): TrainingCombination[] => {
+    const ballPositions = [
+      '中央正位', '左侧15度', '右侧15度', '左侧30度', '右侧30度',
+      '左侧45度', '右侧45度', '左侧60度', '右侧60度', '直线远台'
+    ];
+    const targetPockets = [
+      '左上角袋', '右上角袋', '左下角袋', '右下角袋', '顶边中袋', '底边中袋'
+    ];
+    const difficulties = ['基础', '进阶', '高级'];
+    
+    const combinations: TrainingCombination[] = [];
+    let id = 1;
+    
+    for (const position of ballPositions) {
+      for (const pocket of targetPockets) {
+        for (const difficulty of difficulties) {
+          combinations.push({
+            id: id++,
+            technique: position,
+            cuePoint: pocket,
+            power: difficulty,
+            completed: false
+          });
+        }
+      }
+    }
+    
+    return combinations;
+  };
+
   // Initialize power training
   const initializePowerTraining = (): SpecialTraining => {
     return {
@@ -144,6 +175,20 @@ export default function Tasks() {
       currentRound: 1,
       currentCombination: 0,
       totalRounds: 3
+    };
+  };
+
+  // Initialize accuracy training
+  const initializeAccuracyTraining = (): SpecialTraining => {
+    return {
+      id: 'accuracy-training',
+      name: '准度特训',
+      description: '五分点练习，从不同角度和位置击球入袋，提升击球精度',
+      type: 'accuracy',
+      combinations: generateAccuracyTrainingCombinations(),
+      currentRound: 1,
+      currentCombination: 0,
+      totalRounds: 5
     };
   };
 
@@ -411,23 +456,30 @@ export default function Tasks() {
     setShowTrainingComplete(true);
   };
 
-  const handleStartSpecialTraining = (type: 'power' | 'positioning') => {
+  const handleStartSpecialTraining = (type: 'power' | 'accuracy') => {
+    let training: SpecialTraining;
+    
     if (type === 'power') {
-      const powerTraining = initializePowerTraining();
-      setCurrentSpecialTraining(powerTraining);
-      setIsSpecialTraining(true);
-      setIsSpecialPaused(false);
-      setSpecialElapsedTime(0);
-      setSelectedSessionType("特训");
-      
-      // Create training session
-      startSpecialTrainingMutation.mutate({
-        title: powerTraining.name,
-        description: powerTraining.description
-      });
-      
+      training = initializePowerTraining();
       toast({ title: "特训开始", description: "发力特训已开始" });
+    } else if (type === 'accuracy') {
+      training = initializeAccuracyTraining();
+      toast({ title: "特训开始", description: "准度特训已开始" });
+    } else {
+      return;
     }
+    
+    setCurrentSpecialTraining(training);
+    setIsSpecialTraining(true);
+    setIsSpecialPaused(false);
+    setSpecialElapsedTime(0);
+    setSelectedSessionType("特训");
+    
+    // Create training session
+    startSpecialTrainingMutation.mutate({
+      title: training.name,
+      description: training.description
+    });
   };
 
   const handlePauseSpecialTraining = () => {
@@ -696,13 +748,13 @@ export default function Tasks() {
                   </Button>
                   
                   <Button 
-                    variant="outline"
-                    disabled
-                    className="touch-target h-16 rounded-lg text-center p-4 opacity-50"
+                    onClick={() => handleStartSpecialTraining('accuracy')}
+                    className="bg-indigo-600 hover:bg-indigo-700 touch-target h-16 rounded-lg text-center p-4"
                   >
                     <div className="space-y-1">
-                      <div className="font-semibold">走位特训</div>
-                      <div className="text-xs">即将推出</div>
+                      <div className="font-semibold">准度特训</div>
+                      <div className="text-xs opacity-90">五分点练习</div>
+                      <div className="text-xs opacity-75">180种组合</div>
                     </div>
                   </Button>
                 </div>
@@ -728,9 +780,18 @@ export default function Tasks() {
                     <div className="bg-purple-100 rounded-lg p-3 mb-4">
                       <div className="text-sm text-purple-700 mb-2">当前组合：</div>
                       <div className="text-lg font-bold text-purple-900">
-                        {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint} + {' '}
-                        {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique} + {' '}
-                        {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.power}
+                        {currentSpecialTraining.type === 'power' ? (
+                          <>
+                            {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint} + {' '}
+                            {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique} + {' '}
+                            {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.power}
+                          </>
+                        ) : (
+                          <>
+                            {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique} → {' '}
+                            {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint} ({currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.power})
+                          </>
+                        )}
                       </div>
                       <div className="text-xs text-purple-600 mt-1">
                         进度: {currentSpecialTraining.currentCombination + 1} / {currentSpecialTraining.combinations.length}
