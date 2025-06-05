@@ -234,6 +234,7 @@ export default function Tasks() {
       setShowTrainingComplete(false);
       if (selectedSessionType === "custom") {
         setIsCustomTraining(false);
+        setIsCustomPaused(false);
         setCustomElapsedTime(0);
         setCustomTrainingNotes("");
       } else if (selectedSessionType === "特训") {
@@ -245,9 +246,11 @@ export default function Tasks() {
         setSpecialTrainingSessionId(null);
       } else {
         setIsGuidedTraining(false);
+        setIsGuidedPaused(false);
         setGuidedElapsedTime(0);
         setGuidedTrainingNotes("");
       }
+      setSelectedSessionType("");
       setUserRating(0);
       setCoachingFeedback("");
       
@@ -442,6 +445,8 @@ export default function Tasks() {
       setGuidedElapsedTime(0);
       setGuidedTrainingNotes("");
     }
+    // Reset session type to allow new training
+    setSelectedSessionType("");
   };
 
   const handleStartCustomTraining = () => {
