@@ -895,8 +895,8 @@ export default function Tasks() {
                               );
                             })()}
                             
-                            {/* 发球线 */}
-                            <div className="absolute bottom-8 left-2 right-2 h-0.5 bg-white opacity-60"></div>
+                            {/* 开球线 - 位于台面底部1/4处 */}
+                            <div className="absolute bottom-1/4 left-2 right-2 h-0.5 bg-white opacity-60"></div>
                             
                             {/* 主球位置 - 根据击球线原理计算 */}
                             {(() => {
@@ -957,94 +957,7 @@ export default function Tasks() {
                               );
                             })()}
                             
-                            {/* 击球线指示 - 从主球通过目标球到袋口的直线 */}
-                            {currentSpecialTraining.type === 'accuracy' && (() => {
-                              const targetPocket = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint;
-                              const ballPosition = currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique;
-                              
-                              if (ballPosition !== '中央正位') return null;
-                              
-                              // 绘制击球线：主球→目标球→袋口的直线
-                              let lineStyle = {};
-                              
-                              switch(targetPocket) {
-                                case '左上角袋':
-                                  // 从右下角主球位置到左上角袋口的直线
-                                  lineStyle = { 
-                                    bottom: '15px',
-                                    right: '15px',
-                                    width: '75%',
-                                    height: '75%',
-                                    background: 'linear-gradient(135deg, transparent 49%, #ef4444 49%, #ef4444 51%, transparent 51%)',
-                                    opacity: 0.6
-                                  };
-                                  break;
-                                case '右上角袋':
-                                  // 从左下角主球位置到右上角袋口的直线
-                                  lineStyle = { 
-                                    bottom: '15px',
-                                    left: '15px',
-                                    width: '75%',
-                                    height: '75%',
-                                    background: 'linear-gradient(45deg, transparent 49%, #ef4444 49%, #ef4444 51%, transparent 51%)',
-                                    opacity: 0.6
-                                  };
-                                  break;
-                                case '顶边中袋':
-                                  // 从底部主球位置到顶边中袋的垂直线
-                                  lineStyle = { 
-                                    bottom: '15px',
-                                    left: '50%',
-                                    width: '2px',
-                                    height: '85%',
-                                    backgroundColor: '#ef4444',
-                                    transform: 'translateX(-50%)',
-                                    opacity: 0.6
-                                  };
-                                  break;
-                                case '底边中袋':
-                                  // 从顶部主球位置到底边中袋的垂直线
-                                  lineStyle = { 
-                                    top: '15px',
-                                    left: '50%',
-                                    width: '2px',
-                                    height: '85%',
-                                    backgroundColor: '#ef4444',
-                                    transform: 'translateX(-50%)',
-                                    opacity: 0.6
-                                  };
-                                  break;
-                                case '左下角袋':
-                                  // 从右上角主球位置到左下角袋口的直线
-                                  lineStyle = { 
-                                    top: '15px',
-                                    right: '15px',
-                                    width: '75%',
-                                    height: '75%',
-                                    background: 'linear-gradient(45deg, transparent 49%, #ef4444 49%, #ef4444 51%, transparent 51%)',
-                                    opacity: 0.6
-                                  };
-                                  break;
-                                case '右下角袋':
-                                  // 从左上角主球位置到右下角袋口的直线
-                                  lineStyle = { 
-                                    top: '15px',
-                                    left: '15px',
-                                    width: '75%',
-                                    height: '75%',
-                                    background: 'linear-gradient(135deg, transparent 49%, #ef4444 49%, #ef4444 51%, transparent 51%)',
-                                    opacity: 0.6
-                                  };
-                                  break;
-                              }
-                              
-                              return (
-                                <div 
-                                  className="absolute pointer-events-none"
-                                  style={lineStyle}
-                                ></div>
-                              );
-                            })()}
+
                           </div>
                           
                           <div className="mt-2 text-xs text-center">
