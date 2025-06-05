@@ -255,6 +255,8 @@ export default function Tasks() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/streak"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
       // Show AI feedback immediately if available
       if (data.aiFeedback) {
