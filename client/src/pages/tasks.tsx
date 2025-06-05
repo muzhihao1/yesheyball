@@ -259,6 +259,8 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user-achievements"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-programs/1/days"] });
       
       // Show AI feedback immediately if available
       if (data.aiFeedback) {
@@ -267,7 +269,7 @@ export default function Tasks() {
       }
       
       handleCancelTraining();
-      toast({ title: "训练记录已保存" });
+      toast({ title: "训练记录已保存，已自动进入下一集训练" });
     },
     onError: () => {
       toast({ 
