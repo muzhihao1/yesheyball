@@ -201,9 +201,9 @@ export default function Tasks() {
                       isCustomTraining ? customElapsedTime : 
                       specialElapsedTime;
       
-      const sessionType = isGuidedTraining ? "系统训练" :
-                         isCustomTraining ? "自主训练" :
-                         "特训模式";
+      const sessionType = isGuidedTraining ? "guided" :
+                         isCustomTraining ? "custom" :
+                         "special";
       
       const title = isGuidedTraining ? `第${currentDay}集：${currentDayTraining?.title || "握杆"}` :
                    isCustomTraining ? "自主训练" :
@@ -222,7 +222,6 @@ export default function Tasks() {
           notes,
           sessionType,
           completed: true,
-          completedAt: new Date().toISOString(),
           programId: isGuidedTraining ? mainProgram?.id : null,
           dayId: isGuidedTraining ? currentDayTraining?.id : null
         })
