@@ -89,6 +89,7 @@ export const trainingSessions = pgTable("training_sessions", {
   rating: integer("rating"), // 1-5 stars
   completed: boolean("completed").notNull().default(false),
   sessionType: text("session_type").notNull().default("guided"), // "guided" or "custom"
+  aiFeedback: text("ai_feedback"), // AI coaching feedback
   createdAt: timestamp("created_at").notNull().defaultNow(),
   completedAt: timestamp("completed_at"),
 });

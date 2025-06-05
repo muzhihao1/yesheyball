@@ -711,6 +711,75 @@ export default function Tasks() {
         </Card>
       )}
 
+      {/* Training Record Details Dialog */}
+      <Dialog open={showRecordDetails} onOpenChange={setShowRecordDetails}>
+        <DialogContent className="max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle>训练记录详情</DialogTitle>
+          </DialogHeader>
+          {selectedRecord && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">训练项目</Label>
+                <p className="text-gray-700 mt-1">{selectedRecord.title}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">训练时长</Label>
+                  <p className="text-gray-700 mt-1">
+                    {selectedRecord.duration ? `${Math.floor(selectedRecord.duration / 60)}分钟` : "未记录"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">训练评分</Label>
+                  <p className="text-gray-700 mt-1">
+                    {selectedRecord.rating ? '⭐'.repeat(selectedRecord.rating) : "未评分"}
+                  </p>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">训练时间</Label>
+                <p className="text-gray-700 mt-1">
+                  {new Date(selectedRecord.completedAt).toLocaleString('zh-CN')}
+                </p>
+              </div>
+              
+              {selectedRecord.notes && (
+                <div>
+                  <Label className="text-sm font-medium">训练笔记</Label>
+                  <div className="mt-1 p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                    {selectedRecord.notes}
+                  </div>
+                </div>
+              )}
+              
+              {selectedRecord.aiFeedback && (
+                <div>
+                  <Label className="text-sm font-medium flex items-center space-x-2">
+                    <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">AI</span>
+                    </div>
+                    <span>AI教练反馈</span>
+                  </Label>
+                  <div className="mt-1 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                    {selectedRecord.aiFeedback}
+                  </div>
+                </div>
+              )}
+              
+              <Button 
+                onClick={() => setShowRecordDetails(false)}
+                className="w-full"
+              >
+                关闭
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Training Complete Dialog */}
       <Dialog open={showTrainingComplete} onOpenChange={setShowTrainingComplete}>
         <DialogContent className="max-w-md mx-auto">
