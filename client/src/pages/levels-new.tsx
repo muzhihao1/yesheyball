@@ -621,18 +621,18 @@ export default function Levels() {
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
                     
-                    // Position exercises - first 4 further to the right
-                    let paddingLeft = 120; // Default center position for milestones
+                    // Position exercises - first 4 further to the left
+                    let paddingLeft = 60; // Move milestone center position to the left
                     
                     if (!isMilestone) {
-                      // Move first 4 exercises significantly to the right
+                      // Move first 4 exercises to the left
                       const zigzagPosition = exerciseIndex % 4;
                       switch (zigzagPosition) {
-                        case 0: paddingLeft = 200; break;  // Far right
-                        case 1: paddingLeft = 240; break;  // Even further right
-                        case 2: paddingLeft = 200; break;  // Far right
-                        case 3: paddingLeft = 240; break;  // Even further right
-                        default: paddingLeft = 220; break;
+                        case 0: paddingLeft = 140; break;  // Left side
+                        case 1: paddingLeft = 180; break;  // Right side
+                        case 2: paddingLeft = 140; break;  // Left side
+                        case 3: paddingLeft = 180; break;  // Right side
+                        default: paddingLeft = 160; break;
                       }
                     }
                     
