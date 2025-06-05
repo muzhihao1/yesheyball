@@ -353,9 +353,9 @@ export default function GrowthPage() {
 
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{totalCompletedExercises}</div>
+            <div className="text-2xl font-bold text-green-600">{user.completedTasks || 0}</div>
             <div className="text-sm text-gray-500">完成练习</div>
-            <div className="text-xs text-gray-400 mt-1">练习进度 {completionRate}%</div>
+            <div className="text-xs text-gray-400 mt-1">练习进度 {user.completedTasks > 0 ? Math.round((user.completedTasks / 30) * 100) : 0}%</div>
           </CardContent>
         </Card>
 

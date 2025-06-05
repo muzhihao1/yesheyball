@@ -512,8 +512,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Calculate experience points
+        const sessionType = validatedData.sessionType === "special" ? "custom" : (validatedData.sessionType || "custom");
         const expGained = calculateTrainingExperience({
-          sessionType: validatedData.sessionType || "custom",
+          sessionType: sessionType as "guided" | "custom",
           duration: validatedData.duration || 0,
           rating: validatedData.rating || undefined,
           programDifficulty
