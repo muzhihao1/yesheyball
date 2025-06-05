@@ -369,7 +369,7 @@ export default function GrowthPage() {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">{totalCompletedExercises}</div>
-            <div className="text-sm text-gray-500">完成练习</div>
+            <div className="text-sm text-gray-500">顺序练习</div>
             <div className="text-xs text-gray-400 mt-1">进度 {completionRate}%</div>
           </CardContent>
         </Card>
@@ -395,12 +395,20 @@ export default function GrowthPage() {
       </div>
 
       {/* Training Activity Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">{completedTraining.length}</div>
             <div className="text-sm text-gray-500">训练次数</div>
             <div className="text-xs text-gray-400 mt-1">{avgRating > 0 ? `平均${avgRating.toFixed(1)}星` : '暂无评分'}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-500">{user.completedTasks || 0}</div>
+            <div className="text-sm text-gray-500">练习次数</div>
+            <div className="text-xs text-gray-400 mt-1">包含重复练习</div>
           </CardContent>
         </Card>
 
