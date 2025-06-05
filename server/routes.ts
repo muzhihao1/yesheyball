@@ -600,6 +600,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/training-sessions/:id", async (req, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      await storage.deleteTrainingSession(sessionId);
+      res.json({ message: "Training session deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete training session" });
+    }
+  });
+
   app.post("/api/training-sessions/:id/complete", async (req, res) => {
     try {
       const { duration, rating, notes } = req.body;

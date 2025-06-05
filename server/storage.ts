@@ -380,6 +380,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTrainingSession(id: number): Promise<void> {
+    // First delete any related training notes
+    await db.delete(trainingNotes).where(eq(trainingNotes.sessionId, id));
+    
+    // Then delete the training session
     await db.delete(trainingSessions).where(eq(trainingSessions.id, id));
   }
 
