@@ -26,6 +26,82 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY 
 });
 
+// Calculate training streak based on completed sessions
+function calculateTrainingStreak(completedSessions: any[]): {
+  currentStreak: number;
+  longestStreak: number;
+  totalDays: number;
+  recentDays: { date: string; hasActivity: boolean; sessions: number }[];
+} {
+  if (completedSessions.length === 0) {
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      totalDays: 0,
+      recentDays: []
+    };
+  }
+
+  // Group sessions by date
+  const sessionsByDate = new Map<string, number>();
+  completedSessions.forEach(session => {
+    const date = new Date(session.createdAt).toDateString();
+    sessionsByDate.set(date, (sessionsByDate.get(date) || 0) + 1);
+  });
+
+  const uniqueDates = Array.from(sessionsByDate.keys()).sort();
+  const totalDays = uniqueDates.length;
+
+  // Calculate current streak (consecutive days from today)
+  let currentStreak = 0;
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
+  
+  // Start from today or yesterday if no activity today
+  let checkDate = sessionsByDate.has(today) ? today : yesterday;
+  let currentDate = new Date(checkDate);
+  
+  while (sessionsByDate.has(currentDate.toDateString())) {
+    currentStreak++;
+    currentDate.setDate(currentDate.getDate() - 1);
+  }
+
+  // Calculate longest streak
+  let longestStreak = 0;
+  let tempStreak = 0;
+  let prevDate: Date | null = null;
+
+  uniqueDates.forEach(dateStr => {
+    const date = new Date(dateStr);
+    if (prevDate && (date.getTime() - prevDate.getTime()) <= 24 * 60 * 60 * 1000 + 1000) {
+      tempStreak++;
+    } else {
+      tempStreak = 1;
+    }
+    longestStreak = Math.max(longestStreak, tempStreak);
+    prevDate = date;
+  });
+
+  // Generate recent 7 days data
+  const recentDays = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+    const dateStr = date.toDateString();
+    recentDays.push({
+      date: dateStr,
+      hasActivity: sessionsByDate.has(dateStr),
+      sessions: sessionsByDate.get(dateStr) || 0
+    });
+  }
+
+  return {
+    currentStreak,
+    longestStreak,
+    totalDays,
+    recentDays
+  };
+}
+
 // Generate AI coaching feedback
 async function generateAICoachingFeedback(sessionData: {
   title: string;
@@ -80,6 +156,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user" });
+    }
+  });
+
+  // Get user training streak data
+  app.get("/api/user/streak", async (req, res) => {
+    try {
+      const userId = 1;
+      const sessions = await storage.getUserTrainingSessions(userId);
+      const completedSessions = sessions.filter(s => s.completed);
+      
+      // Calculate streak data
+      const streakData = calculateTrainingStreak(completedSessions);
+      
+      res.json(streakData);
+    } catch (error) {
+      console.error("Streak calculation error:", error);
+      res.status(500).json({ message: "Failed to calculate streak" });
     }
   });
 

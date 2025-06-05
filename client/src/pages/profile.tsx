@@ -26,7 +26,9 @@ import {
   MapPin,
   Cake,
   Trophy,
-  Star
+  Star,
+  Flame,
+  CheckCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -84,6 +86,11 @@ export default function Profile() {
   // Fetch user data
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ["/api/user"],
+  });
+
+  // Fetch streak data
+  const { data: streakData } = useQuery({
+    queryKey: ["/api/user/streak"],
   });
 
   // Mock settings data (in real app this would come from API)
@@ -187,21 +194,68 @@ export default function Profile() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Enhanced Streak Display */}
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{user.streak}</div>
-                <div className="text-sm text-gray-500">连续训练天数</div>
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <Flame className="h-6 w-6 text-orange-500" />
+                  <div className="text-3xl font-bold text-orange-600">
+                    {streakData?.currentStreak || user.streak || 0}
+                  </div>
+                </div>
+                <div className="text-sm text-gray-500 mb-3">连续训练天数</div>
+                
+                {/* Daily Activity Pattern */}
+                {streakData?.recentDays && (
+                  <div className="flex justify-center space-x-1 mb-3">
+                    {streakData.recentDays.map((day, index) => (
+                      <div
+                        key={index}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                          day.hasActivity 
+                            ? 'bg-green-500 text-white' 
+                            : 'bg-gray-200 text-gray-400'
+                        }`}
+                        title={`${new Date(day.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}: ${day.sessions}次训练`}
+                      >
+                        {day.hasActivity ? <CheckCircle className="h-3 w-3" /> : index === 6 ? '今' : ''}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
-                  <div className="font-semibold">{user.completedTasks}</div>
-                  <div className="text-xs text-gray-500">完成任务</div>
+                  <div className="font-semibold">{streakData?.totalDays || user.completedTasks || 0}</div>
+                  <div className="text-xs text-gray-500">训练天数</div>
                 </div>
                 <div>
-                  <div className="font-semibold">{Math.floor(user.totalTime / 60)}h</div>
-                  <div className="text-xs text-gray-500">训练时长</div>
+                  <div className="font-semibold">{streakData?.longestStreak || 0}</div>
+                  <div className="text-xs text-gray-500">最长连击</div>
                 </div>
               </div>
+              
+              {/* Streak Stats */}
+              {streakData && (
+                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-3">
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-orange-800">
+                      {streakData.currentStreak === 0 
+                        ? "开始你的训练之旅！" 
+                        : streakData.currentStreak === 1 
+                        ? "很好的开始！"
+                        : streakData.currentStreak < 7
+                        ? "保持节奏！"
+                        : "训练达人！"}
+                    </div>
+                    <div className="text-xs text-orange-600 mt-1">
+                      {streakData.currentStreak === 0 
+                        ? "完成一次训练开始打卡"
+                        : `已坚持${streakData.currentStreak}天，继续加油！`}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <Button 
                 className="w-full" 
