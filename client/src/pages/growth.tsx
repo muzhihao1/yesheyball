@@ -82,11 +82,12 @@ interface TrainingSession {
   userId: number;
   title: string;
   description: string | null;
+  notes?: string;
   duration: number | null;
   rating: number | null;
   completed: boolean;
   completedAt: Date | null;
-  createdAt: Date;
+  createdAt: string;
   sessionType: string;
   programId?: number | null;
   dayId?: number | null;
@@ -96,11 +97,11 @@ interface TrainingRecord {
   id: number;
   userId: number;
   title: string;
-  content: string;
+  notes?: string;
   duration: number | null;
   rating: number | null;
   completedAt: Date | null;
-  createdAt?: string;
+  createdAt: string;
 }
 
 export default function GrowthPage() {
@@ -182,9 +183,9 @@ export default function GrowthPage() {
     }
   });
 
-  const handleEditRecord = (record: TrainingRecord) => {
-    setEditingRecord(record);
-    setEditNotes(record.content);
+  const handleEditRecord = (record: TrainingSession) => {
+    setEditingRecord(record as any);
+    setEditNotes(record.notes || '');
   };
 
   const handleSaveEdit = () => {
@@ -527,7 +528,7 @@ export default function GrowthPage() {
                 {/* Recent Training Records */}
                 <div className="space-y-3">
                   <h3 className="font-medium text-gray-900">最近训练记录</h3>
-                  {trainingRecords.slice(0, 10).map((record) => (
+                  {completedTraining.slice(0, 10).map((record) => (
                     <div key={record.id} className="border-l-4 border-blue-500 pl-4 py-3 bg-white rounded-r-lg shadow-sm">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -561,7 +562,7 @@ export default function GrowthPage() {
                               </div>
                             </div>
                           ) : (
-                            <p className="text-gray-600 mt-1 text-sm">{record.content}</p>
+                            <p className="text-gray-600 mt-1 text-sm">{record.notes || '无训练笔记'}</p>
                           )}
                           <div className="flex items-center mt-2 text-sm text-gray-500">
                             <Calendar className="h-4 w-4 mr-1" />
