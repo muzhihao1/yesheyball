@@ -330,11 +330,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/training-sessions", async (req, res) => {
     try {
+      console.log('Training session request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertTrainingSessionSchema.parse(req.body);
+      console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       const session = await storage.createTrainingSession(validatedData);
       res.json(session);
     } catch (error) {
-      res.status(400).json({ message: "Invalid training session data" });
+      console.error('Training session validation error:', error);
+      if (error instanceof z.ZodError) {
+        console.error('Zod validation errors:', error.errors);
+        res.status(400).json({ 
+          message: "Invalid training session data", 
+          errors: error.errors 
+        });
+      } else {
+        res.status(400).json({ message: "Invalid training session data" });
+      }
     }
   });
 
