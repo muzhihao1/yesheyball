@@ -895,8 +895,11 @@ export default function Tasks() {
                               );
                             })()}
                             
-                            {/* 主球位置 */}
-                            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white rounded-full border border-gray-600"></div>
+                            {/* 主球位置 - 开球区域 */}
+                            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white rounded-full border border-gray-600"></div>
+                            
+                            {/* 开球线 */}
+                            <div className="absolute bottom-4 left-2 right-2 h-0.5 bg-white opacity-60"></div>
                           </div>
                           
                           <div className="mt-2 text-xs text-center">
