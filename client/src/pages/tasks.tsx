@@ -88,6 +88,7 @@ export default function Tasks() {
   const [currentSpecialTraining, setCurrentSpecialTraining] = useState<SpecialTraining | null>(null);
   const [showSpecialTrainingDetail, setShowSpecialTrainingDetail] = useState(false);
   const [specialTrainingNotes, setSpecialTrainingNotes] = useState("");
+  const [specialTrainingSessionId, setSpecialTrainingSessionId] = useState<number | null>(null);
   
   // Shared states
   const [showTrainingComplete, setShowTrainingComplete] = useState(false);
@@ -170,8 +171,12 @@ export default function Tasks() {
   const completeSessionMutation = useMutation({
     mutationFn: (sessionId: number) => {
       // Combine training notes with coaching feedback if available
-      const currentNotes = selectedSessionType === "custom" ? customTrainingNotes : guidedTrainingNotes;
-      const currentDuration = selectedSessionType === "custom" ? customElapsedTime : guidedElapsedTime;
+      const currentNotes = selectedSessionType === "custom" ? customTrainingNotes 
+                          : selectedSessionType === "特训" ? specialTrainingNotes 
+                          : guidedTrainingNotes;
+      const currentDuration = selectedSessionType === "custom" ? customElapsedTime 
+                             : selectedSessionType === "特训" ? specialElapsedTime 
+                             : guidedElapsedTime;
       const combinedNotes = coachingFeedback 
         ? `${currentNotes}\n\n🏓 教练回复：\n${coachingFeedback}`
         : currentNotes;
@@ -195,6 +200,13 @@ export default function Tasks() {
         setIsCustomTraining(false);
         setCustomElapsedTime(0);
         setCustomTrainingNotes("");
+      } else if (selectedSessionType === "特训") {
+        setIsSpecialTraining(false);
+        setIsSpecialPaused(false);
+        setCurrentSpecialTraining(null);
+        setSpecialElapsedTime(0);
+        setSpecialTrainingNotes("");
+        setSpecialTrainingSessionId(null);
       } else {
         setIsGuidedTraining(false);
         setGuidedElapsedTime(0);
@@ -208,15 +220,20 @@ export default function Tasks() {
       if (response.expGained) {
         toast({ 
           title: "训练完成", 
-          description: `获得 ${response.expGained} 经验值！进入下一集`,
+          description: `获得 ${response.expGained} 经验值！${selectedSessionType === "特训" ? "" : "进入下一集"}`,
           duration: 3000
         });
       } else {
-        toast({ title: "训练完成", description: "您的训练记录已保存，进入下一集" });
+        toast({ 
+          title: "训练完成", 
+          description: `您的训练记录已保存${selectedSessionType === "特训" ? "" : "，进入下一集"}` 
+        });
       }
       
-      // Progress to next episode
-      nextEpisodeMutation.mutate();
+      // Progress to next episode only for guided training
+      if (selectedSessionType !== "特训" && selectedSessionType !== "custom") {
+        nextEpisodeMutation.mutate();
+      }
     }
   });
 
@@ -244,7 +261,8 @@ export default function Tasks() {
         description: trainingData.description,
         sessionType: "特训"
       }),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      setSpecialTrainingSessionId(data.id);
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
     }
@@ -346,8 +364,16 @@ export default function Tasks() {
   };
 
   const handleCompleteTraining = () => {
-    if (currentSession) {
-      completeSessionMutation.mutate(currentSession.id);
+    // Use appropriate session ID based on training type
+    let sessionId = null;
+    if (selectedSessionType === "特训" && specialTrainingSessionId) {
+      sessionId = specialTrainingSessionId;
+    } else if (currentSession) {
+      sessionId = currentSession.id;
+    }
+    
+    if (sessionId) {
+      completeSessionMutation.mutate(sessionId);
     }
     
     // Reset state based on training type
@@ -357,6 +383,7 @@ export default function Tasks() {
       setCurrentSpecialTraining(null);
       setSpecialElapsedTime(0);
       setSpecialTrainingNotes("");
+      setSpecialTrainingSessionId(null);
     } else if (selectedSessionType === "custom") {
       setIsCustomTraining(false);
       setIsCustomPaused(false);
