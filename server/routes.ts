@@ -32,7 +32,7 @@ async function generateAICoachingFeedback(sessionData: {
   sessionType: string;
   duration: number;
   rating: number;
-  notes?: string;
+  notes?: string | null;
 }): Promise<string> {
   try {
     const prompt = `作为一位专业的中式八球台球教练，请为以下训练内容提供简洁的反馈建议（100字以内）：
@@ -379,15 +379,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       
       // Generate AI coaching feedback if session is completed
-      let aiFeedback = null;
+      let aiFeedback: string | null = null;
       if (validatedData.completed && validatedData.rating && validatedData.duration) {
+        console.log('Generating AI feedback for session:', validatedData.title);
         aiFeedback = await generateAICoachingFeedback({
           title: validatedData.title,
-          sessionType: validatedData.sessionType,
+          sessionType: validatedData.sessionType || "custom",
           duration: validatedData.duration,
           rating: validatedData.rating,
-          notes: validatedData.notes || undefined
+          notes: validatedData.notes || null
         });
+        console.log('AI feedback generated:', aiFeedback);
       }
       
       const sessionWithAI = { ...validatedData, aiFeedback };
@@ -512,7 +514,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duration: s.duration,
         rating: s.rating,
         completedAt: s.completedAt,
-        sessionType: s.sessionType
+        sessionType: s.sessionType,
+        notes: s.notes,
+        aiFeedback: s.aiFeedback
       }));
       res.json(completedSessions);
     } catch (error) {
