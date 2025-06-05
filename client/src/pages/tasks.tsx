@@ -467,6 +467,15 @@ export default function Tasks() {
   };
 
   const handleStartSpecialTraining = (type: 'power' | 'accuracy') => {
+    if (isAnyTrainingActive) {
+      toast({ 
+        title: "无法开始训练", 
+        description: "请先完成或取消当前训练",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     let training: SpecialTraining;
     
     if (type === 'power') {
@@ -494,6 +503,32 @@ export default function Tasks() {
 
   const handlePauseSpecialTraining = () => {
     setIsSpecialPaused(!isSpecialPaused);
+  };
+
+  // Cancel training functions
+  const handleCancelTraining = () => {
+    if (selectedSessionType === "特训") {
+      setIsSpecialTraining(false);
+      setIsSpecialPaused(false);
+      setSpecialElapsedTime(0);
+      setCurrentSpecialTraining(null);
+      setSpecialTrainingNotes("");
+      setSpecialTrainingSessionId(null);
+      toast({ title: "训练已取消", description: "特训已取消" });
+    } else if (selectedSessionType === "custom") {
+      setIsCustomTraining(false);
+      setIsCustomPaused(false);
+      setCustomElapsedTime(0);
+      setCustomTrainingNotes("");
+      toast({ title: "训练已取消", description: "自主训练已取消" });
+    } else {
+      setIsGuidedTraining(false);
+      setIsGuidedPaused(false);
+      setGuidedElapsedTime(0);
+      setGuidedTrainingNotes("");
+      toast({ title: "训练已取消", description: "系统训练已取消" });
+    }
+    setSelectedSessionType("");
   };
 
   const handleCompleteCurrentCombination = () => {
@@ -679,6 +714,9 @@ export default function Tasks() {
                       {isGuidedPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
                       {isGuidedPaused ? "继续" : "暂停"}
                     </Button>
+                    <Button onClick={handleCancelTraining} variant="secondary" className="touch-target h-12 sm:h-auto">
+                      取消
+                    </Button>
                     <Button onClick={handleStopTraining} variant="destructive" className="touch-target h-12 sm:h-auto">
                       <Square className="h-4 w-4 mr-2" />
                       结束训练
@@ -725,7 +763,7 @@ export default function Tasks() {
                   自主训练
                 </Button>
               ) : (
-                <div className="flex gap-3 w-full max-w-md">
+                <div className="flex gap-2 w-full max-w-lg">
                   <Button 
                     onClick={handlePauseTraining} 
                     variant="outline" 
@@ -733,6 +771,13 @@ export default function Tasks() {
                   >
                     {isCustomPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
                     {isCustomPaused ? "继续" : "暂停"}
+                  </Button>
+                  <Button 
+                    onClick={handleCancelTraining}
+                    variant="secondary"
+                    className="touch-target h-12 flex-1 rounded-lg"
+                  >
+                    取消
                   </Button>
                   <Button 
                     onClick={handleCompleteCustomTraining} 
@@ -835,7 +880,7 @@ export default function Tasks() {
                           </>
                         ) : (
                           <>
-                            中央正位 → {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint} (第{Math.floor(currentSpecialTraining.currentCombination / 5) + 1}球)
+                            {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.power}
                           </>
                         )}
                       </div>
@@ -848,11 +893,8 @@ export default function Tasks() {
                         <div className="mt-4 bg-blue-50 rounded-lg p-4 border">
                           <h4 className="font-medium text-blue-900 mb-2">五分点练习</h4>
                           <p className="text-sm text-blue-700 mb-3">
-                            目标球置于中心点，主球放在开球线上，与目标球和袋口呈一条直线
+                            目标球置于中心点，主球放在开球线上，袋口由用户自行安排
                           </p>
-                          <div className="text-xs text-blue-600">
-                            目标袋口: {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint}
-                          </div>
                           
                           {/* 进球统计 */}
                           <div className="mt-4 grid grid-cols-3 gap-3">
@@ -925,6 +967,13 @@ export default function Tasks() {
                         >
                           {isSpecialPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
                           {isSpecialPaused ? "继续" : "暂停"}
+                        </Button>
+                        <Button 
+                          onClick={handleCancelTraining}
+                          variant="destructive"
+                          className="touch-target h-12 flex-1 rounded-lg"
+                        >
+                          取消
                         </Button>
                         <Button 
                           onClick={handleCompleteCurrentCombination}
