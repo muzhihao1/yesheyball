@@ -208,7 +208,11 @@ export default function Levels() {
       unlocked: true,
       completed: user.level > 1,
       progress: user.level > 1 ? 100 : Math.min((user.exp / 1000) * 100, 95),
-      completedExercises: user.level > 1 ? 35 : (user.completedTasks || 0)
+      completedExercises: (() => {
+        if (!user.completedExercises) return 0;
+        const exercises = user.completedExercises as Record<string, number>;
+        return exercises['1'] || 0;
+      })()
     },
     {
       level: 2,
