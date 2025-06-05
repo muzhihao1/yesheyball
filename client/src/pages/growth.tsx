@@ -36,6 +36,9 @@ interface User {
   totalDays: number;
   completedTasks: number;
   totalTime: number;
+  currentLevel?: number;
+  currentExercise?: number;
+  completedExercises?: Record<string, number>;
 }
 
 interface LevelStage {
@@ -187,18 +190,23 @@ export default function GrowthPage() {
     return <div>加载中...</div>;
   }
 
-  // Generate level stages based on user progress (same logic as levels page)
+  // Generate level stages based on user progress using sequential exercise progression
+  const getCompletedExercisesForLevel = (level: number): number => {
+    if (!user.completedExercises) return 0;
+    return user.completedExercises[level.toString()] || 0;
+  };
+
   const levelStages: LevelStage[] = [
     {
       level: 1,
       name: "初窥门径",
-      totalExercises: 30,
+      totalExercises: 35,
       category: "启明星",
       description: "掌握基础击球姿势与瞄准技巧",
       unlocked: user.level >= 1,
       completed: user.level > 1,
-      progress: user.level > 1 ? 100 : Math.min((user.exp / 100) * 100, 95),
-      completedExercises: user.level > 1 ? 30 : Math.floor((user.exp / 100) * 30)
+      progress: user.level > 1 ? 100 : Math.min((getCompletedExercisesForLevel(1) / 35) * 100, 95),
+      completedExercises: getCompletedExercisesForLevel(1)
     },
     {
       level: 2,
@@ -208,8 +216,8 @@ export default function GrowthPage() {
       description: "练习各种角度的击球技巧",
       unlocked: user.level >= 2,
       completed: user.level > 2,
-      progress: user.level > 2 ? 100 : user.level === 2 ? Math.min((user.exp / 200) * 100, 95) : 0,
-      completedExercises: user.level > 2 ? 40 : user.level === 2 ? Math.floor((user.exp / 200) * 40) : 0
+      progress: user.level > 2 ? 100 : user.level === 2 ? Math.min((getCompletedExercisesForLevel(2) / 40) * 100, 95) : 0,
+      completedExercises: getCompletedExercisesForLevel(2)
     },
     {
       level: 3,
@@ -219,8 +227,8 @@ export default function GrowthPage() {
       description: "掌握基本走位与控球技巧",
       unlocked: user.level >= 3,
       completed: user.level > 3,
-      progress: user.level > 3 ? 100 : user.level === 3 ? Math.min((user.exp / 300) * 100, 95) : 0,
-      completedExercises: user.level > 3 ? 50 : user.level === 3 ? Math.floor((user.exp / 300) * 50) : 0
+      progress: user.level > 3 ? 100 : user.level === 3 ? Math.min((getCompletedExercisesForLevel(3) / 50) * 100, 95) : 0,
+      completedExercises: getCompletedExercisesForLevel(3)
     },
     {
       level: 4,

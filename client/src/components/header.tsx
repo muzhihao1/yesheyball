@@ -1,9 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 
+interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  totalDays: number;
+}
+
 export default function Header() {
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ["/api/user"],
+  });
+
+  const { data: streakData } = useQuery<StreakData>({
+    queryKey: ["/api/user/streak"],
   });
 
   if (isLoading) {
