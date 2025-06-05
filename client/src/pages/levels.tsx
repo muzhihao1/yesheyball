@@ -377,7 +377,7 @@ export default function Levels() {
                   </div>
                   <div className="text-right">
                     <div className="text-xs opacity-90">进度</div>
-                    <div className="font-bold">3/33</div>
+                    <div className="font-bold">{stage.level === 1 ? getActualCompletedExercises() : 0}/{stage.totalExercises - 2}</div>
                   </div>
                 </div>
                 <Progress value={stage.progress} className="mt-2 h-1 bg-white/20" />
