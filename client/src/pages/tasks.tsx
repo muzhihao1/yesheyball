@@ -87,6 +87,7 @@ export default function Tasks() {
   const [specialElapsedTime, setSpecialElapsedTime] = useState(0);
   const [currentSpecialTraining, setCurrentSpecialTraining] = useState<SpecialTraining | null>(null);
   const [showSpecialTrainingDetail, setShowSpecialTrainingDetail] = useState(false);
+  const [specialTrainingNotes, setSpecialTrainingNotes] = useState("");
   
   // Shared states
   const [showTrainingComplete, setShowTrainingComplete] = useState(false);
@@ -234,6 +235,20 @@ export default function Tasks() {
     }
   });
 
+  // Start special training mutation
+  const startSpecialTrainingMutation = useMutation({
+    mutationFn: (trainingData: { title: string; description: string }) => 
+      apiRequest("/api/training-sessions", "POST", {
+        title: trainingData.title,
+        description: trainingData.description,
+        sessionType: "特训"
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+    }
+  });
+
   // Next episode mutation
   const nextEpisodeMutation = useMutation({
     mutationFn: () => apiRequest("/api/training-programs/next-episode", "POST"),
@@ -357,6 +372,13 @@ export default function Tasks() {
       setIsSpecialPaused(false);
       setSpecialElapsedTime(0);
       setSelectedSessionType("特训");
+      
+      // Create training session
+      startSpecialTrainingMutation.mutate({
+        title: powerTraining.name,
+        description: powerTraining.description
+      });
+      
       toast({ title: "特训开始", description: "发力特训已开始" });
     }
   };
@@ -399,6 +421,9 @@ export default function Tasks() {
 
   const handleCompleteSpecialTraining = () => {
     setSelectedSessionType("特训");
+    setIsSpecialTraining(false);
+    setIsSpecialPaused(false);
+    setCurrentSpecialTraining(null);
     setShowTrainingComplete(true);
   };
 
@@ -795,7 +820,11 @@ export default function Tasks() {
           <div className="space-y-4 pb-4">
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600 mb-2">
-                {formatTime(selectedSessionType === "custom" ? customElapsedTime : guidedElapsedTime)}
+                {formatTime(
+                  selectedSessionType === "custom" ? customElapsedTime 
+                  : selectedSessionType === "特训" ? specialElapsedTime 
+                  : guidedElapsedTime
+                )}
               </div>
               <p className="text-gray-600">本次训练时长</p>
             </div>
@@ -803,7 +832,9 @@ export default function Tasks() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="final-notes">训练总结</Label>
-                {(selectedSessionType === "custom" ? customTrainingNotes : guidedTrainingNotes).trim() && (
+                {(selectedSessionType === "custom" ? customTrainingNotes 
+                  : selectedSessionType === "特训" ? specialTrainingNotes 
+                  : guidedTrainingNotes).trim() && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -818,10 +849,14 @@ export default function Tasks() {
               <Textarea
                 id="final-notes"
                 placeholder="总结本次训练的收获和感受..."
-                value={selectedSessionType === "custom" ? customTrainingNotes : guidedTrainingNotes}
+                value={selectedSessionType === "custom" ? customTrainingNotes 
+                       : selectedSessionType === "特训" ? specialTrainingNotes 
+                       : guidedTrainingNotes}
                 onChange={(e) => {
                   if (selectedSessionType === "custom") {
                     setCustomTrainingNotes(e.target.value);
+                  } else if (selectedSessionType === "特训") {
+                    setSpecialTrainingNotes(e.target.value);
                   } else {
                     setGuidedTrainingNotes(e.target.value);
                   }
