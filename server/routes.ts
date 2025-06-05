@@ -558,11 +558,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newTotalExp = currentUser.exp + expGained;
         const levelInfo = calculateUserLevel(newTotalExp);
         
-        await storage.updateUser(sessionDetails.userId, {
+        console.log('Before update - Current user stats:', {
+          exp: currentUser.exp,
+          completedTasks: currentUser.completedTasks,
+          totalTime: currentUser.totalTime
+        });
+        
+        const updateData = {
           exp: newTotalExp,
           level: levelInfo.level,
           completedTasks: currentUser.completedTasks + 1,
           totalTime: currentUser.totalTime + Math.floor((duration || 0) / 60)
+        };
+        
+        console.log('Updating user with data:', updateData);
+        
+        const updatedUser = await storage.updateUser(sessionDetails.userId, updateData);
+        
+        console.log('After update - User stats:', {
+          exp: updatedUser.exp,
+          completedTasks: updatedUser.completedTasks,
+          totalTime: updatedUser.totalTime
         });
         
         // Check and unlock achievements after updating user stats
