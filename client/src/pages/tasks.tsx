@@ -180,12 +180,12 @@ export default function Tasks() {
     return {
       id: 'accuracy-training',
       name: '准度特训',
-      description: '五分点练习，从不同角度和位置击球入袋，提升击球精度',
+      description: '五分点练习：目标球置于中心点，主球放在开球线上，与目标球和袋口呈一条直线',
       type: 'accuracy',
       combinations: generateAccuracyTrainingCombinations(),
       currentRound: 1,
       currentCombination: 0,
-      totalRounds: 5
+      totalRounds: 1
     };
   };
 
@@ -496,20 +496,26 @@ export default function Tasks() {
       if (updatedTraining.currentCombination < updatedTraining.combinations.length - 1) {
         updatedTraining.currentCombination++;
       } else {
-        // All combinations completed, start new round
-        updatedTraining.currentRound++;
-        updatedTraining.currentCombination = 0;
-        
-        // Reset all combinations for new round
-        updatedTraining.combinations.forEach(combo => combo.completed = false);
+        if (updatedTraining.type === 'accuracy') {
+          // For accuracy training, finish after 30 balls
+          handleCompleteSpecialTraining();
+          return;
+        } else {
+          // For power training, start new round
+          updatedTraining.currentRound++;
+          updatedTraining.currentCombination = 0;
+          updatedTraining.combinations.forEach(combo => combo.completed = false);
+        }
       }
       
       setCurrentSpecialTraining(updatedTraining);
       
       const combo = currentCombo;
       toast({ 
-        title: "组合完成", 
-        description: `${combo.cuePoint} + ${combo.technique} + ${combo.power} 完成！`,
+        title: updatedTraining.type === 'accuracy' ? "进球记录" : "组合完成", 
+        description: updatedTraining.type === 'accuracy' 
+          ? `${combo.cuePoint} 练习完成！` 
+          : `${combo.cuePoint} + ${combo.technique} + ${combo.power} 完成！`,
         duration: 2000
       });
     }
@@ -780,7 +786,7 @@ export default function Tasks() {
                     <div className="space-y-1">
                       <div className="font-semibold">准度特训</div>
                       <div className="text-xs opacity-90">五分点练习</div>
-                      <div className="text-xs opacity-75">180种组合</div>
+                      <div className="text-xs opacity-75">30球练习</div>
                     </div>
                   </Button>
                 </div>
@@ -799,12 +805,14 @@ export default function Tasks() {
                       {currentSpecialTraining.name}
                     </div>
                     <div className="text-sm text-gray-600 mb-4">
-                      第 {currentSpecialTraining.currentRound} 轮 / 共 {currentSpecialTraining.totalRounds} 轮
+                      {currentSpecialTraining.type === 'accuracy' ? '五分点练习' : `第 ${currentSpecialTraining.currentRound} 轮 / 共 ${currentSpecialTraining.totalRounds} 轮`}
                     </div>
                     
-                    {/* Current Combination */}
+                    {/* Current Exercise */}
                     <div className="bg-purple-100 rounded-lg p-3 mb-4">
-                      <div className="text-sm text-purple-700 mb-2">当前组合：</div>
+                      <div className="text-sm text-purple-700 mb-2">
+                        {currentSpecialTraining.type === 'accuracy' ? '当前练习：' : '当前组合：'}
+                      </div>
                       <div className="text-lg font-bold text-purple-900">
                         {currentSpecialTraining.type === 'power' ? (
                           <>
@@ -814,8 +822,7 @@ export default function Tasks() {
                           </>
                         ) : (
                           <>
-                            {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique} → {' '}
-                            {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint} ({currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.power})
+                            中央正位 → {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint} (第{Math.floor(currentSpecialTraining.currentCombination / 5) + 1}球)
                           </>
                         )}
                       </div>
