@@ -520,6 +520,35 @@ export default function Tasks() {
     setShowTrainingComplete(true);
   };
 
+  // Handle five-point practice result recording
+  const handleSpecialTrainingResult = (succeeded: boolean) => {
+    if (!currentSpecialTraining) return;
+    
+    const updatedTraining = { ...currentSpecialTraining };
+    const currentCombo = updatedTraining.combinations[updatedTraining.currentCombination];
+    
+    if (currentCombo) {
+      currentCombo.result = succeeded;
+      currentCombo.completed = true;
+      
+      // Move to next combination
+      if (updatedTraining.currentCombination < updatedTraining.combinations.length - 1) {
+        updatedTraining.currentCombination++;
+      } else {
+        // All combinations completed
+        const totalShots = updatedTraining.combinations.length;
+        const successfulShots = updatedTraining.combinations.filter(c => c.result === true).length;
+        toast({ 
+          title: "五分点练习完成", 
+          description: `进球: ${successfulShots}/${totalShots} (${Math.round((successfulShots/totalShots)*100)}%)`
+        });
+        setShowTrainingComplete(true);
+      }
+      
+      setCurrentSpecialTraining(updatedTraining);
+    }
+  };
+
   const getDifficultyBadge = (day: number) => {
     if (day <= 17) return { label: "初级", color: "bg-green-100 text-green-800" };
     if (day <= 34) return { label: "中级", color: "bg-yellow-100 text-yellow-800" };
@@ -832,29 +861,66 @@ export default function Tasks() {
                     </div>
                     
                     {/* Control Buttons */}
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={handlePauseSpecialTraining} 
-                        variant="outline" 
-                        className="touch-target h-12 flex-1 rounded-lg border-2 border-purple-600 text-purple-600 hover:bg-purple-50"
-                      >
-                        {isSpecialPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-                        {isSpecialPaused ? "继续" : "暂停"}
-                      </Button>
-                      <Button 
-                        onClick={handleCompleteCurrentCombination}
-                        className="bg-green-600 hover:bg-green-700 touch-target h-12 flex-1 rounded-lg"
-                      >
-                        <Square className="h-4 w-4 mr-2" />
-                        完成组合
-                      </Button>
-                      <Button 
-                        onClick={handleCompleteSpecialTraining}
-                        className="bg-purple-600 hover:bg-purple-700 touch-target h-12 flex-1 rounded-lg"
-                      >
-                        结束特训
-                      </Button>
-                    </div>
+                    {currentSpecialTraining?.type === 'accuracy' ? (
+                      <div className="space-y-3">
+                        {/* 五分点练习专用按钮 */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button 
+                            onClick={() => handleSpecialTrainingResult(true)}
+                            className="bg-green-500 hover:bg-green-600 text-white h-14 text-lg font-medium rounded-lg"
+                          >
+                            ✓ 进球
+                          </Button>
+                          <Button 
+                            onClick={() => handleSpecialTrainingResult(false)}
+                            className="bg-red-500 hover:bg-red-600 text-white h-14 text-lg font-medium rounded-lg"
+                          >
+                            ✗ 未进
+                          </Button>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={handlePauseSpecialTraining} 
+                            variant="outline" 
+                            className="touch-target h-12 flex-1 rounded-lg border-2 border-purple-600 text-purple-600 hover:bg-purple-50"
+                          >
+                            {isSpecialPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                            {isSpecialPaused ? "继续" : "暂停"}
+                          </Button>
+                          <Button 
+                            onClick={handleCompleteSpecialTraining}
+                            className="bg-purple-600 hover:bg-purple-700 touch-target h-12 flex-1 rounded-lg"
+                          >
+                            结束特训
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handlePauseSpecialTraining} 
+                          variant="outline" 
+                          className="touch-target h-12 flex-1 rounded-lg border-2 border-purple-600 text-purple-600 hover:bg-purple-50"
+                        >
+                          {isSpecialPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                          {isSpecialPaused ? "继续" : "暂停"}
+                        </Button>
+                        <Button 
+                          onClick={handleCompleteCurrentCombination}
+                          className="bg-green-600 hover:bg-green-700 touch-target h-12 flex-1 rounded-lg"
+                        >
+                          <Square className="h-4 w-4 mr-2" />
+                          完成组合
+                        </Button>
+                        <Button 
+                          onClick={handleCompleteSpecialTraining}
+                          className="bg-purple-600 hover:bg-purple-700 touch-target h-12 flex-1 rounded-lg"
+                        >
+                          结束特训
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </>
