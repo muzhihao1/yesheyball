@@ -595,6 +595,111 @@ export default function Tasks() {
         </CardContent>
       </Card>
 
+      {/* Special Training Section */}
+      <Card className="border-2 border-purple-200 bg-purple-50">
+        <CardContent className="p-6">
+          <div className="text-center space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">特</span>
+              </div>
+              <h3 className="text-xl font-bold text-purple-800">特训模式</h3>
+            </div>
+            
+            {!isSpecialTraining ? (
+              <>
+                <p className="text-gray-600 text-sm">
+                  重复训练特定技巧组合，提升专项能力
+                </p>
+                
+                {/* Special Training Options */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
+                  <Button 
+                    onClick={() => handleStartSpecialTraining('power')}
+                    className="bg-purple-600 hover:bg-purple-700 touch-target h-16 rounded-lg text-center p-4"
+                  >
+                    <div className="space-y-1">
+                      <div className="font-semibold">发力特训</div>
+                      <div className="text-xs opacity-90">打法×打点×力度</div>
+                      <div className="text-xs opacity-75">81种组合</div>
+                    </div>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    disabled
+                    className="touch-target h-16 rounded-lg text-center p-4 opacity-50"
+                  >
+                    <div className="space-y-1">
+                      <div className="font-semibold">走位特训</div>
+                      <div className="text-xs">即将推出</div>
+                    </div>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Timer Display */}
+                <div className="text-3xl font-mono text-purple-600">
+                  {formatTime(specialElapsedTime)}
+                </div>
+                
+                {/* Current Training Display */}
+                {currentSpecialTraining && (
+                  <div className="bg-white rounded-lg p-4 border-2 border-purple-200">
+                    <div className="text-lg font-bold text-purple-800 mb-2">
+                      {currentSpecialTraining.name}
+                    </div>
+                    <div className="text-sm text-gray-600 mb-4">
+                      第 {currentSpecialTraining.currentRound} 轮 / 共 {currentSpecialTraining.totalRounds} 轮
+                    </div>
+                    
+                    {/* Current Combination */}
+                    <div className="bg-purple-100 rounded-lg p-3 mb-4">
+                      <div className="text-sm text-purple-700 mb-2">当前组合：</div>
+                      <div className="text-lg font-bold text-purple-900">
+                        {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.cuePoint} + {' '}
+                        {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.technique} + {' '}
+                        {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination]?.power}
+                      </div>
+                      <div className="text-xs text-purple-600 mt-1">
+                        进度: {currentSpecialTraining.currentCombination + 1} / {currentSpecialTraining.combinations.length}
+                      </div>
+                    </div>
+                    
+                    {/* Control Buttons */}
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handlePauseSpecialTraining} 
+                        variant="outline" 
+                        className="touch-target h-12 flex-1 rounded-lg border-2 border-purple-600 text-purple-600 hover:bg-purple-50"
+                      >
+                        {isSpecialPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                        {isSpecialPaused ? "继续" : "暂停"}
+                      </Button>
+                      <Button 
+                        onClick={handleCompleteCurrentCombination}
+                        className="bg-green-600 hover:bg-green-700 touch-target h-12 flex-1 rounded-lg"
+                      >
+                        <Square className="h-4 w-4 mr-2" />
+                        完成组合
+                      </Button>
+                      <Button 
+                        onClick={handleCompleteSpecialTraining}
+                        className="bg-purple-600 hover:bg-purple-700 touch-target h-12 flex-1 rounded-lg"
+                      >
+                        结束特训
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Today's Progress */}
       <Card>
         <CardHeader>
