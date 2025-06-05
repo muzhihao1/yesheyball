@@ -355,7 +355,7 @@ export default function Tasks() {
   };
 
   // Check if any training is active
-  const isAnyTrainingActive = isGuidedTraining || isCustomTraining || isSpecialTraining || !!currentSession;
+  const isAnyTrainingActive = isGuidedTraining || isCustomTraining || isSpecialTraining;
 
   const handleStartTraining = () => {
     if (isAnyTrainingActive) {
