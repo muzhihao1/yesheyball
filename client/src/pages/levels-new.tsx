@@ -158,6 +158,14 @@ export default function Levels() {
     if (exerciseOverride[overrideKey] !== undefined) {
       return exerciseOverride[overrideKey];
     }
+    
+    // Use sequential progression data from user
+    if (user && user.completedExercises) {
+      const exercises = user.completedExercises as Record<string, number>;
+      const levelCompleted = exercises[exercise.level.toString()] || 0;
+      return exercise.exerciseNumber <= levelCompleted;
+    }
+    
     return exercise.completed;
   };
 
@@ -702,7 +710,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
-                                            : exercise.completed 
+                                            : isExerciseCompleted(exercise)
                                               ? levelColors.node.includes('emerald') ? '#059669'
                                                 : levelColors.node.includes('blue') ? '#2563EB' 
                                                 : levelColors.node.includes('purple') ? '#7C3AED'
@@ -723,7 +731,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
-                                            : exercise.completed 
+                                            : isExerciseCompleted(exercise)
                                               ? levelColors.node.includes('emerald') ? '#10B981'
                                                 : levelColors.node.includes('blue') ? '#3B82F6' 
                                                 : levelColors.node.includes('purple') ? '#8B5CF6'
@@ -749,7 +757,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
-                                            : exercise.completed 
+                                            : isExerciseCompleted(exercise) 
                                               ? levelColors.node.includes('emerald') ? '#34D399'
                                                 : levelColors.node.includes('blue') ? '#60A5FA' 
                                                 : levelColors.node.includes('purple') ? '#A78BFA'
@@ -770,7 +778,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
-                                            : exercise.completed 
+                                            : isExerciseCompleted(exercise) 
                                               ? levelColors.node.includes('emerald') ? '#34D399'
                                                 : levelColors.node.includes('blue') ? '#60A5FA' 
                                                 : levelColors.node.includes('purple') ? '#A78BFA'
