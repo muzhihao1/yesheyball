@@ -380,11 +380,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTrainingSession(id: number): Promise<void> {
+    // Get the session before deletion to know which user to update
+    const session = await this.getTrainingSession(id);
+    
     // First delete any related training notes
     await db.delete(trainingNotes).where(eq(trainingNotes.sessionId, id));
     
     // Then delete the training session
     await db.delete(trainingSessions).where(eq(trainingSessions.id, id));
+    
+    // Recalculate user statistics if session existed
+    if (session) {
+      await this.recalculateUserStats(session.userId);
+    }
+  }
+
+  async recalculateUserStats(userId: number): Promise<void> {
+    // Get all completed training sessions for this user
+    const completedSessions = await db
+      .select()
+      .from(trainingSessions)
+      .where(and(
+        eq(trainingSessions.userId, userId),
+        eq(trainingSessions.completed, true)
+      ));
+
+    // Calculate new stats
+    const completedTasks = completedSessions.length;
+    const totalTime = completedSessions.reduce((sum, session) => sum + (session.duration || 0), 0);
+    
+    // Calculate total experience (assuming 50 exp per completed session on average)
+    const totalExp = completedSessions.reduce((sum, session) => {
+      return sum + ((session.rating || 3) * 50); // Base exp calculation
+    }, 0);
+
+    // Update user stats
+    await db
+      .update(users)
+      .set({
+        completedTasks,
+        totalTime,
+        exp: totalExp,
+        level: Math.floor(totalExp / 1000) + 1 // Simple level calculation
+      })
+      .where(eq(users.id, userId));
   }
 
   // Training note operations
