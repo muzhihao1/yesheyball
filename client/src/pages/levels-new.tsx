@@ -163,7 +163,19 @@ export default function Levels() {
     if (user && user.completedExercises) {
       const exercises = user.completedExercises as Record<string, number>;
       const levelCompleted = exercises[exercise.level.toString()] || 0;
-      return exercise.exerciseNumber <= levelCompleted;
+      const isCompleted = exercise.exerciseNumber <= levelCompleted;
+      
+      // Debug logging for milestone exercises
+      if (exercise.exerciseNumber === 5) {
+        console.log(`Exercise 5 completion check:`, {
+          exerciseNumber: exercise.exerciseNumber,
+          levelCompleted,
+          isCompleted,
+          user: user.completedExercises
+        });
+      }
+      
+      return isCompleted;
     }
     
     return exercise.completed;
