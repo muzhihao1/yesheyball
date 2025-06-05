@@ -88,6 +88,8 @@ interface TrainingSession {
   completedAt: Date | null;
   createdAt: Date;
   sessionType: string;
+  programId?: number | null;
+  dayId?: number | null;
 }
 
 interface TrainingRecord {
@@ -298,6 +300,12 @@ export default function GrowthPage() {
   const totalExercises = levelStages.reduce((sum, stage) => sum + stage.totalExercises, 0);
   const completionRate = totalExercises > 0 ? Math.round((totalCompletedExercises / totalExercises) * 100) : 0;
   
+  // Calculate systematic training sessions (系统训练)
+  const systematicTrainingSessions = trainingSessions.filter(session => 
+    session.completed && (session as any).programId && session.sessionType === "guided"
+  );
+  const systematicTrainingCount = systematicTrainingSessions.length;
+  
   const completedTraining = trainingSessions.filter(ts => ts.completed);
   
   // Fix total training time calculation (convert seconds to proper format)
@@ -368,9 +376,9 @@ export default function GrowthPage() {
 
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{totalCompletedExercises}</div>
-            <div className="text-sm text-gray-500">顺序练习</div>
-            <div className="text-xs text-gray-400 mt-1">进度 {completionRate}%</div>
+            <div className="text-2xl font-bold text-green-600">{systematicTrainingCount}</div>
+            <div className="text-sm text-gray-500">系统训练</div>
+            <div className="text-xs text-gray-400 mt-1">共30集课程</div>
           </CardContent>
         </Card>
 
