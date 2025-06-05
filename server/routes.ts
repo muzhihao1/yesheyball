@@ -388,16 +388,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Generate AI insights for the diary content
-      if (content && content.length > 10) {
-        const user = await storage.getUser(1);
-        if (user) {
-          const insights = await generateDiaryInsights(content, user.level, user.completedTasks);
-          // You could save insights as feedback or return them directly
-        }
-      }
-
+      // Respond immediately to user
       res.json(entry);
+      
+      // Generate AI insights asynchronously in the background (non-blocking)
+      if (content && content.length > 10) {
+        setImmediate(async () => {
+          try {
+            const user = await storage.getUser(1);
+            if (user) {
+              const insights = await generateDiaryInsights(content, user.level, user.completedTasks);
+              // You could save insights as feedback or return them directly
+              console.log("AI insights generated in background for diary entry:", entry.id);
+            }
+          } catch (error) {
+            console.error("Background AI insights generation failed:", error);
+          }
+        });
+      }
     } catch (error) {
       console.error("Diary creation error:", error);
       if (error instanceof z.ZodError) {
