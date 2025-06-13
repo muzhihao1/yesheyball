@@ -171,13 +171,13 @@ export default function Tasks() {
   };
 
   // Get training programs
-  const { data: programs = [] } = useQuery<TrainingProgram[]>({
+  const { data: programs = [], isLoading: programsLoading } = useQuery<TrainingProgram[]>({
     queryKey: ["/api/training-programs"],
   });
 
   // Get training days for the main program
   const mainProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
-  const { data: trainingDays = [] } = useQuery<TrainingDay[]>({
+  const { data: trainingDays = [], isLoading: trainingDaysLoading } = useQuery<TrainingDay[]>({
     queryKey: [`/api/training-programs/${mainProgram?.id}/days`],
     enabled: !!mainProgram?.id,
   });
@@ -417,6 +417,9 @@ export default function Tasks() {
     return { label: "高级", color: "bg-red-100 text-red-800" };
   };
 
+  // Don't render until we have the program data to prevent UI flash
+  const isDataLoading = programsLoading || trainingDaysLoading || !mainProgram;
+  
   const currentDay = mainProgram?.currentDay || 1;
   const currentEpisode = `第${currentDay}集`;
   const difficultyBadge = getDifficultyBadge(currentDay);
@@ -428,25 +431,35 @@ export default function Tasks() {
     <div className="p-4 space-y-6 pb-24">
       {/* System Training Section */}
       <Card className="border-2 border-green-200 bg-green-50">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <BookOpen className="h-6 w-6 text-green-600" />
-              <div>
-                <CardTitle className="text-lg text-green-800">系统训练：{currentEpisode}</CardTitle>
+        {isDataLoading ? (
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </CardContent>
+        ) : (
+          <>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <BookOpen className="h-6 w-6 text-green-600" />
+                  <div>
+                    <CardTitle className="text-lg text-green-800">系统训练：{currentEpisode}</CardTitle>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className={`${difficultyBadge.color} text-xs`}>
+                    {difficultyBadge.label}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    第{Math.ceil(currentDay / 7)}周
+                  </Badge>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Badge className={`${difficultyBadge.color} text-xs`}>
-                {difficultyBadge.label}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                第{Math.ceil(currentDay / 7)}周
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+            </CardHeader>
+            <CardContent className="space-y-4">
           <div>
             <h3 className="text-xl font-semibold mb-2">第{currentDay}集：{currentDayTraining?.title || "握杆"}</h3>
             <p className="text-gray-600 mb-4">
