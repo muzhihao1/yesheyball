@@ -417,8 +417,8 @@ export default function Tasks() {
     return { label: "高级", color: "bg-red-100 text-red-800" };
   };
 
-  // Prevent rendering with default values until data loads
-  if (programsLoading || trainingDaysLoading || !mainProgram) {
+  // Show loading state if data is not available yet
+  if (!mainProgram || trainingDays.length === 0) {
     return (
       <div className="p-4 space-y-6 pb-24">
         <Card className="border-2 border-green-200 bg-green-50">
