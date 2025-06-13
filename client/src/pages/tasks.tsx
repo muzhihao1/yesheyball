@@ -147,12 +147,12 @@ export default function Tasks() {
     return {
       id: 'power-training',
       name: '发力特训',
-      description: '通过不同打法、打点和力度的组合训练，提升击球技巧和力度控制',
+      description: '集中练习低杆、中杆、高杆的不同击球技巧，结合多种打点位置和力度控制，全面提升击球的准确性和稳定性。通过系统性训练掌握各种球路变化和力度控制要领。',
       type: 'power',
       combinations: generatePowerTrainingCombinations(),
       currentRound: 1,
       currentCombination: 0,
-      totalRounds: 3
+      totalRounds: 1
     };
   };
 
@@ -161,7 +161,7 @@ export default function Tasks() {
     return {
       id: 'accuracy-training',
       name: '准度特训',
-      description: '五分点练习：目标球置于中心点，主球放在开球线上，袋口由用户自行安排',
+      description: '专注于击球准确性的系统训练。通过多次重复练习，训练手眼协调能力和击球稳定性，逐步提高进球成功率和击球精度。',
       type: 'accuracy',
       combinations: generateAccuracyTrainingCombinations(),
       currentRound: 1,
@@ -640,7 +640,7 @@ export default function Tasks() {
             {!isSpecialTraining ? (
               <>
                 <p className="text-gray-600 text-sm">
-                  重复训练特定技巧组合，提升专项能力
+                  专项技能强化训练，集中练习特定技巧
                 </p>
                 
                 {/* Special Training Options */}
@@ -651,8 +651,8 @@ export default function Tasks() {
                   >
                     <div className="space-y-1">
                       <div className="font-semibold">发力特训</div>
-                      <div className="text-xs opacity-90">打法×打点×力度</div>
-                      <div className="text-xs opacity-75">81种组合</div>
+                      <div className="text-xs opacity-90">打法・打点・力度</div>
+                      <div className="text-xs opacity-75">综合技巧练习</div>
                     </div>
                   </Button>
                   
@@ -662,8 +662,8 @@ export default function Tasks() {
                   >
                     <div className="space-y-1">
                       <div className="font-semibold">准度特训</div>
-                      <div className="text-xs opacity-90">五分点练习</div>
-                      <div className="text-xs opacity-75">30球练习</div>
+                      <div className="text-xs opacity-90">精准度练习</div>
+                      <div className="text-xs opacity-75">稳定性提升</div>
                     </div>
                   </Button>
                 </div>
@@ -678,30 +678,35 @@ export default function Tasks() {
                 {/* Current Training Display */}
                 {currentSpecialTraining && (
                   <div className="bg-white rounded-lg p-4 border-2 border-purple-200">
-                    <div className="text-lg font-bold text-purple-800 mb-2">
+                    <div className="text-lg font-bold text-purple-800 mb-3">
                       {currentSpecialTraining.name}
                     </div>
-                    <div className="text-sm text-gray-600 mb-4">
-                      {currentSpecialTraining.type === 'accuracy' ? '五分点练习' : `第 ${currentSpecialTraining.currentRound} 轮 / 共 ${currentSpecialTraining.totalRounds} 轮`}
-                    </div>
                     
-                    {/* Current Combination */}
-                    {currentSpecialTraining.combinations[currentSpecialTraining.currentCombination] && (
-                      <div className="bg-gray-50 rounded p-3 mb-4">
-                        <div className="text-sm font-medium mb-2">
-                          {currentSpecialTraining.type === 'accuracy' 
-                            ? `第 ${currentSpecialTraining.currentCombination + 1} 球 / 共 30 球`
-                            : `组合 ${currentSpecialTraining.currentCombination + 1} / ${currentSpecialTraining.combinations.length}`
-                          }
-                        </div>
-                        <div className="text-lg font-bold">
-                          {currentSpecialTraining.type === 'accuracy' 
-                            ? '五分点练习 - 用户自选袋口'
-                            : `${currentSpecialTraining.combinations[currentSpecialTraining.currentCombination].method} + ${currentSpecialTraining.combinations[currentSpecialTraining.currentCombination].target} + ${currentSpecialTraining.combinations[currentSpecialTraining.currentCombination].power}`
-                          }
-                        </div>
+                    <div className="bg-gray-50 rounded p-4 mb-4">
+                      <div className="text-sm text-gray-600 leading-relaxed">
+                        {currentSpecialTraining.description}
                       </div>
-                    )}
+                      
+                      {currentSpecialTraining.type === 'power' && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="text-xs font-medium text-gray-500 mb-2">训练要点：</div>
+                          <div className="text-sm text-gray-700">
+                            • 打法组合：低杆、中杆、高杆<br/>
+                            • 击球位置：上部、中部、下部<br/>
+                            • 力度控制：小力、中力、大力
+                          </div>
+                        </div>
+                      )}
+                      
+                      {currentSpecialTraining.type === 'accuracy' && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="text-xs font-medium text-gray-500 mb-2">练习方法：</div>
+                          <div className="text-sm text-gray-700">
+                            目标球置于台面中心，主球开球线位置，自由选择袋口进行准度练习
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     
                     {/* Training Controls */}
                     <div className="grid grid-cols-3 gap-2 mb-4">
