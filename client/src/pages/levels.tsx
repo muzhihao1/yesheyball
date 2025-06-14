@@ -1067,7 +1067,6 @@ export default function Levels() {
                     
                     // 练习解锁逻辑：基于用户实际完成数据
                     const isUnlocked = stage.unlocked && (
-                      (currentLevelCompleted > 0) || // 如果当前等级有任何完成进度，解锁所有练习供练习
                       (user && user.level > stage.level) || // 如果用户等级超过当前关卡，所有练习都解锁
                       exerciseIndex === 0 || // 第一个练习总是解锁
                       (exerciseIndex <= currentLevelCompleted) // 已完成的练习及下一个练习解锁
