@@ -49,22 +49,78 @@ export default function Levels() {
 
   if (userLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <div className="w-48 h-8 skeleton mx-auto mb-4"></div>
-          <div className="w-64 h-6 skeleton mx-auto"></div>
+      <>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="text-center mb-8">
+            <div className="w-48 h-8 skeleton mx-auto mb-4"></div>
+            <div className="w-64 h-6 skeleton mx-auto"></div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[...Array(9)].map((_, i) => (
+              <div key={i} className="skeleton h-96 rounded-xl"></div>
+            ))}
+          </div>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[...Array(9)].map((_, i) => (
-            <div key={i} className="skeleton h-96 rounded-xl"></div>
-          ))}
+        
+        {/* 返回当前关卡浮动按钮 - 加载状态 */}
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '120px',
+            right: '16px',
+            zIndex: 999999,
+            width: '50px',
+            height: '50px',
+            backgroundColor: '#ff0000',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(255,0,0,0.5)',
+            border: '3px solid #000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '24px',
+            color: 'white',
+            fontWeight: 'bold'
+          }}
+        >
+          ↑
         </div>
-      </div>
+      </>
     );
   }
 
   if (!user) {
-    return <div className="text-center py-8">数据加载失败</div>;
+    return (
+      <>
+        <div className="text-center py-8">数据加载失败</div>
+        
+        {/* 返回当前关卡浮动按钮 - 错误状态 */}
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '120px',
+            right: '16px',
+            zIndex: 999999,
+            width: '50px',
+            height: '50px',
+            backgroundColor: '#ff0000',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(255,0,0,0.5)',
+            border: '3px solid #000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '24px',
+            color: 'white',
+            fontWeight: 'bold'
+          }}
+        >
+          ↑
+        </div>
+      </>
+    );
   }
 
   // 基于实际完成的训练数据计算练习数量
