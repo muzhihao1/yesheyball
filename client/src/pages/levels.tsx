@@ -220,18 +220,10 @@ export default function Levels() {
           
           // Match exact pattern for level header
           if (text.includes(`等级 ${user.level} •`)) {
-            // Find the parent container (should be the level section)
-            let parent = el.parentElement;
-            while (parent && parent !== document.body) {
-              const parentRect = parent.getBoundingClientRect();
-              if (parentRect.height > 300) { // Level sections are large containers
-                targetElement = parent;
-                console.log('🔴 Found level section via header');
-                break;
-              }
-              parent = parent.parentElement;
-            }
-            if (targetElement) break;
+            // Use the header element itself, not the parent container
+            targetElement = el;
+            console.log('🔴 Found level header directly');
+            break;
           }
         }
         
@@ -253,9 +245,18 @@ export default function Levels() {
         
         if (targetElement) {
           console.log('🔴 Scrolling to target element');
-          targetElement.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
+          
+          // Get element position and calculate optimal scroll position
+          const rect = targetElement.getBoundingClientRect();
+          const currentScrollY = window.scrollY;
+          const elementTop = rect.top + currentScrollY;
+          
+          // Scroll to position where level header is near the top (with some padding)
+          const targetScrollY = Math.max(0, elementTop - 100); // 100px padding from top
+          
+          window.scrollTo({ 
+            top: targetScrollY, 
+            behavior: 'smooth' 
           });
           
           // 添加绿色高亮提示效果
