@@ -47,38 +47,85 @@ export default function Levels() {
     queryKey: ["/api/user"],
   });
 
-  // Direct DOM manipulation test for floating button
+  // Multiple test buttons to debug positioning issues
   useEffect(() => {
-    const testButton = document.createElement('div');
-    testButton.innerHTML = '🔴TEST';
-    testButton.style.cssText = `
+    // Test 1: Full screen overlay
+    const overlay = document.createElement('div');
+    overlay.innerHTML = 'OVERLAY TEST';
+    overlay.style.cssText = `
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background-color: rgba(255,0,0,0.5) !important;
+      z-index: 999999 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 48px !important;
+      color: white !important;
+      font-weight: bold !important;
+      pointer-events: none !important;
+    `;
+    
+    // Test 2: Top-left corner
+    const topButton = document.createElement('div');
+    topButton.innerHTML = 'TOP';
+    topButton.style.cssText = `
+      position: fixed !important;
+      top: 20px !important;
+      left: 20px !important;
+      z-index: 999999 !important;
+      width: 80px !important;
+      height: 60px !important;
+      background-color: #00ff00 !important;
+      color: black !important;
+      font-weight: bold !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    `;
+    
+    // Test 3: Bottom-right corner
+    const bottomButton = document.createElement('div');
+    bottomButton.innerHTML = 'BOT';
+    bottomButton.style.cssText = `
       position: fixed !important;
       bottom: 20px !important;
       right: 20px !important;
       z-index: 999999 !important;
       width: 80px !important;
       height: 60px !important;
-      background-color: #ff0000 !important;
-      border-radius: 15px !important;
-      box-shadow: 0 8px 32px rgba(255,0,0,0.8) !important;
-      border: 4px solid #ffffff !important;
+      background-color: #0000ff !important;
+      color: white !important;
+      font-weight: bold !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      cursor: pointer !important;
-      font-size: 14px !important;
-      color: white !important;
-      font-weight: bold !important;
     `;
     
-    document.body.appendChild(testButton);
-    console.log('Test button added to DOM');
+    document.body.appendChild(overlay);
+    document.body.appendChild(topButton);
+    document.body.appendChild(bottomButton);
+    
+    console.log('Multiple test elements added to DOM');
+    console.log('Body children count:', document.body.children.length);
+    console.log('Viewport size:', window.innerWidth, 'x', window.innerHeight);
+    
+    // Auto-remove overlay after 3 seconds
+    setTimeout(() => {
+      if (document.body.contains(overlay)) {
+        document.body.removeChild(overlay);
+      }
+    }, 3000);
     
     return () => {
-      if (document.body.contains(testButton)) {
-        document.body.removeChild(testButton);
-        console.log('Test button removed from DOM');
-      }
+      [overlay, topButton, bottomButton].forEach(el => {
+        if (document.body.contains(el)) {
+          document.body.removeChild(el);
+        }
+      });
     };
   }, []);
 
