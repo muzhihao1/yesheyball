@@ -109,7 +109,7 @@ export default function Ranking() {
         streak: currentUserStreak,
         totalTime: totalTrainingTime,
         achievements: userAchievementCount,
-        profileImageUrl: user.profileImageUrl,
+        profileImageUrl: user.profileImageUrl ?? undefined,
         change: 3
       },
       {
