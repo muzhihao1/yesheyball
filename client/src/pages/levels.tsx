@@ -85,13 +85,6 @@ export default function Levels() {
   const [skipChallengeQuestions, setSkipChallengeQuestions] = useState<any[]>([]);
   const [currentSkipQuestion, setCurrentSkipQuestion] = useState(0);
   const [skipChallengeAnswers, setSkipChallengeAnswers] = useState<string[]>([]);
-
-  // Force close skip dialogs on component mount
-  useEffect(() => {
-    setShowSkipDialog(false);
-    setShowSkipChallenge(false);
-    setSkipToLevel(null);
-  }, []);
   
   // 考核相关状态
   const [showExamDialog, setShowExamDialog] = useState(false);
@@ -479,11 +472,7 @@ export default function Levels() {
       unlocked: user.level >= 2,
       completed: user.level > 2,
       progress: user.level > 2 ? 100 : user.level === 2 ? Math.min(((user.exp - 1000) / 1000) * 100, 95) : 0,
-      completedExercises: (() => {
-        if (!user.completedExercises) return 0;
-        const exercises = user.completedExercises as Record<string, number>;
-        return exercises['2'] || 0;
-      })()
+      completedExercises: 0
     },
     {
       level: 3,
@@ -1045,7 +1034,6 @@ export default function Levels() {
                     const isUnlocked = stage.unlocked && (
                       (stage.completedExercises > 0) || // 如果有任何完成进度，解锁所有练习供练习
                       (user && user.level > stage.level) || // 如果用户等级超过当前关卡，所有练习都解锁
-                      (user && user.level === stage.level && exerciseIndex === 0) || // 当前等级的第一个练习总是解锁
                       exerciseIndex === 0 // 第一个练习总是解锁
                     );
                     const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
