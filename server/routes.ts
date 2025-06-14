@@ -256,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get today's tasks for user
   app.get("/api/user/tasks/today", async (req, res) => {
     try {
-      const userTasks = await storage.getTodayUserTasks(1);
+      const userTasks = await storage.getTodayUserTasks("1");
       res.json(userTasks);
     } catch (error) {
       res.status(500).json({ message: "Failed to get today's tasks" });
@@ -491,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/check-achievements", async (req, res) => {
     try {
-      const newAchievements = await storage.checkAndUnlockAchievements(1);
+      const newAchievements = await storage.checkAndUnlockAchievements("1");
       res.json(newAchievements);
     } catch (error) {
       res.status(500).json({ message: "Failed to check achievements" });
@@ -855,7 +855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all training logs/notes for a user
   app.get("/api/training-logs", async (req, res) => {
     try {
-      const logs = await storage.getAllTrainingNotes(1);
+      const logs = await storage.getAllTrainingNotes("1");
       res.json(logs);
     } catch (error) {
       res.status(500).json({ message: "Failed to get training logs" });
@@ -1128,7 +1128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get adaptive learning path for user
   app.get("/api/adaptive-learning/:userId", async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = req.params.userId;
       const user = await storage.getUser(userId);
       
       if (!user) {
