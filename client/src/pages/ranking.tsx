@@ -57,90 +57,13 @@ export default function Ranking() {
     enabled: !!user,
   });
 
-  // Create ranking data from real user data
-  const createRankingUsers = (): RankingUser[] => {
-    if (!user) return [];
-    
-    // Use current user data and create example rankings based on real data
-    const currentUserName = user.firstName || user.email?.split('@')[0] || 'User';
-    const currentUserLevel = 1; // From real data
-    const currentUserExp = 0; // From real data
-    const currentUserStreak = (userStats as any)?.currentStreak || 0;
-    const totalTrainingTime = ((userStats as any)?.totalDays || 0) * 30;
-    const userAchievementCount = (userAchievements as any)?.length || 0;
 
-    // Generate ranking based on real user data variations
-    return [
-      {
-        id: "1",
-        name: "张明",
-        level: currentUserLevel + 4,
-        exp: currentUserExp + 2480,
-        streak: currentUserStreak + 15,
-        totalTime: totalTrainingTime + 480,
-        achievements: userAchievementCount + 7,
-        change: 2
-      },
-      {
-        id: "2", 
-        name: "李华",
-        level: currentUserLevel + 3,
-        exp: currentUserExp + 2156,
-        streak: currentUserStreak + 12,
-        totalTime: totalTrainingTime + 420,
-        achievements: userAchievementCount + 5,
-        change: -1
-      },
-      {
-        id: "3",
-        name: "王芳", 
-        level: currentUserLevel + 3,
-        exp: currentUserExp + 1890,
-        streak: currentUserStreak + 8,
-        totalTime: totalTrainingTime + 380,
-        achievements: userAchievementCount + 4,
-        change: 1
-      },
-      {
-        id: user.id,
-        name: currentUserName,
-        level: currentUserLevel,
-        exp: currentUserExp,
-        streak: currentUserStreak,
-        totalTime: totalTrainingTime,
-        achievements: userAchievementCount,
-        profileImageUrl: user.profileImageUrl ?? undefined,
-        change: 3
-      },
-      {
-        id: "4",
-        name: "陈刚",
-        level: Math.max(1, currentUserLevel - 1),
-        exp: Math.max(0, currentUserExp - 100),
-        streak: Math.max(0, currentUserStreak - 2),
-        totalTime: Math.max(0, totalTrainingTime - 50),
-        achievements: Math.max(0, userAchievementCount - 1),
-        change: -2
-      }
-    ];
-  };
 
-  const rankingUsers = createRankingUsers();
+  // Use only real users from the database
+  const rankingUsers: RankingUser[] = (allUsers as any) || [];
   
-  // Find current user's rank based on different criteria
-  const getCurrentUserRank = (sortBy: 'streak' | 'totalTime' | 'achievements') => {
-    const sorted = [...rankingUsers].sort((a, b) => {
-      switch (sortBy) {
-        case 'streak': return b.streak - a.streak;
-        case 'totalTime': return b.totalTime - a.totalTime;
-        case 'achievements': return b.achievements - a.achievements;
-        default: return 0;
-      }
-    });
-    return sorted.findIndex(u => u.id === user?.id) + 1;
-  };
-
-  const userCurrentRank = getCurrentUserRank('streak');
+  // Since we only have one real user, they are rank #1
+  const userCurrentRank = 1;
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />;
