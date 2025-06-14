@@ -127,7 +127,7 @@ export default function Levels() {
     button.className = 'level-floating-btn';
     button.innerHTML = '↑';
     
-    // Apply styles
+    // Apply styles with higher z-index and ensure clickability
     button.style.cssText = `
       position: fixed !important;
       bottom: 100px !important;
@@ -145,9 +145,11 @@ export default function Levels() {
       color: #22c55e !important;
       font-weight: 800 !important;
       cursor: pointer !important;
-      z-index: 999999 !important;
+      z-index: 9999999 !important;
       transition: all 0.2s ease !important;
       outline: none !important;
+      pointer-events: auto !important;
+      user-select: none !important;
     `;
     
     // Add multiple click handlers to ensure detection
@@ -194,15 +196,37 @@ export default function Levels() {
       }
     };
     
-    // Add multiple event listeners
-    button.onclick = handleClick;
-    button.addEventListener('click', handleClick, true);
-    button.addEventListener('touchstart', handleClick);
-    button.addEventListener('mousedown', handleClick);
+    // Add debug test on button creation
+    button.onclick = (e) => {
+      console.log('🔴 ONCLICK TRIGGERED!');
+      handleClick(e);
+    };
+    
+    // Add multiple event listeners with immediate test
+    button.addEventListener('click', (e) => {
+      console.log('🔴 CLICK EVENT TRIGGERED!');
+      handleClick(e);
+    }, true);
+    
+    button.addEventListener('touchstart', (e) => {
+      console.log('🔴 TOUCH EVENT TRIGGERED!');
+      handleClick(e);
+    });
+    
+    button.addEventListener('mousedown', (e) => {
+      console.log('🔴 MOUSEDOWN EVENT TRIGGERED!');
+      handleClick(e);
+    });
     
     // Add to page
     document.body.appendChild(button);
     console.log('🔴 Button added to DOM');
+    
+    // Test button immediately after creation
+    setTimeout(() => {
+      console.log('🔴 Testing button click programmatically...');
+      button.click();
+    }, 500);
     
     // Cleanup function
     return () => {
