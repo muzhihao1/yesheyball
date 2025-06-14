@@ -136,6 +136,66 @@ export default function Profile() {
           </CardContent>
         </Card>
 
+        {/* Growth Path */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Star className="h-5 w-5 text-yellow-600" />
+              成长路径
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Current Level Progress */}
+              <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-green-600" />
+                    <span className="font-medium">初窥门径</span>
+                    <Badge variant="secondary">启明星</Badge>
+                  </div>
+                  <span className="text-sm text-gray-600">第 1 级</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">掌握基础击球姿势与瞄准技巧</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>进度</span>
+                    <span>0/35 练习</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-green-600 h-2 rounded-full" style={{width: '0%'}}></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Next Levels Preview */}
+              <div className="grid grid-cols-1 gap-3">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-60">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-gray-600">2</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">小有所成</p>
+                    <p className="text-xs text-gray-500">练习各种角度的击球技巧</p>
+                  </div>
+                  <Badge variant="outline" className="ml-auto">启明星</Badge>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-60">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-gray-600">3</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">渐入佳境</p>
+                    <p className="text-xs text-gray-500">掌握基本走位与控球技巧</p>
+                  </div>
+                  <Badge variant="outline" className="ml-auto">启明星</Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Training Statistics */}
         <Card className="mb-6">
           <CardHeader>
