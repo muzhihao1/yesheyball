@@ -174,46 +174,65 @@ export default function Levels() {
         // Look for level 3 section more specifically
         console.log('🔴 Searching for level sections...');
         
-        // Smart search for user's current level position
+        // Advanced search for user's current level position
         const pageHeight = document.body.scrollHeight;
         console.log('🔴 Total page height:', pageHeight);
         
-        // First, try to find level section containers or dividers
-        const allSections = Array.from(document.querySelectorAll('div, section'))
-          .filter(el => el.children.length > 5 && el.getBoundingClientRect().height > 300);
-        
-        console.log('🔴 Found', allSections.length, 'potential level sections');
-        
-        // Look for level 3 specifically in different ways
-        let targetPosition = null;
-        
-        // Method 1: Look for specific level 3 indicators
-        const level3Indicators = Array.from(document.querySelectorAll('*'))
+        // Search for level headers or section dividers that contain "等级"
+        const levelHeaders = Array.from(document.querySelectorAll('*'))
           .filter(el => {
             const text = (el.textContent || '').trim();
-            return text === '等级 3' || text === 'Level 3' || text === '第3关' || text === '3级';
-          });
+            const rect = el.getBoundingClientRect();
+            return text.includes('等级') && rect.height > 0 && rect.height < 100;
+          })
+          .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
         
-        if (level3Indicators.length > 0) {
-          const element = level3Indicators[0];
-          const rect = element.getBoundingClientRect();
-          targetPosition = rect.top + window.scrollY - 150;
-          console.log('🔴 Found level 3 indicator, position:', targetPosition);
-        }
+        console.log('🔴 Found', levelHeaders.length, 'level headers');
         
-        // Method 2: If no specific indicator, find the 3rd major section
-        else if (allSections.length >= 3) {
-          const thirdSection = allSections[2]; // Index 2 for 3rd section
-          const rect = thirdSection.getBoundingClientRect();
+        let targetPosition = null;
+        
+        // Method 1: Look for exact "等级 3" text
+        const exactLevel3 = levelHeaders.find(el => {
+          const text = (el.textContent || '').trim();
+          return text.includes('等级 3') || text.includes('等级3');
+        });
+        
+        if (exactLevel3) {
+          const rect = exactLevel3.getBoundingClientRect();
           targetPosition = rect.top + window.scrollY - 100;
-          console.log('🔴 Using 3rd section, position:', targetPosition);
+          console.log('🔴 Found exact level 3 header, position:', targetPosition);
         }
         
-        // Method 3: Mathematical estimation based on typical level layouts
+        // Method 2: Use the 3rd level header if we have enough headers
+        else if (levelHeaders.length >= 3) {
+          const thirdLevelHeader = levelHeaders[2]; // Index 2 for 3rd level
+          const rect = thirdLevelHeader.getBoundingClientRect();
+          targetPosition = rect.top + window.scrollY - 100;
+          console.log('🔴 Using 3rd level header, position:', targetPosition);
+        }
+        
+        // Method 3: Look for exercise containers and estimate level 3 position
         else {
-          // Assume 10 levels distributed evenly, level 3 at 30% down
-          targetPosition = Math.floor(pageHeight * 0.25);
-          console.log('🔴 Using mathematical estimate, position:', targetPosition);
+          // Count exercise elements (circles with stars) to estimate positions
+          const exerciseElements = Array.from(document.querySelectorAll('button, div'))
+            .filter(el => {
+              const rect = el.getBoundingClientRect();
+              return rect.width > 40 && rect.width < 100 && rect.height > 40 && rect.height < 100;
+            });
+          
+          console.log('🔴 Found', exerciseElements.length, 'exercise elements');
+          
+          // Assume ~10 exercises per level, so level 3 starts around exercise 21
+          if (exerciseElements.length >= 21) {
+            const level3StartExercise = exerciseElements[20]; // 21st exercise (index 20)
+            const rect = level3StartExercise.getBoundingClientRect();
+            targetPosition = rect.top + window.scrollY - 200;
+            console.log('🔴 Using exercise-based estimation, position:', targetPosition);
+          } else {
+            // Fallback: Level 3 at 35% down the page
+            targetPosition = Math.floor(pageHeight * 0.35);
+            console.log('🔴 Using mathematical fallback, position:', targetPosition);
+          }
         }
         
         // Execute the scroll
@@ -225,7 +244,7 @@ export default function Levels() {
           
           setTimeout(() => {
             window.scrollTo({ top: finalPosition, behavior: 'auto' });
-            console.log('🔴 Backup scroll to:', finalPosition);
+            console.log('🔴 Backup scroll completed');
           }, 400);
         }
       }, 50); // Small delay to override conflicting scrolls
