@@ -6,6 +6,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Serve static assessment images
+app.use('/assessments', express.static('assessments'));
+app.use('/uploads', express.static('uploads'));
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
