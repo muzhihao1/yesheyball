@@ -1032,9 +1032,9 @@ export default function Levels() {
                     const positionInGroup = exerciseIndex % 5; // 0-4 within each group
                     // 练习解锁逻辑：完成任何练习后，所有之前的练习都解锁
                     const isUnlocked = stage.unlocked && (
-                      exerciseIndex <= stage.completedExercises || // 所有已完成的练习及之前的练习都解锁
+                      (stage.completedExercises > 0) || // 如果有任何完成进度，解锁所有练习供练习
                       (user && user.level > stage.level) || // 如果用户等级超过当前关卡，所有练习都解锁
-                      (stage.completedExercises > 0 && exerciseIndex === 0) // 如果有任何完成进度，至少解锁第一个练习
+                      exerciseIndex === 0 // 第一个练习总是解锁
                     );
                     const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
