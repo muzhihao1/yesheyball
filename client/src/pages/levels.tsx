@@ -124,7 +124,55 @@ export default function Levels() {
       
       const button = document.createElement('div');
       button.className = 'level-floating-btn';
-      button.innerHTML = '↑';
+      // Determine arrow direction based on current level position
+      const getCurrentLevelPosition = () => {
+        if (!user) return { shouldShowDown: true };
+        
+        // Look for current level elements more specifically
+        const allElements = document.querySelectorAll('div, h1, h2, h3, span');
+        let currentLevelElement = null;
+        
+        // First try to find level header
+        for (const el of allElements) {
+          const text = el.textContent || '';
+          if (text.includes(`等级 ${user.level}`) && text.includes('•')) {
+            const rect = el.getBoundingClientRect();
+            if (rect.height > 20 && rect.width > 100) {
+              currentLevelElement = el;
+              break;
+            }
+          }
+        }
+        
+        // Fallback: look for any element with current level number
+        if (!currentLevelElement) {
+          for (const el of allElements) {
+            const text = el.textContent || '';
+            if (text.includes(`等级 ${user.level}`) || text.includes(`Level ${user.level}`)) {
+              const rect = el.getBoundingClientRect();
+              if (rect.height > 20) {
+                currentLevelElement = el;
+                break;
+              }
+            }
+          }
+        }
+        
+        if (currentLevelElement) {
+          const rect = currentLevelElement.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          // If element is below the middle of screen, show down arrow
+          return { shouldShowDown: rect.top > viewportHeight * 0.4 };
+        }
+        
+        // Default behavior: if we can't find current level, assume it's below
+        return { shouldShowDown: true };
+      };
+      
+      const { shouldShowDown } = getCurrentLevelPosition();
+      const arrowDirection = shouldShowDown ? '↓' : '↑';
+      
+      button.innerHTML = arrowDirection;
       
       // Apply styles directly - 匹配参考设计
       const styles = [
