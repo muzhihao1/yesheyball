@@ -356,17 +356,17 @@ export default function Levels() {
   };
 
   return (
-    <div className="relative">
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-green-700 mb-2">关卡地图</h2>
-        <p className="text-gray-600">选择等级开始挑战，完成所有习题解锁下一级</p>
-        <div className="inline-flex items-center bg-green-100 rounded-full px-4 py-2 mt-4">
-          <span className="mr-2">🏆</span>
-          <span className="text-green-700 font-medium">当前等级: {user.level} - {levelStages.find(s => s.level === user.level)?.name}</span>
+    <>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-green-700 mb-2">关卡地图</h2>
+          <p className="text-gray-600">选择等级开始挑战，完成所有习题解锁下一级</p>
+          <div className="inline-flex items-center bg-green-100 rounded-full px-4 py-2 mt-4">
+            <span className="mr-2">🏆</span>
+            <span className="text-green-700 font-medium">当前等级: {user.level} - {levelStages.find(s => s.level === user.level)?.name}</span>
+          </div>
         </div>
-      </div>
 
       {/* 多邻国风格的垂直滚动关卡地图 */}
       <div className="max-w-md mx-auto bg-gradient-to-b from-green-50 to-blue-50 rounded-xl p-6">
@@ -669,16 +669,15 @@ export default function Levels() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
 
-    {/* 返回当前关卡浮动按钮 */}
-    <button
-      onClick={scrollToCurrentLevel}
-      className="fixed bottom-24 right-6 z-[9999] w-12 h-12 bg-white rounded-xl shadow-2xl border border-gray-300 flex items-center justify-center hover:shadow-xl transition-all duration-200 hover:scale-105"
-      style={{ position: 'fixed' }}
-    >
-      <ArrowUp className="w-5 h-5 text-blue-600" />
-    </button>
+      {/* 返回当前关卡浮动按钮 */}
+      <button
+        onClick={scrollToCurrentLevel}
+        className="fixed bottom-24 right-6 z-[9999] w-12 h-12 bg-white rounded-xl shadow-2xl border border-gray-300 flex items-center justify-center hover:shadow-xl transition-all duration-200 hover:scale-105"
+        style={{ position: 'fixed' }}
+      >
+        <ArrowUp className="w-5 h-5 text-blue-600" />
+      </button>
     </div>
   );
 }
