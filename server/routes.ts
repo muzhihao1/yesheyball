@@ -17,6 +17,7 @@ import {
   calculateUserLevel,
   getExperienceBreakdown 
 } from "./experienceSystem";
+import { recalculateUserExperience } from "./recalculateExperience";
 import { z } from "zod";
 import OpenAI from "openai";
 import path from "path";
@@ -209,6 +210,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Recalculate user experience points
+  app.post("/api/recalculate-experience", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const result = await recalculateUserExperience(userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Experience recalculation error:", error);
+      res.status(500).json({ message: "Failed to recalculate experience" });
+    }
+  });
+
   // Get users ranking (only real users)
   app.get("/api/users/ranking", isAuthenticated, async (req: any, res) => {
     try {
@@ -225,10 +238,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const rankings = [{
         id: user.id,
         name: user.firstName || user.email?.split('@')[0] || 'User',
-        level: 1,
-        exp: 0,
-        streak: 0,
-        totalTime: 0,
+        level: user.level || 1,
+        exp: user.exp || 0,
+        streak: user.streak || 0,
+        totalTime: user.totalTime || 0,
         achievements: 0,
         profileImageUrl: user.profileImageUrl,
         rank: 1
