@@ -669,38 +669,30 @@ export default function Levels() {
         </DialogContent>
       </Dialog>
 
-      {/* 返回当前关卡浮动按钮 */}
+      {/* 返回当前关卡浮动按钮 - 测试版本 */}
       <div
         onClick={scrollToCurrentLevel}
         style={{
           position: 'fixed',
-          bottom: '100px',
-          right: '20px',
-          zIndex: 99999,
-          width: '48px',
-          height: '48px',
-          backgroundColor: 'white',
+          bottom: '120px',
+          right: '16px',
+          zIndex: 999999,
+          width: '50px',
+          height: '50px',
+          backgroundColor: '#ff0000', // 红色背景便于测试
           borderRadius: '12px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-          border: '1px solid #d1d5db',
+          boxShadow: '0 8px 32px rgba(255,0,0,0.5)',
+          border: '3px solid #000',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
-          e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.2)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)';
+          fontSize: '24px',
+          color: 'white',
+          fontWeight: 'bold'
         }}
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2">
-          <path d="m5 15 7-7 7 7"></path>
-        </svg>
+        ↑
       </div>
     </div>
   );
