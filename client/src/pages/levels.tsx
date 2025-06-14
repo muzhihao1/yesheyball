@@ -373,10 +373,10 @@ export default function Levels() {
         <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 shadow-sm">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
-              {user.username.charAt(0).toUpperCase()}
+              {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
             </div>
             <div>
-              <div className="font-bold text-gray-800">{user.username}</div>
+              <div className="font-bold text-gray-800">{user.email || '用户'}</div>
               <div className="text-sm text-gray-600">等级 {user.level} - {levelStages.find(s => s.level === user.level)?.name}</div>
             </div>
           </div>
@@ -670,18 +670,12 @@ export default function Levels() {
       </Dialog>
 
       {/* 返回当前关卡浮动按钮 */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <Button
-          onClick={scrollToCurrentLevel}
-          className="bg-green-600 hover:bg-green-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110"
-          size="lg"
-        >
-          <div className="flex items-center space-x-2">
-            <Target className="w-5 h-5" />
-            <span className="hidden sm:inline">回到当前关卡</span>
-          </div>
-        </Button>
-      </div>
+      <button
+        onClick={scrollToCurrentLevel}
+        className="fixed bottom-20 right-4 z-50 w-12 h-12 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:shadow-xl transition-shadow duration-200"
+      >
+        <ArrowUp className="w-6 h-6 text-blue-500" />
+      </button>
     </div>
   );
 }
