@@ -127,32 +127,33 @@ export default function Levels() {
     button.className = 'level-floating-btn';
     button.innerHTML = '↑';
     
-    // Apply styles with maximum z-index and force clickability
-    button.style.cssText = `
-      position: fixed !important;
-      bottom: 80px !important;
-      right: 20px !important;
-      width: 56px !important;
-      height: 56px !important;
-      background-color: #22c55e !important;
-      color: white !important;
-      border: none !important;
-      border-radius: 50% !important;
-      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4) !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      font-size: 28px !important;
-      font-weight: 900 !important;
-      cursor: pointer !important;
-      z-index: 2147483647 !important;
-      transition: all 0.3s ease !important;
-      outline: none !important;
-      pointer-events: auto !important;
-      user-select: none !important;
-      touch-action: manipulation !important;
-      -webkit-tap-highlight-color: transparent !important;
-    `;
+    // Apply styles with maximum z-index and absolute positioning to avoid conflicts
+    button.style.position = 'fixed';
+    button.style.bottom = '80px';
+    button.style.right = '20px';
+    button.style.width = '60px';
+    button.style.height = '60px';
+    button.style.backgroundColor = '#ff4444';
+    button.style.color = 'white';
+    button.style.border = '3px solid white';
+    button.style.borderRadius = '50%';
+    button.style.boxShadow = '0 8px 25px rgba(255, 68, 68, 0.5)';
+    button.style.display = 'flex';
+    button.style.alignItems = 'center';
+    button.style.justifyContent = 'center';
+    button.style.fontSize = '32px';
+    button.style.fontWeight = '900';
+    button.style.cursor = 'pointer';
+    button.style.zIndex = '2147483647';
+    button.style.transition = 'all 0.3s ease';
+    button.style.outline = 'none';
+    button.style.pointerEvents = 'auto';
+    button.style.userSelect = 'none';
+    button.style.touchAction = 'manipulation';
+    button.style.webkitTapHighlightColor = 'transparent';
+    button.style.webkitUserSelect = 'none';
+    button.style.mozUserSelect = 'none';
+    button.style.msUserSelect = 'none';
     
     // Add robust click handler with delayed execution
     const handleClick = (e: any) => {
@@ -219,45 +220,37 @@ export default function Levels() {
       }, 50); // Small delay to override conflicting scrolls
     };
     
-    // Add comprehensive event handlers
+    // Add simple, direct event handlers
     button.onclick = (e) => {
-      console.log('🔴 Manual click detected!');
+      console.log('🔴 ONCLICK EVENT FIRED!');
       handleClick(e);
     };
     
     button.addEventListener('click', (e) => {
-      console.log('🔴 Click event triggered!');
+      console.log('🔴 CLICK LISTENER FIRED!');
       handleClick(e);
-    }, { capture: true, passive: false });
+    });
+    
+    button.addEventListener('touchstart', (e) => {
+      console.log('🔴 TOUCHSTART FIRED!');
+      button.style.backgroundColor = '#aa2222';
+    });
     
     button.addEventListener('touchend', (e) => {
-      console.log('🔴 Touch end triggered!');
-      e.preventDefault();
+      console.log('🔴 TOUCHEND FIRED!');
+      button.style.backgroundColor = '#ff4444';
       handleClick(e);
-    }, { passive: false });
-    
-    // Add hover effects
-    button.addEventListener('mouseenter', () => {
-      button.style.transform = 'scale(1.1) !important';
-      button.style.boxShadow = '0 8px 25px rgba(34, 197, 94, 0.6) !important';
     });
     
-    button.addEventListener('mouseleave', () => {
-      button.style.transform = 'scale(1) !important';
-      button.style.boxShadow = '0 6px 20px rgba(34, 197, 94, 0.4) !important';
-    });
-    
-    button.addEventListener('mousedown', () => {
-      button.style.transform = 'scale(0.95) !important';
-    });
-    
-    button.addEventListener('mouseup', () => {
-      button.style.transform = 'scale(1.1) !important';
-    });
-    
-    // Add to page
+    // Add to page first
     document.body.appendChild(button);
     console.log('🔴 Button added to DOM');
+    
+    // Test button immediately to verify it works
+    setTimeout(() => {
+      console.log('🔴 Testing button programmatically...');
+      button.click();
+    }, 1000);
     
     // Cleanup function
     return () => {
