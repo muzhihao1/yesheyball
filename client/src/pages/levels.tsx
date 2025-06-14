@@ -174,24 +174,43 @@ export default function Levels() {
         // Look for level 3 section more specifically
         console.log('🔴 Searching for level sections...');
         
-        // Calculate position for level 3 based on actual page structure
+        // More precise calculation for level 3 position
         const pageHeight = document.body.scrollHeight;
         console.log('🔴 Total page height:', pageHeight);
         
-        // Since levels appear to be distributed vertically, and user is on level 3
-        // Position level 3 at approximately 3/8 of the way down the page
-        const levelPosition = Math.floor(pageHeight * 0.375); // 3/8 of page height
+        // Try to find actual level elements first
+        const levelElements = Array.from(document.querySelectorAll('h2, h3, .text-xl, .text-2xl, [class*="level"]'))
+          .filter(el => {
+            const text = el.textContent || '';
+            return text.includes('等级 3') || text.includes('Level 3') || text.includes('第3') || text.includes('3级');
+          });
         
-        console.log('🔴 Scrolling to level 3 position:', levelPosition);
-        
-        // Force scroll to the calculated position
-        window.scrollTo({ top: levelPosition, behavior: 'smooth' });
-        
-        // Backup scroll to ensure it works
-        setTimeout(() => {
-          window.scrollTo({ top: levelPosition, behavior: 'auto' });
-          console.log('🔴 Backup scroll completed to:', levelPosition);
-        }, 300);
+        if (levelElements.length > 0) {
+          const targetElement = levelElements[0];
+          const rect = targetElement.getBoundingClientRect();
+          const elementTop = rect.top + window.scrollY;
+          const targetPosition = Math.max(0, elementTop - 200);
+          
+          console.log('🔴 Found level 3 element, scrolling to:', targetPosition);
+          window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+          
+          setTimeout(() => {
+            window.scrollTo({ top: targetPosition, behavior: 'auto' });
+            console.log('🔴 Final scroll to found element:', targetPosition);
+          }, 300);
+        } else {
+          // Fallback: More accurate calculation based on level progression
+          // Levels 1-3 are typically in the first 25% of the page
+          const levelPosition = Math.floor(pageHeight * 0.15); // Earlier in the page for level 3
+          
+          console.log('🔴 Using calculated position for level 3:', levelPosition);
+          window.scrollTo({ top: levelPosition, behavior: 'smooth' });
+          
+          setTimeout(() => {
+            window.scrollTo({ top: levelPosition, behavior: 'auto' });
+            console.log('🔴 Final scroll to calculated position:', levelPosition);
+          }, 300);
+        }
       }, 50); // Small delay to override conflicting scrolls
     };
     
