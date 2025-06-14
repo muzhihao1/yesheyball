@@ -865,30 +865,21 @@ export default function Levels() {
     if (!skipToLevel || !user) return;
     
     try {
-      // Generate challenge questions for the skip level test
-      const challengeQuestions = [
-        {
-          id: 1,
-          question: "在台球中，什么是'拉杆'技术？",
-          options: ["向前推杆", "向后拉杆使球产生回旋", "左右摆杆", "用力击球"],
-          correctAnswer: 1,
-          explanation: "拉杆是向后拉动球杆，使母球产生后旋，撞击目标球后会向后退。"
-        },
-        {
-          id: 2,
-          question: "进行走位时，最重要的考虑因素是什么？",
-          options: ["击球力度", "下一球的位置", "球杆角度", "击球速度"],
-          correctAnswer: 1,
-          explanation: "走位的核心是控制母球到达有利于下一球进攻的位置。"
-        },
-        {
-          id: 3,
-          question: "什么情况下应该选择防守？",
-          options: ["任何时候", "没有好的进攻机会时", "对手犯规时", "比分领先时"],
-          correctAnswer: 1,
-          explanation: "当没有把握的进攻机会时，选择防守可以避免给对手留下机会。"
-        }
-      ];
+      // Generate challenge questions using actual exercises from the target level
+      const targetLevelExercises = generateExercisesForLevel(skipToLevel);
+      const challengeQuestions = targetLevelExercises.slice(0, 3).map((exercise, index) => ({
+        id: exercise.id,
+        question: `完成${exercise.title}练习`,
+        exercise: exercise,
+        options: [
+          "我可以完成这个练习",
+          "这个练习对我来说比较困难", 
+          "我需要更多练习才能掌握",
+          "我还没准备好做这个练习"
+        ],
+        correctAnswer: 0, // First option is correct - confident completion
+        explanation: `${exercise.title}: ${exercise.description}`
+      }));
       
       setSkipChallengeQuestions(challengeQuestions);
       setCurrentSkipQuestion(0);
@@ -1660,6 +1651,30 @@ export default function Levels() {
                 <h3 className="font-semibold text-lg text-gray-800 mb-4">
                   {skipChallengeQuestions[currentSkipQuestion]?.question}
                 </h3>
+                
+                {/* Display actual exercise image and details */}
+                {skipChallengeQuestions[currentSkipQuestion]?.exercise && (
+                  <div className="mb-6">
+                    <div className="bg-white rounded-lg p-4 mb-4">
+                      <img 
+                        src={skipChallengeQuestions[currentSkipQuestion].exercise.imageUrl}
+                        alt={skipChallengeQuestions[currentSkipQuestion].exercise.title}
+                        className="w-full h-64 object-cover rounded-lg mb-4"
+                        style={getCroppingStyle(skipChallengeQuestions[currentSkipQuestion].exercise)}
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg">
+                          <h4 className="font-bold text-blue-700 mb-2">题目说明</h4>
+                          <p className="text-gray-700 text-sm">{skipChallengeQuestions[currentSkipQuestion].exercise.description}</p>
+                        </div>
+                        <div className="bg-orange-50 border-l-4 border-orange-500 p-3 rounded-r-lg">
+                          <h4 className="font-bold text-orange-700 mb-2">过关要求</h4>
+                          <p className="text-gray-700 text-sm">{skipChallengeQuestions[currentSkipQuestion].exercise.requirement}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="space-y-3">
                   {skipChallengeQuestions[currentSkipQuestion]?.options.map((option: string, index: number) => (
