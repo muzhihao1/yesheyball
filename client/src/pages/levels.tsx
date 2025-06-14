@@ -79,6 +79,8 @@ export default function Levels() {
   const [practiceTime, setPracticeTime] = useState(0);
   const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
   const [exerciseOverride, setExerciseOverride] = useState<{[key: string]: boolean}>({});
+  const [showSkipDialog, setShowSkipDialog] = useState(false);
+  const [skipToLevel, setSkipToLevel] = useState<number | null>(null);
   
   // 考核相关状态
   const [showExamDialog, setShowExamDialog] = useState(false);
@@ -785,6 +787,39 @@ export default function Levels() {
     });
   };
 
+  // Handle skip to level functionality
+  const handleSkipToLevel = (targetLevel: number) => {
+    setSkipToLevel(targetLevel);
+    setShowSkipDialog(true);
+  };
+
+  const confirmSkipToLevel = async () => {
+    if (!skipToLevel || !user) return;
+    
+    try {
+      await apiRequest("/api/user/skip-level", "POST", {
+        targetLevel: skipToLevel
+      });
+      
+      toast({
+        title: "跳级成功！",
+        description: `已跳级到等级 ${skipToLevel}`,
+      });
+      
+      setShowSkipDialog(false);
+      setSkipToLevel(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
+    } catch (error) {
+      console.error("跳级失败:", error);
+      toast({
+        title: "跳级失败",
+        description: "请稍后重试",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-50">
 
@@ -820,6 +855,26 @@ export default function Levels() {
                     />
                   </div>
                 </div>
+
+                {/* Skip Level Button - Show for locked levels that are next to unlock */}
+                {!stage.unlocked && user && stage.level === user.level + 1 && (
+                  <div className="flex justify-center mb-8">
+                    <div className="text-center">
+                      <div className="text-sm text-gray-600 mb-3">跳级到这儿？</div>
+                      <button
+                        onClick={() => handleSkipToLevel(stage.level)}
+                        className="w-16 h-16 bg-orange-500 hover:bg-orange-600 rounded-full flex items-center justify-center text-white shadow-lg transform hover:scale-105 transition-all duration-200"
+                        style={{
+                          filter: 'drop-shadow(0 4px 12px rgba(249, 115, 22, 0.4))'
+                        }}
+                      >
+                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Exercise Nodes - Grouped by 5 */}
                 <div className="relative">
