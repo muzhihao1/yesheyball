@@ -47,83 +47,106 @@ export default function Levels() {
     queryKey: ["/api/user"],
   });
 
-  // Floating button using React portal approach
+  // 全局浮动按钮 - 更激进的方法
   useEffect(() => {
-    const createFloatingButton = () => {
-      const button = document.createElement('div');
-      button.id = 'floating-level-button';
-      button.innerHTML = '↑';
-      button.style.cssText = `
-        position: fixed !important;
-        bottom: 100px !important;
-        right: 20px !important;
-        z-index: 2147483647 !important;
-        width: 56px !important;
-        height: 56px !important;
-        background: white !important;
-        border: 2px solid #0070f3 !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        cursor: pointer !important;
-        font-size: 24px !important;
-        color: #0070f3 !important;
-        font-weight: bold !important;
-        transition: all 0.2s ease !important;
-        user-select: none !important;
-      `;
+    console.log('🔴 开始创建浮动按钮');
+    
+    const createButton = () => {
+      // 清除旧按钮
+      const oldButtons = document.querySelectorAll('.global-floating-button');
+      oldButtons.forEach(btn => btn.remove());
       
-      button.addEventListener('mouseenter', () => {
-        button.style.transform = 'scale(1.1)';
-        button.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
-      });
+      // 创建按钮容器
+      const container = document.createElement('div');
+      container.className = 'global-floating-button';
+      container.innerHTML = '↑';
       
-      button.addEventListener('mouseleave', () => {
-        button.style.transform = 'scale(1)';
-        button.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
-      });
+      // 使用内联样式和!important确保显示
+      const styles = [
+        'position: fixed',
+        'bottom: 80px', 
+        'right: 16px',
+        'width: 60px',
+        'height: 60px',
+        'background-color: #ffffff',
+        'border: 3px solid #3b82f6',
+        'border-radius: 16px',
+        'box-shadow: 0 8px 24px rgba(0,0,0,0.3)',
+        'display: flex',
+        'align-items: center', 
+        'justify-content: center',
+        'font-size: 28px',
+        'color: #3b82f6',
+        'font-weight: bold',
+        'cursor: pointer',
+        'z-index: 999999999',
+        'transform: translateZ(0)', // 创建新的层叠上下文
+        'will-change: transform'
+      ].map(style => style + ' !important').join('; ');
       
-      button.addEventListener('click', () => {
-        // Find current level and scroll to it
-        const currentLevel = document.querySelector('[data-level="2"]') as HTMLElement;
+      container.setAttribute('style', styles);
+      
+      // 添加点击事件
+      container.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔴 按钮被点击');
+        
+        // 滚动到当前等级
+        const currentLevel = document.querySelector('[data-level="2"]');
         if (currentLevel) {
           currentLevel.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       });
       
-      return button;
-    };
-
-    // Wait for DOM to be ready
-    const addButton = () => {
-      const existingButton = document.getElementById('floating-level-button');
-      if (existingButton) {
-        existingButton.remove();
-      }
+      // 添加触摸事件（移动端）
+      container.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        container.style.transform = 'scale(0.95) translateZ(0)';
+      });
       
-      const button = createFloatingButton();
-      document.body.appendChild(button);
-      console.log('Floating button added to body');
+      container.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        container.style.transform = 'scale(1) translateZ(0)';
+      });
+      
+      return container;
     };
-
-    // Multiple attempts to ensure button appears
-    addButton();
     
-    const timer1 = setTimeout(addButton, 100);
-    const timer2 = setTimeout(addButton, 500);
-    const timer3 = setTimeout(addButton, 1000);
+    // 立即创建
+    const button = createButton();
+    document.body.appendChild(button);
+    console.log('🔴 按钮已添加到body，当前body子元素数量：', document.body.children.length);
+    console.log('🔴 按钮元素：', button);
+    console.log('🔴 按钮样式：', window.getComputedStyle(button));
+    
+    // 延迟检查按钮是否可见
+    setTimeout(() => {
+      const addedButton = document.querySelector('.global-floating-button');
+      console.log('🔴 1秒后检查 - 按钮存在：', !!addedButton);
+      if (addedButton) {
+        const rect = addedButton.getBoundingClientRect();
+        console.log('🔴 按钮位置：', rect);
+        console.log('🔴 视口大小：', window.innerWidth, 'x', window.innerHeight);
+      }
+    }, 1000);
+    
+    // 多次尝试确保创建成功
+    const intervals = [200, 500, 1000, 2000].map(delay => 
+      setTimeout(() => {
+        if (!document.querySelector('.global-floating-button')) {
+          const retryButton = createButton();
+          document.body.appendChild(retryButton);
+          console.log('🔴 重试创建按钮，延迟：', delay + 'ms');
+        }
+      }, delay)
+    );
     
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      
-      const button = document.getElementById('floating-level-button');
-      if (button) {
-        button.remove();
-      }
+      console.log('🔴 清理浮动按钮');
+      intervals.forEach(clearTimeout);
+      const buttons = document.querySelectorAll('.global-floating-button');
+      buttons.forEach(btn => btn.remove());
     };
   }, []);
 
