@@ -134,16 +134,18 @@ export default function Profile() {
   });
 
   // Initialize edit form when user data loads
-  if (user && !editForm.username) {
-    setEditForm({
-      username: user.username || '',
-      email: '',
-      phone: '',
-      location: '',
-      birthday: '',
-      bio: ''
-    });
-  }
+  useEffect(() => {
+    if (user && !editForm.username) {
+      setEditForm({
+        username: user.username || '',
+        email: user.email || '',
+        phone: '',
+        location: '',
+        birthday: '',
+        bio: ''
+      });
+    }
+  }, [user, editForm.username]);
 
   if (isLoading) {
     return (
