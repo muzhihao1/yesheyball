@@ -299,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Save feedback to storage
       await storage.createFeedback({
-        userId: 1,
+        userId: "1",
         taskId: taskData.taskId,
         content: aiFeedback,
         rating: rating,
@@ -332,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { content, duration, rating, exerciseCompleted } = req.body;
       
       const entryData = {
-        userId: 1,
+        userId: "1",
         content,
         duration: duration ? parseInt(duration) : null,
         rating: rating ? parseInt(rating) : null,
@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user feedbacks
   app.get("/api/feedbacks", async (req, res) => {
     try {
-      const feedbacks = await storage.getUserFeedbacks(1);
+      const feedbacks = await storage.getUserFeedbacks("1");
       res.json(feedbacks);
     } catch (error) {
       res.status(500).json({ message: "Failed to get feedbacks" });
@@ -482,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const userAchievements = await storage.getUserAchievements(1);
+      const userAchievements = await storage.getUserAchievements("1");
       res.json(userAchievements);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user achievements" });
@@ -553,7 +553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/training-sessions/current", async (req, res) => {
     try {
-      const session = await storage.getCurrentTrainingSession(1);
+      const session = await storage.getCurrentTrainingSession("1");
       res.json(session);
     } catch (error) {
       res.status(500).json({ message: "Failed to get current training session" });
@@ -964,7 +964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/training-programs/:id/reset-progress", async (req, res) => {
     try {
       const programId = parseInt(req.params.id);
-      const userId = 1; // Current user
+      const userId = "1"; // Current user
       
       // Get all remaining completed guided sessions for this program
       const allSessions = await storage.getUserTrainingSessions(userId);
@@ -1012,7 +1012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create new session for next episode
         const newSession = await storage.createTrainingSession({
-          userId: 1,
+          userId: "1",
           programId: beginnerProgram.id,
           dayId: nextDay,
           title: `第${nextDay}集：${nextDay <= 17 ? '基础技能训练' : nextDay <= 34 ? '中级技术提升' : '高级技巧掌握'}`,
