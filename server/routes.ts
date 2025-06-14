@@ -396,9 +396,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userId = (req.user as any)?.claims?.sub || req.user?.id;
         const user = await storage.getUser(userId);
         if (user) {
-          // Extract exercise info from diary content
-          const exerciseMatch = content.match(/第(\d+)题练习/);
-          const exerciseNumber = exerciseMatch ? parseInt(exerciseMatch[1]) : null;
+          // Extract exercise info from diary content - support multiple formats
+          let exerciseNumber = null;
+          
+          // Try different patterns to match exercise numbers
+          const patterns = [
+            /第(\d+)题练习/,           // 第7题练习
+            /第(\d+)题/,              // 第7题
+            /练习第(\d+)题/,          // 练习第7题
+            /(\d+)题练习/,            // 7题练习
+            /题目(\d+)/,              // 题目7
+            /exercise\s*(\d+)/i,      // exercise 7
+            /第(\d+)道题/,            // 第7道题
+            /完成了.*第(\d+)题/,       // 完成了第7题
+          ];
+          
+          for (const pattern of patterns) {
+            const match = content.match(pattern);
+            if (match) {
+              exerciseNumber = parseInt(match[1]);
+              break;
+            }
+          }
           
           if (exerciseNumber) {
             // Calculate experience based on exercise completion
