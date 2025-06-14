@@ -365,6 +365,17 @@ export default function Levels() {
           <span className="mr-2">🏆</span>
           <span className="text-green-700 font-medium">当前等级: {user.level} - {levelStages.find(s => s.level === user.level)?.name}</span>
         </div>
+        
+        {/* Temporary test button */}
+        <div className="mt-4">
+          <Button
+            onClick={scrollToCurrentLevel}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Target className="w-4 h-4 mr-2" />
+            回到当前关卡 (测试按钮)
+          </Button>
+        </div>
       </div>
 
       {/* 多邻国风格的垂直滚动关卡地图 */}
@@ -373,10 +384,10 @@ export default function Levels() {
         <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 shadow-sm">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
-              {user.username.charAt(0).toUpperCase()}
+              {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
             </div>
             <div>
-              <div className="font-bold text-gray-800">{user.username}</div>
+              <div className="font-bold text-gray-800">{user.email || '用户'}</div>
               <div className="text-sm text-gray-600">等级 {user.level} - {levelStages.find(s => s.level === user.level)?.name}</div>
             </div>
           </div>
@@ -670,15 +681,15 @@ export default function Levels() {
       </Dialog>
 
       {/* 返回当前关卡浮动按钮 */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-24 right-4 z-50 md:bottom-6 md:right-6">
         <Button
           onClick={scrollToCurrentLevel}
-          className="bg-green-600 hover:bg-green-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110"
+          className="bg-green-600 hover:bg-green-700 text-white rounded-full w-14 h-14 md:w-auto md:h-auto p-3 md:p-4 shadow-lg transition-all duration-300 hover:scale-110"
           size="lg"
         >
-          <div className="flex items-center space-x-2">
-            <Target className="w-5 h-5" />
-            <span className="hidden sm:inline">回到当前关卡</span>
+          <div className="flex items-center justify-center md:space-x-2">
+            <Target className="w-6 h-6 md:w-5 md:h-5" />
+            <span className="hidden md:inline ml-2">回到当前关卡</span>
           </div>
         </Button>
       </div>
