@@ -212,43 +212,33 @@ export default function Levels() {
         // Find current level section based on user's actual level
         let targetElement = null;
         
-        // Method 1: Look for current level header with specific pattern
-        const levelHeaders = document.querySelectorAll('h2, h3, div');
-        for (let i = 0; i < levelHeaders.length; i++) {
-          const el = levelHeaders[i];
+        // Look for level header with exact pattern "等级 X •"
+        const allElements = document.querySelectorAll('div, span, h1, h2, h3');
+        for (let i = 0; i < allElements.length; i++) {
+          const el = allElements[i];
           const text = el.textContent || '';
-          if (text.includes(`等级 ${user.level}`) && text.includes('•')) {
-            const rect = el.getBoundingClientRect();
-            if (rect.height > 20 && rect.width > 100) {
-              targetElement = el;
-              console.log('🔴 Found current level header');
-              break;
-            }
-          }
-        }
-        
-        // Method 2: Look for level container or section
-        if (!targetElement) {
-          const allDivs = document.querySelectorAll('div');
-          for (let i = 0; i < allDivs.length; i++) {
-            const div = allDivs[i];
-            const text = div.textContent || '';
-            if (text.includes(`等级 ${user.level}`) && div.children.length > 2) {
-              const rect = div.getBoundingClientRect();
-              if (rect.height > 200) { // Level sections are typically large
-                targetElement = div;
-                console.log('🔴 Found current level section');
+          
+          // Match exact pattern for level header
+          if (text.includes(`等级 ${user.level} •`)) {
+            // Find the parent container (should be the level section)
+            let parent = el.parentElement;
+            while (parent && parent !== document.body) {
+              const parentRect = parent.getBoundingClientRect();
+              if (parentRect.height > 300) { // Level sections are large containers
+                targetElement = parent;
+                console.log('🔴 Found level section via header');
                 break;
               }
+              parent = parent.parentElement;
             }
+            if (targetElement) break;
           }
         }
         
-        // Method 3: Find any element mentioning current level
+        // Fallback: Find any element with current level number
         if (!targetElement) {
-          const allElements = document.querySelectorAll('*');
-          for (let i = 0; i < allElements.length; i++) {
-            const el = allElements[i];
+          for (let j = 0; j < allElements.length; j++) {
+            const el = allElements[j];
             const text = el.textContent || '';
             if (text.includes(`等级 ${user.level}`)) {
               const rect = el.getBoundingClientRect();
