@@ -8,7 +8,7 @@ import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
-import Levels from "@/pages/levels";
+import Levels from "@/pages/levels-new";
 import Tasks from "@/pages/tasks";
 import Ranking from "@/pages/ranking";
 import Diary from "@/pages/diary";
