@@ -147,10 +147,11 @@ export default function Levels() {
       
       // Add click handler
       button.addEventListener('click', () => {
-        console.log('🔴 Button clicked, user level:', user?.level);
-        
-        if (user) {
-          console.log('🔴 Looking for user level:', user.level);
+        try {
+          console.log('🔴 Button clicked, user level:', user?.level);
+          
+          if (user) {
+            console.log('🔴 Looking for user level:', user.level);
           
           // 重新设计滚动逻辑：查找当前等级对应的第一个练习节点
           let targetElement: Element | null = null;
@@ -161,56 +162,105 @@ export default function Levels() {
           console.log('🔴 Found exercise nodes:', allExerciseNodes.length);
           
           // 找到第一个可点击的（非锁定的）练习节点
-          for (let node of allExerciseNodes) {
-            const rect = node.getBoundingClientRect();
-            const isVisible = rect.height > 0 && rect.width > 0;
-            const isNotLocked = !node.textContent?.includes('🔒') && !node.querySelector('.text-gray-500');
-            
-            if (isVisible && isNotLocked) {
-              targetElement = node;
-              console.log('🔴 Found unlocked exercise node');
-              break;
+          try {
+            for (let i = 0; i < allExerciseNodes.length; i++) {
+              const node = allExerciseNodes[i];
+              if (!node) continue;
+              
+              const rect = node.getBoundingClientRect();
+              const isVisible = rect.height > 0 && rect.width > 0;
+              const hasText = node.textContent || '';
+              const isNotLocked = !hasText.includes('🔒') && !node.querySelector('.text-gray-500');
+              
+              if (isVisible && isNotLocked) {
+                targetElement = node;
+                console.log('🔴 Found unlocked exercise node');
+                break;
+              }
             }
+          } catch (error) {
+            console.log('🔴 Error in node search:', error);
           }
           
           // 如果没找到练习节点，查找等级标题
           if (!targetElement) {
-            const titleElements = document.querySelectorAll('*');
-            for (let el of titleElements) {
-              if (el.textContent?.includes(`等级 ${user.level}`) && el.getBoundingClientRect().height > 0) {
-                targetElement = el;
-                console.log('🔴 Found level title');
-                break;
+            try {
+              const titleElements = document.querySelectorAll('h1, h2, h3, div, span');
+              for (let i = 0; i < titleElements.length; i++) {
+                const el = titleElements[i];
+                if (!el) continue;
+                
+                const text = el.textContent || '';
+                const rect = el.getBoundingClientRect();
+                
+                if (text.includes(`等级 ${user.level}`) && rect.height > 0) {
+                  targetElement = el;
+                  console.log('🔴 Found level title');
+                  break;
+                }
               }
+            } catch (error) {
+              console.log('🔴 Error in title search:', error);
             }
           }
           
           console.log('🔴 Final target element:', targetElement);
           
           if (targetElement) {
-            // 简单直接的滚动到元素
-            targetElement.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            
-            // 添加绿色高亮效果
-            if (targetElement instanceof HTMLElement) {
-              const originalTransform = targetElement.style.transform;
-              const originalBoxShadow = targetElement.style.boxShadow;
+            try {
+              // 简单直接的滚动到元素
+              targetElement.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              });
               
-              targetElement.style.transition = 'all 0.5s ease';
-              targetElement.style.transform = 'scale(1.1)';
-              targetElement.style.boxShadow = '0 0 25px rgba(34, 197, 94, 0.8)';
-              
-              setTimeout(() => {
-                targetElement.style.transform = originalTransform;
-                targetElement.style.boxShadow = originalBoxShadow;
-              }, 2000);
+              // 添加绿色高亮效果
+              if (targetElement instanceof HTMLElement) {
+                const originalTransform = targetElement.style.transform || '';
+                const originalBoxShadow = targetElement.style.boxShadow || '';
+                const originalTransition = targetElement.style.transition || '';
+                
+                targetElement.style.transition = 'all 0.5s ease';
+                targetElement.style.transform = 'scale(1.1)';
+                targetElement.style.boxShadow = '0 0 25px rgba(34, 197, 94, 0.8)';
+                
+                setTimeout(() => {
+                  try {
+                    if (targetElement instanceof HTMLElement) {
+                      targetElement.style.transform = originalTransform;
+                      targetElement.style.boxShadow = originalBoxShadow;
+                      targetElement.style.transition = originalTransition;
+                    }
+                  } catch (resetError) {
+                    console.log('🔴 Error resetting styles:', resetError);
+                  }
+                }, 2000);
+              }
+            } catch (scrollError) {
+              console.log('🔴 Error during scroll:', scrollError);
+              // 备用滚动方法
+              try {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              } catch (fallbackError) {
+                console.log('🔴 Fallback scroll failed:', fallbackError);
+              }
             }
           } else {
             console.log('🔴 No target found, scrolling to top');
+            try {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (scrollError) {
+              console.log('🔴 Error scrolling to top:', scrollError);
+            }
+          }
+          } // Close if (user) block
+        } catch (error) {
+          console.log('🔴 Click handler error:', error);
+          // 最后的备用方案：滚动到页面顶部
+          try {
             window.scrollTo({ top: 0, behavior: 'smooth' });
+          } catch (finalError) {
+            console.log('🔴 Final fallback failed:', finalError);
           }
         }
       });
