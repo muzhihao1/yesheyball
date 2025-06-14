@@ -3,8 +3,11 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/header";
 import Navigation from "@/components/navigation";
+import Landing from "@/pages/Landing";
+import Home from "@/pages/Home";
 import Levels from "@/pages/levels-new";
 import Tasks from "@/pages/tasks";
 import Growth from "@/pages/growth";
@@ -14,34 +17,51 @@ import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
   return (
     <Switch>
-      <Route path="/" component={Levels} />
-      <Route path="/levels" component={Levels} />
-      <Route path="/tasks" component={Tasks} />
-      <Route path="/growth" component={Growth} />
-      <Route path="/diary" component={Diary} />
-      <Route path="/profile" component={Profile} />
+      {isLoading || !isAuthenticated ? (
+        <Route path="/" component={Landing} />
+      ) : (
+        <>
+          <Route path="/" component={Home} />
+          <Route path="/training" component={Levels} />
+          <Route path="/levels" component={Levels} />
+          <Route path="/tasks" component={Tasks} />
+          <Route path="/growth" component={Growth} />
+          <Route path="/diary" component={Diary} />
+          <Route path="/profile" component={Profile} />
+        </>
+      )}
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function AppContent() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  return (
+    <TooltipProvider>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 pb-20">
+        {isAuthenticated && !isLoading && <Header />}
+        
+        <main className="pb-4">
+          <Router />
+        </main>
+        
+        {isAuthenticated && !isLoading && <Navigation />}
+      </div>
+      <Toaster />
+    </TooltipProvider>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 pb-20">
-          <Header />
-          
-          <main className="pb-4">
-            <Router />
-          </main>
-          
-          <Navigation />
-        </div>
-        <Toaster />
-      </TooltipProvider>
+      <AppContent />
     </QueryClientProvider>
   );
 }
