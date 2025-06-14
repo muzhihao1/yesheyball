@@ -107,6 +107,91 @@ export default function Levels() {
     queryKey: ["/api/user"],
   });
 
+  // Floating button for returning to current level
+  useEffect(() => {
+    console.log('🔴 Creating floating button in levels-new');
+    
+    const createButton = () => {
+      // Remove any existing buttons
+      const existing = document.querySelectorAll('.level-floating-btn');
+      existing.forEach(btn => btn.remove());
+      
+      const button = document.createElement('div');
+      button.className = 'level-floating-btn';
+      button.innerHTML = '↑';
+      
+      // Apply styles directly
+      const styles = [
+        'position: fixed',
+        'bottom: 100px',
+        'right: 20px', 
+        'width: 56px',
+        'height: 56px',
+        'background: white',
+        'border: 2px solid #22c55e',
+        'border-radius: 16px',
+        'box-shadow: 0 8px 24px rgba(0,0,0,0.15)',
+        'display: flex',
+        'align-items: center',
+        'justify-content: center',
+        'font-size: 24px',
+        'color: #22c55e',
+        'font-weight: bold',
+        'cursor: pointer',
+        'z-index: 999999',
+        'transition: all 0.2s ease'
+      ].map(s => s + ' !important').join('; ');
+      
+      button.setAttribute('style', styles);
+      
+      // Add click handler
+      button.addEventListener('click', () => {
+        console.log('🔴 Button clicked');
+        if (user) {
+          // Find current level element and scroll to it
+          const currentLevelEl = document.querySelector(`[data-level="${user.level}"]`);
+          if (currentLevelEl) {
+            currentLevelEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      });
+      
+      // Add hover effects
+      button.addEventListener('mouseenter', () => {
+        button.style.transform = 'scale(1.1) !important';
+      });
+      
+      button.addEventListener('mouseleave', () => {
+        button.style.transform = 'scale(1) !important';
+      });
+      
+      return button;
+    };
+    
+    // Create button immediately
+    const btn = createButton();
+    document.body.appendChild(btn);
+    console.log('🔴 Button added to DOM');
+    
+    // Retry creation multiple times to ensure it appears
+    const timeouts = [100, 300, 600, 1000].map(delay => 
+      setTimeout(() => {
+        if (!document.querySelector('.level-floating-btn')) {
+          const retryBtn = createButton();
+          document.body.appendChild(retryBtn);
+          console.log(`🔴 Retry button created at ${delay}ms`);
+        }
+      }, delay)
+    );
+    
+    return () => {
+      timeouts.forEach(clearTimeout);
+      const buttons = document.querySelectorAll('.level-floating-btn');
+      buttons.forEach(btn => btn.remove());
+      console.log('🔴 Button cleanup completed');
+    };
+  }, [user]);
+
   // Load exercise data on component mount
   useEffect(() => {
     loadExerciseData().then(setExerciseData);
