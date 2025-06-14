@@ -395,8 +395,8 @@ export default function Levels() {
       }
       
       // Debug skip challenge completion
-      if (exercise.level === 1) {
-        console.log(`Level 1 Exercise ${exercise.exerciseNumber}: levelCompleted=${levelCompleted}, isCompleted=${isCompleted}`);
+      if (exercise.level === 3) {
+        console.log(`Level 3 Exercise ${exercise.exerciseNumber}: levelCompleted=${levelCompleted}, isCompleted=${isCompleted}`);
       }
       
       // Only check override if the exercise isn't already completed in the database
@@ -1093,7 +1093,7 @@ export default function Levels() {
                     const isUnlocked = stage.unlocked && (
                       (user && user.level > stage.level) || // 如果用户等级超过当前关卡，所有练习都解锁
                       exerciseIndex === 0 || // 第一个练习总是解锁
-                      (exerciseIndex <= currentLevelCompleted + 1) // 已完成的练习及下一个练习解锁
+                      (exerciseIndex <= currentLevelCompleted) // 只有已完成的练习和下一个练习解锁
                     );
                     const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
