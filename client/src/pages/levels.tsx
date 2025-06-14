@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Target, ArrowUp } from "lucide-react";
 
 interface LevelStage {
   level: number;
@@ -40,6 +41,7 @@ export default function Levels() {
   const [exerciseRequirements, setExerciseRequirements] = useState<{ [key: string]: string }>({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
+  const currentLevelRef = useRef<HTMLDivElement>(null);
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ["/api/user"],
@@ -328,6 +330,29 @@ export default function Levels() {
 
   const canTakeExam = (stage: LevelStage) => {
     return stage.level > 1 && stage.completedExercises >= stage.totalExercises;
+  };
+
+  const scrollToCurrentLevel = () => {
+    currentLevelRef.current?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'center' 
+    });
+    
+    // 添加高亮效果
+    if (currentLevelRef.current) {
+      currentLevelRef.current.style.transform = 'scale(1.05)';
+      currentLevelRef.current.style.transition = 'transform 0.3s ease';
+      setTimeout(() => {
+        if (currentLevelRef.current) {
+          currentLevelRef.current.style.transform = 'scale(1)';
+        }
+      }, 1000);
+    }
+    
+    toast({
+      title: "已定位到当前关卡",
+      description: `等级 ${user.level} - ${levelStages.find(s => s.level === user.level)?.name}`,
+    });
   };
 
   return (
