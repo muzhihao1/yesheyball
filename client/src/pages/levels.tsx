@@ -113,174 +113,138 @@ export default function Levels() {
     queryKey: ["/api/user"],
   });
 
-  // Floating navigation button
+  // Floating navigation button to jump to current level
   useEffect(() => {
     if (!user) return;
     
-    console.log('🔴 Creating navigation button for level', user.level);
-    
-    // Remove any existing floating buttons
-    const existing = document.querySelectorAll('.level-floating-btn');
-    existing.forEach(btn => btn.remove());
-    
-    const button = document.createElement('button');
-    button.className = 'level-floating-btn';
-    button.innerHTML = '↑';
-    
-    // Apply styles with maximum z-index and absolute positioning to avoid conflicts
-    button.style.position = 'fixed';
-    button.style.bottom = '80px';
-    button.style.right = '20px';
-    button.style.width = '60px';
-    button.style.height = '60px';
-    button.style.setProperty('background-color', '#22c55e', 'important');
-    button.style.setProperty('color', 'white', 'important');
-    button.style.setProperty('border', '3px solid white', 'important');
-    button.style.setProperty('border-radius', '50%', 'important');
-    button.style.setProperty('box-shadow', '0 8px 25px rgba(34, 197, 94, 0.5)', 'important');
-    button.style.display = 'flex';
-    button.style.alignItems = 'center';
-    button.style.justifyContent = 'center';
-    button.style.fontSize = '32px';
-    button.style.fontWeight = '900';
-    button.style.cursor = 'pointer';
-    button.style.zIndex = '2147483647';
-    button.style.transition = 'all 0.3s ease';
-    button.style.outline = 'none';
-    button.style.pointerEvents = 'auto';
-    button.style.userSelect = 'none';
-    button.style.touchAction = 'manipulation';
-    button.style.webkitTapHighlightColor = 'transparent';
-    button.style.webkitUserSelect = 'none';
-    button.style.mozUserSelect = 'none';
-    button.style.msUserSelect = 'none';
-    
-    // Add robust click handler with delayed execution
-    const handleClick = (e: any) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      console.log('🔴 CLICK DETECTED - User level:', user.level);
+    const createFloatingNavButton = () => {
+      // Remove any existing floating buttons
+      const existing = document.querySelectorAll('.level-floating-btn');
+      existing.forEach(btn => btn.remove());
       
-      // Force prevent any default browser behavior
-      if (e.type === 'touchend') {
-        e.preventDefault();
+      const button = document.createElement('button');
+      button.className = 'level-floating-btn';
+      button.innerHTML = '↑';
+      button.setAttribute('aria-label', `跳转到等级${user.level}`);
+      
+      // Apply core styles
+      Object.assign(button.style, {
+        position: 'fixed',
+        bottom: '80px',
+        right: '20px',
+        width: '60px',
+        height: '60px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '32px',
+        fontWeight: '900',
+        cursor: 'pointer',
+        zIndex: '2147483647',
+        transition: 'all 0.3s ease',
+        outline: 'none',
+        pointerEvents: 'auto',
+        userSelect: 'none',
+        touchAction: 'manipulation'
+      });
+      
+      // Apply theme colors with important priority
+      button.style.setProperty('background-color', '#22c55e', 'important');
+      button.style.setProperty('color', 'white', 'important');
+      button.style.setProperty('border', '3px solid white', 'important');
+      button.style.setProperty('border-radius', '50%', 'important');
+      button.style.setProperty('box-shadow', '0 8px 25px rgba(34, 197, 94, 0.5)', 'important');
+      
+      return button;
+    };
+    
+    const findUserLevelPosition = (userLevel: number): number | null => {
+      // Search for level headers containing "等级"
+      const levelHeaders = Array.from(document.querySelectorAll('*'))
+        .filter(el => {
+          const text = (el.textContent || '').trim();
+          const rect = el.getBoundingClientRect();
+          return text.includes('等级') && rect.height > 0 && rect.height < 100;
+        })
+        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+      
+      // Method 1: Look for exact level text
+      const exactLevelElement = levelHeaders.find(el => {
+        const text = (el.textContent || '').trim();
+        return text.includes(`等级 ${userLevel}`) || text.includes(`等级${userLevel}`);
+      });
+      
+      if (exactLevelElement) {
+        const rect = exactLevelElement.getBoundingClientRect();
+        return rect.top + window.scrollY - 100;
       }
       
-      // Use setTimeout to ensure our scroll happens after any conflicting scrolls
-      setTimeout(() => {
-        console.log('🔴 Delayed scroll execution starting...');
-        
-        // Look for level 3 section more specifically
-        console.log('🔴 Searching for level sections...');
-        
-        // Advanced search for user's current level position
-        const pageHeight = document.body.scrollHeight;
-        console.log('🔴 Total page height:', pageHeight);
-        
-        // Search for level headers or section dividers that contain "等级"
-        const levelHeaders = Array.from(document.querySelectorAll('*'))
-          .filter(el => {
-            const text = (el.textContent || '').trim();
-            const rect = el.getBoundingClientRect();
-            return text.includes('等级') && rect.height > 0 && rect.height < 100;
-          })
-          .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
-        
-        console.log('🔴 Found', levelHeaders.length, 'level headers');
-        
-        let targetPosition = null;
-        
-        // Method 1: Look for exact "等级 3" text
-        const exactLevel3 = levelHeaders.find(el => {
-          const text = (el.textContent || '').trim();
-          return text.includes('等级 3') || text.includes('等级3');
+      // Method 2: Use nth level header if available
+      if (levelHeaders.length >= userLevel) {
+        const levelHeader = levelHeaders[userLevel - 1];
+        const rect = levelHeader.getBoundingClientRect();
+        return rect.top + window.scrollY - 100;
+      }
+      
+      // Method 3: Exercise-based estimation
+      const exerciseElements = Array.from(document.querySelectorAll('button, div'))
+        .filter(el => {
+          const rect = el.getBoundingClientRect();
+          return rect.width > 40 && rect.width < 100 && rect.height > 40 && rect.height < 100;
         });
-        
-        if (exactLevel3) {
-          const rect = exactLevel3.getBoundingClientRect();
-          targetPosition = rect.top + window.scrollY - 100;
-          console.log('🔴 Found exact level 3 header, position:', targetPosition);
-        }
-        
-        // Method 2: Use the 3rd level header if we have enough headers
-        else if (levelHeaders.length >= 3) {
-          const thirdLevelHeader = levelHeaders[2]; // Index 2 for 3rd level
-          const rect = thirdLevelHeader.getBoundingClientRect();
-          targetPosition = rect.top + window.scrollY - 100;
-          console.log('🔴 Using 3rd level header, position:', targetPosition);
-        }
-        
-        // Method 3: Look for exercise containers and estimate level 3 position
-        else {
-          // Count exercise elements (circles with stars) to estimate positions
-          const exerciseElements = Array.from(document.querySelectorAll('button, div'))
-            .filter(el => {
-              const rect = el.getBoundingClientRect();
-              return rect.width > 40 && rect.width < 100 && rect.height > 40 && rect.height < 100;
-            });
-          
-          console.log('🔴 Found', exerciseElements.length, 'exercise elements');
-          
-          // Assume ~10 exercises per level, so level 3 starts around exercise 21
-          if (exerciseElements.length >= 21) {
-            const level3StartExercise = exerciseElements[20]; // 21st exercise (index 20)
-            const rect = level3StartExercise.getBoundingClientRect();
-            targetPosition = rect.top + window.scrollY - 200;
-            console.log('🔴 Using exercise-based estimation, position:', targetPosition);
-          } else {
-            // Fallback: Level 3 at 35% down the page
-            targetPosition = Math.floor(pageHeight * 0.35);
-            console.log('🔴 Using mathematical fallback, position:', targetPosition);
-          }
-        }
-        
-        // Execute the scroll
-        if (targetPosition !== null) {
-          const finalPosition = Math.max(0, targetPosition);
-          console.log('🔴 Scrolling to final position:', finalPosition);
-          
-          window.scrollTo({ top: finalPosition, behavior: 'smooth' });
-          
-          setTimeout(() => {
-            window.scrollTo({ top: finalPosition, behavior: 'auto' });
-            console.log('🔴 Backup scroll completed');
-          }, 400);
-        }
-      }, 50); // Small delay to override conflicting scrolls
+      
+      const exercisesPerLevel = 10;
+      const estimatedExerciseIndex = (userLevel - 1) * exercisesPerLevel;
+      
+      if (exerciseElements.length > estimatedExerciseIndex) {
+        const targetExercise = exerciseElements[estimatedExerciseIndex];
+        const rect = targetExercise.getBoundingClientRect();
+        return rect.top + window.scrollY - 200;
+      }
+      
+      // Fallback: Mathematical estimation
+      const pageHeight = document.body.scrollHeight;
+      return Math.floor(pageHeight * (userLevel / 10) * 0.8);
     };
     
-    // Add simple, direct event handlers
-    button.onclick = (e) => {
-      console.log('🔴 ONCLICK EVENT FIRED!');
-      handleClick(e);
+    const scrollToUserLevel = () => {
+      const targetPosition = findUserLevelPosition(user.level);
+      
+      if (targetPosition !== null) {
+        const finalPosition = Math.max(0, targetPosition);
+        window.scrollTo({ top: finalPosition, behavior: 'smooth' });
+        
+        // Backup scroll to ensure positioning
+        setTimeout(() => {
+          window.scrollTo({ top: finalPosition, behavior: 'auto' });
+        }, 400);
+      }
     };
     
-    button.addEventListener('click', (e) => {
-      console.log('🔴 CLICK LISTENER FIRED!');
-      handleClick(e);
-    });
+    const handleButtonClick = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Delay execution to override any conflicting scrolls
+      setTimeout(scrollToUserLevel, 50);
+    };
     
-    button.addEventListener('touchstart', (e) => {
-      console.log('🔴 TOUCHSTART FIRED!');
-      button.style.setProperty('background-color', '#1ea84b', 'important'); // 更深的绿色表示按下
+    const button = createFloatingNavButton();
+    
+    // Event handlers
+    button.addEventListener('click', handleButtonClick);
+    
+    button.addEventListener('touchstart', () => {
+      button.style.setProperty('background-color', '#1ea84b', 'important');
     });
     
     button.addEventListener('touchend', (e) => {
-      console.log('🔴 TOUCHEND FIRED!');
-      button.style.setProperty('background-color', '#22c55e', 'important'); // 恢复正常绿色
-      handleClick(e);
+      button.style.setProperty('background-color', '#22c55e', 'important');
+      handleButtonClick(e);
     });
     
-    // Add to page first
+    // Add button to DOM
     document.body.appendChild(button);
-    console.log('🔴 Button added to DOM');
-    
-    // Test button immediately to verify it works
-    setTimeout(() => {
-      console.log('🔴 Testing button programmatically...');
-      button.click();
-    }, 1000);
     
     // Cleanup function
     return () => {
@@ -346,10 +310,7 @@ export default function Levels() {
         return true;
       }
       
-      // Debug skip challenge completion
-      if (exercise.level === 3) {
-        console.log(`Level 3 Exercise ${exercise.exerciseNumber}: levelCompleted=${levelCompleted}, isCompleted=${isCompleted}`);
-      }
+
       
       // Only check override if the exercise isn't already completed in the database
       if (isCompleted) {
