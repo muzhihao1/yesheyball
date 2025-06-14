@@ -154,48 +154,69 @@ export default function Levels() {
       -webkit-tap-highlight-color: transparent !important;
     `;
     
-    // Add multiple click handlers to ensure detection
+    // Add robust click handler with delayed execution
     const handleClick = (e: any) => {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       console.log('🔴 CLICK DETECTED - User level:', user.level);
       
-      // More specific search for level 3 elements
-      const allElements = Array.from(document.querySelectorAll('*'));
-      let targetElement = null;
+      // Force prevent any default browser behavior
+      if (e.type === 'touchend') {
+        e.preventDefault();
+      }
       
-      // Look for different variations of level 3 text
-      const searchTexts = [
-        `等级 ${user.level} •`,
-        `等级${user.level}`,
-        `Level ${user.level}`,
-        `第${user.level}组`,
-        `${user.level}`
-      ];
-      
-      for (const searchText of searchTexts) {
-        for (const el of allElements) {
-          const text = el.textContent || '';
-          if (text.includes(searchText) && el.getBoundingClientRect().height > 10) {
-            targetElement = el;
-            console.log('🔴 Found target with text:', searchText);
-            break;
+      // Use setTimeout to ensure our scroll happens after any conflicting scrolls
+      setTimeout(() => {
+        console.log('🔴 Delayed scroll execution starting...');
+        
+        // More specific search for level 3 elements
+        const allElements = Array.from(document.querySelectorAll('*'));
+        let targetElement = null;
+        
+        // Look for different variations of level 3 text
+        const searchTexts = [
+          `等级 ${user.level} •`,
+          `等级${user.level}`,
+          `Level ${user.level}`,
+          `第${user.level}组`,
+          `${user.level}`
+        ];
+        
+        for (const searchText of searchTexts) {
+          for (const el of allElements) {
+            const text = el.textContent || '';
+            if (text.includes(searchText) && el.getBoundingClientRect().height > 10) {
+              targetElement = el;
+              console.log('🔴 Found target with text:', searchText);
+              break;
+            }
           }
+          if (targetElement) break;
         }
-        if (targetElement) break;
-      }
-      
-      if (targetElement) {
-        const rect = targetElement.getBoundingClientRect();
-        const scrollY = window.scrollY + rect.top - 100;
-        window.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' });
-        console.log('🔴 Scrolled to level', user.level);
-      } else {
-        console.log('🔴 Level not found, scrolling to middle of page');
-        // Scroll to middle section where level 3 should be
-        const scrollTarget = document.body.scrollHeight * 0.5;
-        window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-      }
+        
+        if (targetElement) {
+          const rect = targetElement.getBoundingClientRect();
+          const currentScroll = window.scrollY;
+          const targetScroll = currentScroll + rect.top - 100;
+          console.log('🔴 Current scroll:', currentScroll, 'Target scroll:', targetScroll);
+          
+          // Force scroll multiple times to override any conflicting behavior
+          window.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+          
+          // Backup immediate scroll
+          setTimeout(() => {
+            window.scrollTo({ top: Math.max(0, targetScroll), behavior: 'auto' });
+            console.log('🔴 Backup scroll executed');
+          }, 100);
+          
+          console.log('🔴 Scrolled to level', user.level);
+        } else {
+          console.log('🔴 Level not found, scrolling to middle of page');
+          const scrollTarget = document.body.scrollHeight * 0.4;
+          window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+        }
+      }, 50); // Small delay to override conflicting scrolls
     };
     
     // Add comprehensive event handlers
