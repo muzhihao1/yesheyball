@@ -337,10 +337,13 @@ export default function Levels() {
       const exercises = user.completedExercises as Record<string, number>;
       const levelCompleted = exercises[exercise.level.toString()] || 0;
       const isCompleted = exercise.exerciseNumber <= levelCompleted;
-      
-
-      
       return isCompleted;
+    }
+    
+    // Check based on level stage progress
+    const stage = levelStages.find(s => s.level === exercise.level);
+    if (stage) {
+      return exercise.exerciseNumber <= stage.completedExercises;
     }
     
     return exercise.completed;
@@ -981,6 +984,7 @@ export default function Levels() {
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
                     const isCurrentExercise = exerciseIndex === stage.completedExercises; // Next exercise to complete
+                    const isThisExerciseCompleted = exerciseIndex < stage.completedExercises || isExerciseCompleted(exercise);
                     
                     // Position exercises - first 4 further to the left
                     let paddingLeft = 60; // Move milestone center position to the left
@@ -1036,7 +1040,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
-                                            : isExerciseCompleted(exercise)
+                                            : isThisExerciseCompleted
                                               ? levelColors.node.includes('emerald') ? '#059669'
                                                 : levelColors.node.includes('blue') ? '#2563EB' 
                                                 : levelColors.node.includes('purple') ? '#7C3AED'
@@ -1057,7 +1061,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
-                                            : isExerciseCompleted(exercise)
+                                            : isThisExerciseCompleted
                                               ? levelColors.node.includes('emerald') ? '#10B981'
                                                 : levelColors.node.includes('blue') ? '#3B82F6' 
                                                 : levelColors.node.includes('purple') ? '#8B5CF6'
