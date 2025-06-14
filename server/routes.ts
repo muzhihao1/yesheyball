@@ -170,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const user = await storage.getUser(1);
+      const user = await storage.getUser("1");
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -183,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user training streak data
   app.get("/api/user/streak", async (req, res) => {
     try {
-      const userId = 1;
+      const userId = "1";
       const sessions = await storage.getUserTrainingSessions(userId);
       const completedSessions = sessions.filter(s => s.completed);
       
@@ -200,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user streak
   app.post("/api/user/streak", async (req, res) => {
     try {
-      const user = await storage.updateUserStreak(1);
+      const user = await storage.updateUserStreak("1");
       res.json(user);
     } catch (error) {
       res.status(500).json({ message: "Failed to update streak" });
@@ -274,14 +274,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userTask = await storage.completeUserTask(parseInt(id), rating);
-      const user = await storage.getUser(1);
+      const user = await storage.getUser("1");
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
       // Get task details for AI feedback
-      const allUserTasks = await storage.getUserTasks(1);
+      const allUserTasks = await storage.getUserTasks("1");
       const taskData = allUserTasks.find(ut => ut.id === parseInt(id));
       
       if (!taskData) {
@@ -319,7 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get diary entries
   app.get("/api/diary", async (req, res) => {
     try {
-      const entries = await storage.getDiaryEntries(1);
+      const entries = await storage.getDiaryEntries("1");
       res.json(entries);
     } catch (error) {
       res.status(500).json({ message: "Failed to get diary entries" });
@@ -345,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Award experience and update user progress if this is an exercise completion
       if (exerciseCompleted && rating) {
-        const user = await storage.getUser(1);
+        const user = await storage.getUser("1");
         if (user) {
           // Extract exercise info from diary content
           const exerciseMatch = content.match(/第(\d+)题练习/);
@@ -379,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const levelInfo = calculateUserLevel(newExp);
               
               // Update user data with sequential progression
-              await storage.updateUser(1, {
+              await storage.updateUser("1", {
                 exp: newExp,
                 level: levelInfo.level,
                 completedTasks: newCompletedTasks,
@@ -392,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Just award experience for practice, don't update sequential progression
               const levelInfo = calculateUserLevel(newExp);
               
-              await storage.updateUser(1, {
+              await storage.updateUser("1", {
                 exp: newExp,
                 level: levelInfo.level,
                 completedTasks: newCompletedTasks
@@ -411,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (content && content.length > 10) {
         setImmediate(async () => {
           try {
-            const user = await storage.getUser(1);
+            const user = await storage.getUser("1");
             if (user) {
               const insights = await generateDiaryInsights(content, user.level, user.completedTasks);
               // You could save insights as feedback or return them directly
@@ -544,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Training session routes
   app.get("/api/training-sessions", async (req, res) => {
     try {
-      const sessions = await storage.getUserTrainingSessions(1);
+      const sessions = await storage.getUserTrainingSessions("1");
       res.json(sessions);
     } catch (error) {
       res.status(500).json({ message: "Failed to get training sessions" });
@@ -870,7 +870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const sessions = await storage.getUserTrainingSessions(1);
+      const sessions = await storage.getUserTrainingSessions("1");
       const completedSessions = sessions.filter(s => s.completed).map(s => ({
         id: s.id,
         userId: s.userId,
@@ -1045,13 +1045,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user statistics
   app.get("/api/user/stats", async (req, res) => {
     try {
-      const user = await storage.getUser(1);
+      const user = await storage.getUser("1");
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const diaryEntries = await storage.getDiaryEntries(1);
-      const userTasks = await storage.getUserTasks(1);
+      const diaryEntries = await storage.getDiaryEntries("1");
+      const userTasks = await storage.getUserTasks("1");
       const completedTasks = userTasks.filter(ut => ut.completed);
 
       const stats = {
