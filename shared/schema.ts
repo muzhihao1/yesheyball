@@ -1,11 +1,27 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Updated users table for Replit Auth
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
+  id: varchar("id").primaryKey().notNull(), // Changed to varchar for Replit user IDs
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  username: text("username").unique(), // Keep for backwards compatibility
   level: integer("level").notNull().default(1),
   exp: integer("exp").notNull().default(0),
   streak: integer("streak").notNull().default(0),
@@ -33,7 +49,7 @@ export const tasks = pgTable("tasks", {
 
 export const userTasks = pgTable("user_tasks", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   taskId: integer("task_id").notNull().references(() => tasks.id),
   rating: integer("rating"), // 1-5 stars
   completed: boolean("completed").notNull().default(false),
@@ -43,7 +59,7 @@ export const userTasks = pgTable("user_tasks", {
 
 export const diaryEntries = pgTable("diary_entries", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   content: text("content").notNull(),
   duration: integer("duration"), // in minutes
   rating: integer("rating"), // 1-5 stars
@@ -54,7 +70,7 @@ export const diaryEntries = pgTable("diary_entries", {
 
 export const feedbacks = pgTable("feedbacks", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   taskId: integer("task_id").references(() => tasks.id),
   content: text("content").notNull(), // AI generated feedback
   rating: integer("rating"), // Task performance rating
@@ -84,7 +100,7 @@ export const trainingDays = pgTable("training_days", {
 
 export const trainingSessions = pgTable("training_sessions", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   programId: integer("program_id").references(() => trainingPrograms.id),
   dayId: integer("day_id").references(() => trainingDays.id),
   title: text("title").notNull(),
@@ -121,7 +137,7 @@ export const achievements = pgTable("achievements", {
 
 export const userAchievements = pgTable("user_achievements", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   achievementId: integer("achievement_id").notNull().references(() => achievements.id),
   unlockedAt: timestamp("unlocked_at").notNull().defaultNow(),
   progress: integer("progress").notNull().default(0),
@@ -129,7 +145,11 @@ export const userAchievements = pgTable("user_achievements", {
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
+  createdAt: true,
+  lastActiveAt: true,
+});
+
+export const upsertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   lastActiveAt: true,
 });
@@ -173,6 +193,7 @@ export const insertTrainingNoteSchema = createInsertSchema(trainingNotes).omit({
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type UserTask = typeof userTasks.$inferSelect;
