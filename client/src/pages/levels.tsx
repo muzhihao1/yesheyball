@@ -701,14 +701,8 @@ export default function Levels() {
   const handleAbortPractice = () => {
     setIsPracticing(false);
     setPracticeTime(0);
-    // 放弃练习后恢复到已完成状态
-    if (selectedExercise) {
-      const overrideKey = `${selectedExercise.level}-${selectedExercise.exerciseNumber}`;
-      setExerciseOverride(prev => ({
-        ...prev,
-        [overrideKey]: true
-      }));
-    }
+    // 放弃练习不改变完成状态，保持原有状态
+    // 不设置任何override，让系统使用原始的完成状态
   };
 
   const handleResetPractice = () => {
@@ -1069,7 +1063,7 @@ export default function Levels() {
                     const isUnlocked = stage.unlocked && (
                       (user && user.level > stage.level) || // 如果用户等级超过当前关卡，所有练习都解锁
                       exerciseIndex === 0 || // 第一个练习总是解锁
-                      (exerciseIndex <= currentLevelCompleted) // 已完成的练习及下一个练习解锁
+                      (exerciseIndex <= currentLevelCompleted + 1) // 已完成的练习及下一个练习解锁
                     );
                     const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
