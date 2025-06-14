@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 import Landing from "@/pages/Landing";
-import Home from "@/pages/Home";
+import Home from "@/pages/home";
 import Levels from "@/pages/levels-new";
 import Tasks from "@/pages/tasks";
 import Ranking from "@/pages/ranking";
