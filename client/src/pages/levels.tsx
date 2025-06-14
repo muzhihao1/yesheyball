@@ -867,9 +867,6 @@ export default function Levels() {
     try {
       // Generate challenge questions using actual exercises from the target level
       const targetLevelExercises = generateExercisesForLevel(skipToLevel);
-      console.log('🟡 Skip challenge - target level:', skipToLevel);
-      console.log('🟡 Skip challenge - exercises generated:', targetLevelExercises.length);
-      console.log('🟡 Skip challenge - first exercise:', targetLevelExercises[0]);
       
       const challengeQuestions = targetLevelExercises.slice(0, 3).map((exercise, index) => ({
         id: exercise.id,
@@ -884,9 +881,6 @@ export default function Levels() {
         correctAnswer: 0, // First option is correct - confident completion
         explanation: `${exercise.title}: ${exercise.description}`
       }));
-      
-      console.log('🟡 Skip challenge - challenge questions generated:', challengeQuestions.length);
-      console.log('🟡 Skip challenge - first question:', challengeQuestions[0]);
       
       setSkipChallengeQuestions(challengeQuestions);
       setCurrentSkipQuestion(0);
@@ -1642,53 +1636,53 @@ export default function Levels() {
 
       {/* Skip Level Challenge Test Dialog */}
       <Dialog open={showSkipChallenge} onOpenChange={setShowSkipChallenge}>
-        <DialogContent className="max-w-2xl mx-auto">
+        <DialogContent className="max-w-4xl mx-auto max-h-[95vh] overflow-y-auto w-[95vw] p-4 md:p-6">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl font-bold text-orange-600">
+            <DialogTitle className="text-center text-lg md:text-xl font-bold text-orange-600">
               跳级挑战测试
             </DialogTitle>
-            <DialogDescription className="text-center mt-2">
+            <DialogDescription className="text-center mt-2 text-sm md:text-base">
               题目 {currentSkipQuestion + 1} / {skipChallengeQuestions.length}
             </DialogDescription>
           </DialogHeader>
           
           {skipChallengeQuestions.length > 0 && (
-            <div className="py-6">
-              <div className="bg-orange-50 rounded-lg p-6 mb-6">
-                <h3 className="font-semibold text-lg text-gray-800 mb-4">
+            <div className="py-4 md:py-6">
+              <div className="bg-orange-50 rounded-lg p-4 md:p-6 mb-4 md:mb-6">
+                <h3 className="font-semibold text-base md:text-lg text-gray-800 mb-4">
                   {skipChallengeQuestions[currentSkipQuestion]?.question}
                 </h3>
                 
                 {/* Display actual exercise image and details */}
                 {skipChallengeQuestions[currentSkipQuestion]?.exercise && (
-                  <div className="mb-6">
-                    <div className="bg-white rounded-lg p-4 mb-4">
+                  <div className="mb-4 md:mb-6">
+                    <div className="bg-white rounded-lg p-3 md:p-4 mb-4">
                       <img 
                         src={skipChallengeQuestions[currentSkipQuestion].exercise.imageUrl}
                         alt={skipChallengeQuestions[currentSkipQuestion].exercise.title}
-                        className="w-full h-64 object-cover rounded-lg mb-4"
+                        className="w-full h-48 md:h-64 object-cover rounded-lg mb-4"
                         style={getCroppingStyle(skipChallengeQuestions[currentSkipQuestion].exercise)}
                       />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-3 md:gap-4">
                         <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg">
-                          <h4 className="font-bold text-blue-700 mb-2">题目说明</h4>
-                          <p className="text-gray-700 text-sm">{skipChallengeQuestions[currentSkipQuestion].exercise.description}</p>
+                          <h4 className="font-bold text-blue-700 mb-2 text-sm md:text-base">题目说明</h4>
+                          <p className="text-gray-700 text-xs md:text-sm leading-relaxed">{skipChallengeQuestions[currentSkipQuestion].exercise.description}</p>
                         </div>
                         <div className="bg-orange-50 border-l-4 border-orange-500 p-3 rounded-r-lg">
-                          <h4 className="font-bold text-orange-700 mb-2">过关要求</h4>
-                          <p className="text-gray-700 text-sm">{skipChallengeQuestions[currentSkipQuestion].exercise.requirement}</p>
+                          <h4 className="font-bold text-orange-700 mb-2 text-sm md:text-base">过关要求</h4>
+                          <p className="text-gray-700 text-xs md:text-sm leading-relaxed">{skipChallengeQuestions[currentSkipQuestion].exercise.requirement}</p>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
                 
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                   {skipChallengeQuestions[currentSkipQuestion]?.options.map((option: string, index: number) => (
                     <button
                       key={index}
                       onClick={() => handleSkipChallengeAnswer(index)}
-                      className={`w-full text-left p-4 rounded-lg border transition-all ${
+                      className={`w-full text-left p-3 md:p-4 rounded-lg border transition-all text-sm md:text-base ${
                         skipChallengeAnswers[currentSkipQuestion] === index.toString()
                           ? 'border-orange-500 bg-orange-100 text-orange-800'
                           : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
@@ -1702,14 +1696,14 @@ export default function Levels() {
               </div>
               
               <div className="text-center">
-                <div className="text-sm text-gray-500 mb-4">
+                <div className="text-xs md:text-sm text-gray-500 mb-4">
                   请选择正确答案后点击继续
                 </div>
                 
                 <Button 
                   onClick={handleSkipChallengeNext}
                   disabled={!skipChallengeAnswers[currentSkipQuestion]}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-8"
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
                 >
                   {currentSkipQuestion < skipChallengeQuestions.length - 1 ? '下一题' : '完成挑战'}
                 </Button>
