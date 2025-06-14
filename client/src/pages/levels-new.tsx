@@ -145,18 +145,86 @@ export default function Levels() {
       
       button.setAttribute('style', styles);
       
-      // Add click handler with simple scroll logic
+      // Add click handler to find current level
       button.addEventListener('click', () => {
-        console.log('🔴 Button clicked');
+        console.log('🔴 Button clicked, finding current level');
         
-        // Simple scroll to the middle of the page where current level likely is
-        const scrollTarget = window.innerHeight * 0.8;
-        window.scrollTo({ 
-          top: scrollTarget, 
-          behavior: 'smooth' 
-        });
+        if (!user) {
+          console.log('🔴 No user data, scrolling to top');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
         
-        console.log('🔴 Scrolled to middle section');
+        // 查找当前用户等级对应的第一个可解锁/可点击的练习
+        let targetElement = null;
+        
+        // 方法1: 查找带有绿色高亮边框的元素（当前关卡标识）
+        const highlightedElements = document.querySelectorAll('.ring-4, .ring-green-400, .border-green-400, .border-4');
+        if (highlightedElements.length > 0) {
+          targetElement = highlightedElements[0];
+          console.log('🔴 Found highlighted current level element');
+        }
+        
+        // 方法2: 查找第一个未锁定的练习节点
+        if (!targetElement) {
+          const allNodes = document.querySelectorAll('div');
+          for (const node of allNodes) {
+            const rect = node.getBoundingClientRect();
+            if (rect.height > 50 && rect.width > 50) { // 合理大小的元素
+              const hasClickHandler = node.getAttribute('onclick') || node.style.cursor === 'pointer';
+              const isNotLocked = !node.textContent?.includes('🔒');
+              const isVisible = rect.top >= 0;
+              
+              if (hasClickHandler && isNotLocked && isVisible) {
+                targetElement = node;
+                console.log('🔴 Found unlocked exercise node');
+                break;
+              }
+            }
+          }
+        }
+        
+        // 方法3: 备用方案 - 寻找等级标题
+        if (!targetElement) {
+          const allElements = document.querySelectorAll('*');
+          for (const el of allElements) {
+            if (el.textContent?.includes(`等级 ${user.level}`) || el.textContent?.includes(`Level ${user.level}`)) {
+              const rect = el.getBoundingClientRect();
+              if (rect.height > 0) {
+                targetElement = el;
+                console.log('🔴 Found level title element');
+                break;
+              }
+            }
+          }
+        }
+        
+        if (targetElement) {
+          console.log('🔴 Scrolling to target element');
+          targetElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+          
+          // 添加绿色高亮提示效果
+          if (targetElement instanceof HTMLElement) {
+            const originalBoxShadow = targetElement.style.boxShadow;
+            targetElement.style.boxShadow = '0 0 20px rgba(34, 197, 94, 0.8)';
+            targetElement.style.transition = 'box-shadow 0.3s ease';
+            
+            setTimeout(() => {
+              targetElement.style.boxShadow = originalBoxShadow;
+            }, 1500);
+          }
+        } else {
+          console.log('🔴 No current level found, scrolling to active area');
+          // 滚动到页面的活跃练习区域
+          const scrollPosition = Math.min(document.documentElement.scrollHeight * 0.3, 800);
+          window.scrollTo({ 
+            top: scrollPosition, 
+            behavior: 'smooth' 
+          });
+        }
       });
       
       // Add hover effects
