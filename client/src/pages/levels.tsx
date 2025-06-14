@@ -396,7 +396,12 @@ export default function Levels() {
       completedExercises: (() => {
         if (!user.completedExercises) return 0;
         const exercises = user.completedExercises as Record<string, number>;
-        return exercises['1'] || 0;
+        const currentProgress = exercises['1'] || 0;
+        // If user has any progress in this level or higher levels, unlock more exercises
+        if (user.level > 1 || currentProgress > 0) {
+          return Math.max(currentProgress, 1); // At minimum unlock first exercise if any progress
+        }
+        return currentProgress;
       })()
     },
     {
@@ -966,11 +971,11 @@ export default function Levels() {
                 <div className="relative">
                   {exercises.map((exercise, exerciseIndex) => {
                     const positionInGroup = exerciseIndex % 5; // 0-4 within each group
-                    // 练习解锁逻辑：必须按顺序完成
+                    // 练习解锁逻辑：完成任何练习后，所有之前的练习都解锁
                     const isUnlocked = stage.unlocked && (
-                      exerciseIndex === 0 || // 第一个练习总是解锁的
-                      (exerciseIndex < stage.completedExercises) || // 已完成的练习
-                      (exerciseIndex === stage.completedExercises) // 下一个待完成的练习
+                      exerciseIndex <= stage.completedExercises || // 所有已完成的练习及之前的练习都解锁
+                      (user && user.level > stage.level) || // 如果用户等级超过当前关卡，所有练习都解锁
+                      (stage.completedExercises > 0 && exerciseIndex === 0) // 如果有任何完成进度，至少解锁第一个练习
                     );
                     const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
