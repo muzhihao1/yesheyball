@@ -672,9 +672,10 @@ export default function Levels() {
       {/* 返回当前关卡浮动按钮 */}
       <button
         onClick={scrollToCurrentLevel}
-        className="fixed bottom-20 right-4 z-50 w-12 h-12 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:shadow-xl transition-shadow duration-200"
+        className="fixed bottom-24 right-6 z-[9999] w-12 h-12 bg-white rounded-xl shadow-2xl border border-gray-300 flex items-center justify-center hover:shadow-xl transition-all duration-200 hover:scale-105"
+        style={{ position: 'fixed' }}
       >
-        <ArrowUp className="w-6 h-6 text-blue-500" />
+        <ArrowUp className="w-5 h-5 text-blue-600" />
       </button>
     </div>
   );
