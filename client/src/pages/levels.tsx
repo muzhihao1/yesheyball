@@ -133,11 +133,11 @@ export default function Levels() {
     button.style.right = '20px';
     button.style.width = '60px';
     button.style.height = '60px';
-    button.style.backgroundColor = '#22c55e';
-    button.style.color = 'white';
-    button.style.border = '3px solid white';
-    button.style.borderRadius = '50%';
-    button.style.boxShadow = '0 8px 25px rgba(34, 197, 94, 0.5)';
+    button.style.setProperty('background-color', '#22c55e', 'important');
+    button.style.setProperty('color', 'white', 'important');
+    button.style.setProperty('border', '3px solid white', 'important');
+    button.style.setProperty('border-radius', '50%', 'important');
+    button.style.setProperty('box-shadow', '0 8px 25px rgba(34, 197, 94, 0.5)', 'important');
     button.style.display = 'flex';
     button.style.alignItems = 'center';
     button.style.justifyContent = 'center';
