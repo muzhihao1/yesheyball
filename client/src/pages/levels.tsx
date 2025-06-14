@@ -389,9 +389,15 @@ export default function Levels() {
         {/* 垂直滚动的关卡路径 */}
         <div className="space-y-8">
           {levelStages.map((stage, stageIndex) => (
-            <div key={stage.level} className="relative">
+            <div 
+              key={stage.level} 
+              className="relative"
+              ref={stage.level === user.level ? currentLevelRef : null}
+            >
               {/* 等级标题卡片 */}
-              <div className={`bg-gradient-to-r ${getCategoryColor(stage.category)} rounded-lg p-4 mb-6 text-white shadow-lg`}>
+              <div className={`bg-gradient-to-r ${getCategoryColor(stage.category)} rounded-lg p-4 mb-6 text-white shadow-lg ${
+                stage.level === user.level ? 'ring-4 ring-yellow-400 ring-opacity-50' : ''
+              }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="text-2xl">{getCategoryIcon(stage.category)}</span>
@@ -662,6 +668,20 @@ export default function Levels() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* 返回当前关卡浮动按钮 */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={scrollToCurrentLevel}
+          className="bg-green-600 hover:bg-green-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110"
+          size="lg"
+        >
+          <div className="flex items-center space-x-2">
+            <Target className="w-5 h-5" />
+            <span className="hidden sm:inline">回到当前关卡</span>
+          </div>
+        </Button>
+      </div>
     </div>
   );
 }
