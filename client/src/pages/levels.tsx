@@ -150,23 +150,35 @@ export default function Levels() {
       outline: none !important;
     `;
     
-    // Add click handler
-    button.addEventListener('click', (e: any) => {
+    // Add multiple click handlers to ensure detection
+    const handleClick = (e: any) => {
       e.preventDefault();
       e.stopPropagation();
       console.log('🔴 CLICK DETECTED - User level:', user.level);
       
-      // Find level header for current user level
-      const elements = document.querySelectorAll('*');
+      // More specific search for level 3 elements
+      const allElements = Array.from(document.querySelectorAll('*'));
       let targetElement = null;
       
-      for (let i = 0; i < elements.length; i++) {
-        const el = elements[i];
-        const text = el.textContent || '';
-        if (text.includes(`等级 ${user.level} •`)) {
-          targetElement = el;
-          break;
+      // Look for different variations of level 3 text
+      const searchTexts = [
+        `等级 ${user.level} •`,
+        `等级${user.level}`,
+        `Level ${user.level}`,
+        `第${user.level}组`,
+        `${user.level}`
+      ];
+      
+      for (const searchText of searchTexts) {
+        for (const el of allElements) {
+          const text = el.textContent || '';
+          if (text.includes(searchText) && el.getBoundingClientRect().height > 10) {
+            targetElement = el;
+            console.log('🔴 Found target with text:', searchText);
+            break;
+          }
         }
+        if (targetElement) break;
       }
       
       if (targetElement) {
@@ -175,10 +187,18 @@ export default function Levels() {
         window.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' });
         console.log('🔴 Scrolled to level', user.level);
       } else {
-        console.log('🔴 Level not found');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        console.log('🔴 Level not found, scrolling to middle of page');
+        // Scroll to middle section where level 3 should be
+        const scrollTarget = document.body.scrollHeight * 0.5;
+        window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
       }
-    });
+    };
+    
+    // Add multiple event listeners
+    button.onclick = handleClick;
+    button.addEventListener('click', handleClick, true);
+    button.addEventListener('touchstart', handleClick);
+    button.addEventListener('mousedown', handleClick);
     
     // Add to page
     document.body.appendChild(button);
