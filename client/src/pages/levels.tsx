@@ -1087,7 +1087,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
-                                            : isExerciseCompleted(exercise) 
+                                            : isThisExerciseCompleted 
                                               ? levelColors.node.includes('emerald') ? '#34D399'
                                                 : levelColors.node.includes('blue') ? '#60A5FA' 
                                                 : levelColors.node.includes('purple') ? '#A78BFA'
@@ -1108,7 +1108,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#9CA3AF' 
-                                            : isExerciseCompleted(exercise) 
+                                            : isThisExerciseCompleted 
                                               ? levelColors.node.includes('emerald') ? '#34D399'
                                                 : levelColors.node.includes('blue') ? '#60A5FA' 
                                                 : levelColors.node.includes('purple') ? '#A78BFA'
@@ -1128,7 +1128,7 @@ export default function Levels() {
                                         fill={
                                           !isUnlocked 
                                             ? '#6B7280' 
-                                            : isExerciseCompleted(exercise)
+                                            : isThisExerciseCompleted
                                               ? levelColors.node.includes('emerald') ? '#059669'
                                                 : levelColors.node.includes('blue') ? '#2563EB' 
                                                 : levelColors.node.includes('purple') ? '#7C3AED'
