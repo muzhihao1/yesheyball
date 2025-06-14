@@ -128,15 +128,15 @@ export default function Levels() {
         'width: 48px',
         'height: 48px',
         'background: white',
-        'border: 2px solid #3b82f6',
+        'border: 2px solid #22c55e',
         'border-radius: 12px',
-        'box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3)',
+        'box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3)',
         'display: flex',
         'align-items: center',
         'justify-content: center',
-        'font-size: 20px',
-        'color: #3b82f6',
-        'font-weight: 600',
+        'font-size: 24px',
+        'color: #22c55e',
+        'font-weight: 800',
         'cursor: pointer',
         'z-index: 999999',
         'transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -153,38 +153,66 @@ export default function Levels() {
           // 方法1: 尝试通过data-level属性找到元素
           let targetElement = document.querySelector(`[data-level="${user.level}"]`);
           
-          // 方法2: 如果没找到，尝试查找包含当前等级的元素
+          // 方法2: 查找当前用户等级对应的卡片(有高亮边框的)
           if (!targetElement) {
-            const levelTexts = document.querySelectorAll('*');
-            for (let el of levelTexts) {
-              if (el.textContent?.includes(`等级 ${user.level}`) || 
-                  el.textContent?.includes(`Level ${user.level}`)) {
-                targetElement = el;
+            targetElement = document.querySelector('.ring-4, .ring-yellow-400'); 
+          }
+          
+          // 方法3: 查找包含当前等级文本的元素
+          if (!targetElement) {
+            const allElements = Array.from(document.querySelectorAll('*'));
+            targetElement = allElements.find(el => 
+              el.textContent?.includes(`等级 ${user.level}`) || 
+              el.textContent?.includes(`Level ${user.level}`)
+            );
+          }
+          
+          // 方法4: 查找第一个可见的等级卡片
+          if (!targetElement) {
+            const levelCards = document.querySelectorAll('[class*="bg-gradient"], [class*="rounded-lg"]');
+            for (let card of levelCards) {
+              if (card.textContent?.includes('等级') && card.getBoundingClientRect().height > 0) {
+                targetElement = card;
                 break;
               }
             }
           }
           
-          // 方法3: 查找当前用户等级对应的卡片
-          if (!targetElement) {
-            targetElement = document.querySelector('.ring-4'); // 当前等级有ring-4样式
-          }
-          
           console.log('🔴 Target element found:', !!targetElement);
+          console.log('🔴 Target element:', targetElement);
+          console.log('🔴 Current scroll position:', window.scrollY);
           
           if (targetElement) {
+            const rect = targetElement.getBoundingClientRect();
+            console.log('🔴 Element position:', rect);
+            
             targetElement.scrollIntoView({ 
               behavior: 'smooth', 
               block: 'center',
               inline: 'nearest'
             });
             
-            // 添加高亮效果
-            targetElement.style.transition = 'transform 0.3s ease';
-            targetElement.style.transform = 'scale(1.05)';
+            // 强制滚动确保到达目标位置
             setTimeout(() => {
-              targetElement.style.transform = 'scale(1)';
-            }, 1000);
+              const elementTop = targetElement.offsetTop;
+              const offsetPosition = elementTop - (window.innerHeight / 2);
+              window.scrollTo({
+                top: Math.max(0, offsetPosition),
+                behavior: 'smooth'
+              });
+              console.log('🔴 Force scrolled to:', offsetPosition);
+            }, 100);
+            
+            // 添加高亮效果
+            if (targetElement instanceof HTMLElement) {
+              targetElement.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+              targetElement.style.transform = 'scale(1.05)';
+              targetElement.style.boxShadow = '0 0 20px rgba(37, 99, 235, 0.5)';
+              setTimeout(() => {
+                targetElement.style.transform = 'scale(1)';
+                targetElement.style.boxShadow = '';
+              }, 2000);
+            }
           } else {
             console.log('🔴 No target element found, scrolling to top');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -195,12 +223,12 @@ export default function Levels() {
       // Add hover effects
       button.addEventListener('mouseenter', () => {
         button.style.transform = 'scale(1.1) translateY(-2px) !important';
-        button.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.4) !important';
+        button.style.boxShadow = '0 8px 24px rgba(34, 197, 94, 0.4) !important';
       });
       
       button.addEventListener('mouseleave', () => {
         button.style.transform = 'scale(1) translateY(0) !important';
-        button.style.boxShadow = '0 4px 16px rgba(59, 130, 246, 0.3) !important';
+        button.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.3) !important';
       });
       
       // Add active/pressed effect
