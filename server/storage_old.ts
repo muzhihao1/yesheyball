@@ -39,8 +39,8 @@ export interface IStorage {
   getTrainingDay(programId: number, day: number): Promise<TrainingDay | undefined>;
   
   // Training session operations
-  getUserTrainingSessions(userId: string): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay })[]>;
-  getCurrentTrainingSession(userId: string): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay }) | undefined>;
+  getUserTrainingSessions(userId: number): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay })[]>;
+  getCurrentTrainingSession(userId: number): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay }) | undefined>;
   getTrainingSession(id: number): Promise<TrainingSession | undefined>;
   createTrainingSession(session: InsertTrainingSession): Promise<TrainingSession>;
   updateTrainingSession(id: number, updates: Partial<TrainingSession>): Promise<TrainingSession>;
@@ -49,15 +49,15 @@ export interface IStorage {
   
   // Training note operations
   getTrainingNotes(sessionId: number): Promise<TrainingNote[]>;
-  getAllTrainingNotes(userId: string): Promise<TrainingNote[]>;
+  getAllTrainingNotes(userId: number): Promise<TrainingNote[]>;
   createTrainingNote(note: InsertTrainingNote): Promise<TrainingNote>;
   
   // Achievement operations
   getAllAchievements(): Promise<Achievement[]>;
-  getUserAchievements(userId: string): Promise<(UserAchievement & { achievement: Achievement })[]>;
-  checkAndUnlockAchievements(userId: string): Promise<UserAchievement[]>;
-  unlockAchievement(userId: string, achievementId: number): Promise<UserAchievement>;
-  updateAchievementProgress(userId: string, achievementId: number, progress: number): Promise<void>;
+  getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]>;
+  checkAndUnlockAchievements(userId: number): Promise<UserAchievement[]>;
+  unlockAchievement(userId: number, achievementId: number): Promise<UserAchievement>;
+  updateAchievementProgress(userId: number, achievementId: number, progress: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -95,7 +95,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: string, updates: Partial<User>): Promise<User> {
+  async updateUser(id: number, updates: Partial<User>): Promise<User> {
     const [user] = await db
       .update(users)
       .set({ ...updates, lastActiveAt: new Date() })
@@ -104,7 +104,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserStreak(userId: string): Promise<User> {
+  async updateUserStreak(userId: number): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) throw new Error("User not found");
     
@@ -118,99 +118,115 @@ export class DatabaseStorage implements IStorage {
     
     let newStreak = user.streak;
     if (lastActive.getTime() === yesterday.getTime()) {
-      newStreak += 1;
-    } else if (lastActive.getTime() !== today.getTime()) {
+      newStreak = user.streak + 1;
+    } else if (lastActive.getTime() < yesterday.getTime()) {
       newStreak = 1;
     }
     
     return this.updateUser(userId, { 
       streak: newStreak,
-      totalDays: user.totalDays + (lastActive.getTime() !== today.getTime() ? 1 : 0)
+      totalDays: user.totalDays + (newStreak > user.streak ? 1 : 0)
     });
   }
 
   // Task operations
   async getAllTasks(): Promise<Task[]> {
-    return db.select().from(tasks);
+    return await db.select().from(tasks);
   }
 
   async getTasksByLevel(level: number): Promise<Task[]> {
-    return db.select().from(tasks).where(eq(tasks.level, level));
+    return await db.select().from(tasks).where(lte(tasks.level, level));
   }
 
-  async createTask(task: InsertTask): Promise<Task> {
-    const [newTask] = await db
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const [task] = await db
       .insert(tasks)
-      .values(task)
+      .values(insertTask)
       .returning();
-    return newTask;
+    return task;
   }
 
   // User task operations
-  async getUserTasks(userId: string): Promise<(UserTask & { task: Task })[]> {
-    const result = await db
+  async getUserTasks(userId: number): Promise<(UserTask & { task: Task })[]> {
+    return await db
       .select()
       .from(userTasks)
       .leftJoin(tasks, eq(userTasks.taskId, tasks.id))
       .where(eq(userTasks.userId, userId))
-      .orderBy(desc(userTasks.createdAt));
-      
-    return result.map(row => ({
-      ...row.user_tasks,
-      task: row.tasks!
-    }));
+      .then(results => results.map(({ user_tasks, tasks: task }) => ({
+        ...user_tasks,
+        task: task!
+      })));
   }
 
-  async getTodayUserTasks(userId: string): Promise<(UserTask & { task: Task })[]> {
+  async getTodayUserTasks(userId: number): Promise<(UserTask & { task: Task })[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
     
-    const result = await db
+    const todayTasks = await db
       .select()
       .from(userTasks)
       .leftJoin(tasks, eq(userTasks.taskId, tasks.id))
-      .where(
-        and(
-          eq(userTasks.userId, userId),
-          gte(userTasks.createdAt, today),
-          lte(userTasks.createdAt, tomorrow)
-        )
-      )
-      .orderBy(desc(userTasks.createdAt));
+      .where(and(
+        eq(userTasks.userId, userId),
+        gte(userTasks.createdAt, today)
+      ));
+    
+    // If no tasks for today, create 3 random tasks
+    if (todayTasks.length === 0) {
+      const user = await this.getUser(userId);
+      if (!user) throw new Error("User not found");
       
-    return result.map(row => ({
-      ...row.user_tasks,
-      task: row.tasks!
+      const availableTasks = await this.getTasksByLevel(user.level);
+      const shuffled = availableTasks.sort(() => 0.5 - Math.random());
+      const selectedTasks = shuffled.slice(0, 3);
+      
+      const newUserTasks = [];
+      for (const task of selectedTasks) {
+        const [userTask] = await db
+          .insert(userTasks)
+          .values({
+            userId,
+            taskId: task.id,
+            completed: false
+          })
+          .returning();
+        newUserTasks.push({ ...userTask, task });
+      }
+      return newUserTasks;
+    }
+    
+    return todayTasks.map(({ user_tasks, tasks: task }) => ({
+      ...user_tasks,
+      task: task!
     }));
   }
 
-  async createUserTask(userTask: InsertUserTask): Promise<UserTask> {
-    const [newUserTask] = await db
+  async createUserTask(insertUserTask: InsertUserTask): Promise<UserTask> {
+    const [userTask] = await db
       .insert(userTasks)
-      .values(userTask)
+      .values(insertUserTask)
       .returning();
-    return newUserTask;
+    return userTask;
   }
 
   async completeUserTask(id: number, rating: number): Promise<UserTask> {
     const [userTask] = await db
       .update(userTasks)
-      .set({ 
-        completed: true, 
+      .set({
+        completed: true,
         rating,
         completedAt: new Date()
       })
       .where(eq(userTasks.id, id))
       .returning();
-      
+    
     // Update user stats
     const user = await this.getUser(userTask.userId);
     if (user) {
-      await this.updateUser(userTask.userId, {
-        completedTasks: user.completedTasks + 1,
-        exp: user.exp + (rating * 10)
+      await this.updateUser(user.id, {
+        exp: user.exp + (rating * 5),
+        completedTasks: user.completedTasks + 1
       });
     }
     
@@ -218,33 +234,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Diary operations
-  async getDiaryEntries(userId: string): Promise<DiaryEntry[]> {
-    return db
+  async getDiaryEntries(userId: number): Promise<DiaryEntry[]> {
+    return await db
       .select()
       .from(diaryEntries)
       .where(eq(diaryEntries.userId, userId))
       .orderBy(desc(diaryEntries.date));
   }
 
-  async createDiaryEntry(entry: InsertDiaryEntry): Promise<DiaryEntry> {
-    const [newEntry] = await db
+  async createDiaryEntry(insertEntry: InsertDiaryEntry): Promise<DiaryEntry> {
+    const [entry] = await db
       .insert(diaryEntries)
-      .values(entry)
+      .values(insertEntry)
       .returning();
-    return newEntry;
+    return entry;
   }
 
   // Feedback operations
-  async createFeedback(feedback: InsertFeedback): Promise<Feedback> {
-    const [newFeedback] = await db
+  async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
+    const [feedback] = await db
       .insert(feedbacks)
-      .values(feedback)
+      .values(insertFeedback)
       .returning();
-    return newFeedback;
+    return feedback;
   }
 
-  async getUserFeedbacks(userId: string): Promise<Feedback[]> {
-    return db
+  async getUserFeedbacks(userId: number): Promise<Feedback[]> {
+    return await db
       .select()
       .from(feedbacks)
       .where(eq(feedbacks.userId, userId))
@@ -253,11 +269,14 @@ export class DatabaseStorage implements IStorage {
 
   // Training program operations
   async getAllTrainingPrograms(): Promise<TrainingProgram[]> {
-    return db.select().from(trainingPrograms);
+    return await db.select().from(trainingPrograms);
   }
 
   async getTrainingProgram(id: number): Promise<TrainingProgram | undefined> {
-    const [program] = await db.select().from(trainingPrograms).where(eq(trainingPrograms.id, id));
+    const [program] = await db
+      .select()
+      .from(trainingPrograms)
+      .where(eq(trainingPrograms.id, id));
     return program || undefined;
   }
 
@@ -271,7 +290,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTrainingDays(programId: number): Promise<TrainingDay[]> {
-    return db
+    return await db
       .select()
       .from(trainingDays)
       .where(eq(trainingDays.programId, programId))
@@ -282,68 +301,65 @@ export class DatabaseStorage implements IStorage {
     const [trainingDay] = await db
       .select()
       .from(trainingDays)
-      .where(
-        and(
-          eq(trainingDays.programId, programId),
-          eq(trainingDays.day, day)
-        )
-      );
+      .where(and(
+        eq(trainingDays.programId, programId),
+        eq(trainingDays.day, day)
+      ));
     return trainingDay || undefined;
   }
 
   // Training session operations
-  async getUserTrainingSessions(userId: string): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay })[]> {
-    const result = await db
+  async getUserTrainingSessions(userId: number): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay })[]> {
+    return await db
       .select()
       .from(trainingSessions)
       .leftJoin(trainingPrograms, eq(trainingSessions.programId, trainingPrograms.id))
       .leftJoin(trainingDays, eq(trainingSessions.dayId, trainingDays.id))
       .where(eq(trainingSessions.userId, userId))
-      .orderBy(desc(trainingSessions.createdAt));
-      
-    return result.map(row => ({
-      ...row.training_sessions,
-      program: row.training_programs || undefined,
-      day: row.training_days || undefined
-    }));
+      .orderBy(desc(trainingSessions.createdAt))
+      .then(results => results.map(({ training_sessions, training_programs, training_days }) => ({
+        ...training_sessions,
+        program: training_programs || undefined,
+        day: training_days || undefined
+      })));
   }
 
-  async getCurrentTrainingSession(userId: string): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay }) | undefined> {
-    const result = await db
+  async getCurrentTrainingSession(userId: number): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay }) | undefined> {
+    const [result] = await db
       .select()
       .from(trainingSessions)
       .leftJoin(trainingPrograms, eq(trainingSessions.programId, trainingPrograms.id))
       .leftJoin(trainingDays, eq(trainingSessions.dayId, trainingDays.id))
-      .where(
-        and(
-          eq(trainingSessions.userId, userId),
-          eq(trainingSessions.completed, false)
-        )
-      )
+      .where(and(
+        eq(trainingSessions.userId, userId),
+        eq(trainingSessions.completed, false)
+      ))
       .orderBy(desc(trainingSessions.createdAt))
       .limit(1);
-      
-    if (result.length === 0) return undefined;
     
-    const row = result[0];
+    if (!result) return undefined;
+    
     return {
-      ...row.training_sessions,
-      program: row.training_programs || undefined,
-      day: row.training_days || undefined
+      ...result.training_sessions,
+      program: result.training_programs || undefined,
+      day: result.training_days || undefined
     };
   }
 
   async getTrainingSession(id: number): Promise<TrainingSession | undefined> {
-    const [session] = await db.select().from(trainingSessions).where(eq(trainingSessions.id, id));
+    const [session] = await db
+      .select()
+      .from(trainingSessions)
+      .where(eq(trainingSessions.id, id));
     return session || undefined;
   }
 
-  async createTrainingSession(session: InsertTrainingSession): Promise<TrainingSession> {
-    const [newSession] = await db
+  async createTrainingSession(insertSession: InsertTrainingSession): Promise<TrainingSession> {
+    const [session] = await db
       .insert(trainingSessions)
-      .values(session)
+      .values(insertSession)
       .returning();
-    return newSession;
+    return session;
   }
 
   async updateTrainingSession(id: number, updates: Partial<TrainingSession>): Promise<TrainingSession> {
@@ -362,134 +378,165 @@ export class DatabaseStorage implements IStorage {
         completed: true,
         duration,
         rating,
-        notes,
+        notes: notes || null,
         completedAt: new Date()
       })
       .where(eq(trainingSessions.id, id))
       .returning();
-      
+    
     // Update user stats
     const user = await this.getUser(session.userId);
     if (user) {
-      await this.updateUser(session.userId, {
-        totalTime: user.totalTime + duration,
-        exp: user.exp + (rating * 20)
+      await this.updateUser(user.id, {
+        exp: user.exp + (rating * 10),
+        totalTime: user.totalTime + duration
       });
-      
-      // Check for achievements
-      await this.checkAndUnlockAchievements(session.userId);
+      await this.updateUserStreak(user.id);
     }
     
     return session;
   }
 
   async deleteTrainingSession(id: number): Promise<void> {
+    // Get the session before deletion to know which user to update
+    const session = await this.getTrainingSession(id);
+    
+    // First delete any related training notes
+    await db.delete(trainingNotes).where(eq(trainingNotes.sessionId, id));
+    
+    // Then delete the training session
     await db.delete(trainingSessions).where(eq(trainingSessions.id, id));
+    
+    // Recalculate user statistics if session existed
+    if (session) {
+      await this.recalculateUserStats(session.userId);
+    }
+  }
+
+  async recalculateUserStats(userId: number): Promise<void> {
+    // Get all completed training sessions for this user
+    const completedSessions = await db
+      .select()
+      .from(trainingSessions)
+      .where(and(
+        eq(trainingSessions.userId, userId),
+        eq(trainingSessions.completed, true)
+      ));
+
+    // Calculate new stats
+    const completedTasks = completedSessions.length;
+    const totalTime = completedSessions.reduce((sum, session) => sum + (session.duration || 0), 0);
+    
+    // Calculate total experience (assuming 50 exp per completed session on average)
+    const totalExp = completedSessions.reduce((sum, session) => {
+      return sum + ((session.rating || 3) * 50); // Base exp calculation
+    }, 0);
+
+    // Update user stats
+    await db
+      .update(users)
+      .set({
+        completedTasks,
+        totalTime,
+        exp: totalExp,
+        level: Math.floor(totalExp / 1000) + 1 // Simple level calculation
+      })
+      .where(eq(users.id, userId));
   }
 
   // Training note operations
   async getTrainingNotes(sessionId: number): Promise<TrainingNote[]> {
-    return db
+    return await db
       .select()
       .from(trainingNotes)
       .where(eq(trainingNotes.sessionId, sessionId))
       .orderBy(trainingNotes.timestamp);
   }
 
-  async getAllTrainingNotes(userId: string): Promise<TrainingNote[]> {
-    const result = await db
-      .select()
+  async getAllTrainingNotes(userId: number): Promise<TrainingNote[]> {
+    return await db
+      .select({
+        id: trainingNotes.id,
+        sessionId: trainingNotes.sessionId,
+        content: trainingNotes.content,
+        timestamp: trainingNotes.timestamp
+      })
       .from(trainingNotes)
       .leftJoin(trainingSessions, eq(trainingNotes.sessionId, trainingSessions.id))
       .where(eq(trainingSessions.userId, userId))
       .orderBy(desc(trainingNotes.timestamp));
-      
-    return result.map(row => row.training_notes);
   }
 
-  async createTrainingNote(note: InsertTrainingNote): Promise<TrainingNote> {
-    const [newNote] = await db
+  async createTrainingNote(insertNote: InsertTrainingNote): Promise<TrainingNote> {
+    const [note] = await db
       .insert(trainingNotes)
-      .values(note)
+      .values(insertNote)
       .returning();
-    return newNote;
+    return note;
   }
 
   // Achievement operations
   async getAllAchievements(): Promise<Achievement[]> {
-    return db.select().from(achievements);
+    return await db.select().from(achievements);
   }
 
-  async getUserAchievements(userId: string): Promise<(UserAchievement & { achievement: Achievement })[]> {
-    const result = await db
+  async getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]> {
+    return await db
       .select()
       .from(userAchievements)
       .leftJoin(achievements, eq(userAchievements.achievementId, achievements.id))
       .where(eq(userAchievements.userId, userId))
-      .orderBy(desc(userAchievements.unlockedAt));
-      
-    return result.map(row => ({
-      ...row.user_achievements,
-      achievement: row.achievements!
-    }));
+      .then(results => results.map(({ user_achievements, achievements: achievement }) => ({
+        ...user_achievements,
+        achievement: achievement!
+      })));
   }
 
-  async checkAndUnlockAchievements(userId: string): Promise<UserAchievement[]> {
+  async checkAndUnlockAchievements(userId: number): Promise<UserAchievement[]> {
     const user = await this.getUser(userId);
     if (!user) return [];
-    
+
     const allAchievements = await this.getAllAchievements();
     const userAchievements = await this.getUserAchievements(userId);
-    const unlockedIds = userAchievements.map(ua => ua.achievementId);
+    const unlockedIds = new Set(userAchievements.map(ua => ua.achievementId));
     
-    const newUnlocks: UserAchievement[] = [];
+    const newlyUnlocked: UserAchievement[] = [];
     
     for (const achievement of allAchievements) {
-      if (unlockedIds.includes(achievement.id)) continue;
+      if (unlockedIds.has(achievement.id)) continue;
       
       const condition = achievement.condition as any;
       let shouldUnlock = false;
       
       switch (condition.type) {
         case "complete_sessions":
-          const userSessions = await this.getUserTrainingSessions(userId);
-          const completedSessions = userSessions.filter(s => s.completed).length;
+          const sessions = await this.getUserTrainingSessions(userId);
+          const completedSessions = sessions.filter(s => s.completed).length;
           shouldUnlock = completedSessions >= condition.target;
           break;
-        case "streak":
+        case "daily_streak":
           shouldUnlock = user.streak >= condition.target;
-          break;
-        case "level":
-          shouldUnlock = user.level >= condition.target;
           break;
         case "total_time":
           shouldUnlock = user.totalTime >= condition.target;
           break;
-        case "rating_average":
-          const sessions = await this.getUserTrainingSessions(userId);
-          const completedWithRating = sessions.filter(s => s.completed && s.rating);
-          if (completedWithRating.length >= condition.min_sessions) {
-            const avgRating = completedWithRating.reduce((sum, s) => sum + (s.rating || 0), 0) / completedWithRating.length;
-            shouldUnlock = avgRating >= condition.target;
-          }
+        case "high_rating":
+          const recentSessions = await this.getUserTrainingSessions(userId);
+          const highRatingSessions = recentSessions.filter(s => s.rating && s.rating >= condition.target).length;
+          shouldUnlock = highRatingSessions >= (condition.count || 1);
           break;
       }
       
       if (shouldUnlock) {
-        const newAchievement = await this.unlockAchievement(userId, achievement.id);
-        newUnlocks.push(newAchievement);
-        
-        // Award experience points
-        await this.updateUser(userId, {
-          exp: user.exp + achievement.expReward
-        });
+        const newUserAchievement = await this.unlockAchievement(userId, achievement.id);
+        newlyUnlocked.push(newUserAchievement);
       }
     }
     
-    return newUnlocks;
+    return newlyUnlocked;
   }
 
-  async unlockAchievement(userId: string, achievementId: number): Promise<UserAchievement> {
+  async unlockAchievement(userId: number, achievementId: number): Promise<UserAchievement> {
     const [userAchievement] = await db
       .insert(userAchievements)
       .values({
@@ -499,19 +546,34 @@ export class DatabaseStorage implements IStorage {
         progress: 100
       })
       .returning();
+    
+    // Award experience
+    const achievement = await db
+      .select()
+      .from(achievements)
+      .where(eq(achievements.id, achievementId))
+      .then(results => results[0]);
+    
+    if (achievement) {
+      const user = await this.getUser(userId);
+      if (user) {
+        await this.updateUser(userId, {
+          exp: user.exp + achievement.expReward
+        });
+      }
+    }
+    
     return userAchievement;
   }
 
-  async updateAchievementProgress(userId: string, achievementId: number, progress: number): Promise<void> {
+  async updateAchievementProgress(userId: number, achievementId: number, progress: number): Promise<void> {
     await db
       .update(userAchievements)
       .set({ progress })
-      .where(
-        and(
-          eq(userAchievements.userId, userId),
-          eq(userAchievements.achievementId, achievementId)
-        )
-      );
+      .where(and(
+        eq(userAchievements.userId, userId),
+        eq(userAchievements.achievementId, achievementId)
+      ));
   }
 }
 
