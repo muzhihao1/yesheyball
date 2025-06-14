@@ -119,11 +119,12 @@ export default function Levels() {
     
     const createButton = () => {
       // Remove any existing buttons
-      const existing = document.querySelectorAll('.level-floating-btn');
+      const existing = document.querySelectorAll('.level-floating-btn, .floating-nav-button');
       existing.forEach(btn => btn.remove());
       
-      const button = document.createElement('div');
+      const button = document.createElement('button');
       button.className = 'level-floating-btn';
+      button.type = 'button';
       // Determine arrow direction based on current level position
       const getCurrentLevelPosition = () => {
         if (!user) return { shouldShowDown: true };
@@ -199,98 +200,47 @@ export default function Levels() {
       
       button.setAttribute('style', styles);
       
-      // Add debugging for button interaction
-      button.addEventListener('mousedown', () => {
-        console.log('🔴 Button mousedown detected');
-      });
-      
-      button.addEventListener('touchstart', () => {
-        console.log('🔴 Button touchstart detected');
-      });
-      
-      // Add click handler to find current level
-      button.addEventListener('click', (e) => {
+      // Simple click handler that works immediately
+      const handleClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('🔴 Button clicked, user level:', user?.level);
-        console.log('🔴 Button clicked, finding current level');
+        console.log('🔴 CLICK DETECTED - User level:', user?.level);
         
         if (!user) {
-          console.log('🔴 No user data, scrolling to top');
+          console.log('🔴 No user, scrolling to top');
           window.scrollTo({ top: 0, behavior: 'smooth' });
           return;
         }
         
-        // Find current level section based on user's actual level
+        // Find level 3 header directly
+        const levelElements = document.querySelectorAll('*');
         let targetElement = null;
         
-        // Look for level header with exact pattern "等级 X •"
-        const allElements = document.querySelectorAll('div, span, h1, h2, h3');
-        for (let i = 0; i < allElements.length; i++) {
-          const el = allElements[i];
+        for (let i = 0; i < levelElements.length; i++) {
+          const el = levelElements[i];
           const text = el.textContent || '';
-          
-          // Match exact pattern for level header
           if (text.includes(`等级 ${user.level} •`)) {
-            // Use the header element itself, not the parent container
             targetElement = el;
-            console.log('🔴 Found level header directly');
+            console.log('🔴 Found target level header');
             break;
           }
         }
         
-        // Fallback: Find any element with current level number
-        if (!targetElement) {
-          for (let j = 0; j < allElements.length; j++) {
-            const el = allElements[j];
-            const text = el.textContent || '';
-            if (text.includes(`等级 ${user.level}`)) {
-              const rect = el.getBoundingClientRect();
-              if (rect.height > 30) {
-                targetElement = el;
-                console.log('🔴 Found level element');
-                break;
-              }
-            }
-          }
-        }
-        
         if (targetElement) {
-          console.log('🔴 Scrolling to target element');
-          
-          // Get element position and calculate optimal scroll position
           const rect = targetElement.getBoundingClientRect();
-          const currentScrollY = window.scrollY;
-          const elementTop = rect.top + currentScrollY;
-          
-          // Scroll to position where level header is near the top (with some padding)
-          const targetScrollY = Math.max(0, elementTop - 100); // 100px padding from top
-          
-          window.scrollTo({ 
-            top: targetScrollY, 
-            behavior: 'smooth' 
-          });
-          
-          // 添加绿色高亮提示效果
-          if (targetElement instanceof HTMLElement) {
-            const originalBoxShadow = targetElement.style.boxShadow;
-            targetElement.style.boxShadow = '0 0 20px rgba(34, 197, 94, 0.8)';
-            targetElement.style.transition = 'box-shadow 0.3s ease';
-            
-            setTimeout(() => {
-              targetElement.style.boxShadow = originalBoxShadow;
-            }, 1500);
-          }
+          const scrollY = window.scrollY + rect.top - 100;
+          window.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' });
+          console.log('🔴 Scrolled to level', user.level);
         } else {
-          console.log('🔴 No current level found, scrolling to active area');
-          // 滚动到页面的活跃练习区域
-          const scrollPosition = Math.min(document.documentElement.scrollHeight * 0.3, 800);
-          window.scrollTo({ 
-            top: scrollPosition, 
-            behavior: 'smooth' 
-          });
+          console.log('🔴 Level not found, scrolling to 30% of page');
+          window.scrollTo({ top: document.body.scrollHeight * 0.3, behavior: 'smooth' });
         }
-      });
+      };
+      
+      // Add multiple event listeners to ensure it works
+      button.onclick = handleClick;
+      button.addEventListener('click', handleClick);
+      button.addEventListener('touchend', handleClick);
       
       // Add hover effects
       button.addEventListener('mouseenter', () => {
