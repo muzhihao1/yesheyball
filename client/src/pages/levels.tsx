@@ -81,6 +81,10 @@ export default function Levels() {
   const [exerciseOverride, setExerciseOverride] = useState<{[key: string]: boolean}>({});
   const [showSkipDialog, setShowSkipDialog] = useState(false);
   const [skipToLevel, setSkipToLevel] = useState<number | null>(null);
+  const [showSkipChallenge, setShowSkipChallenge] = useState(false);
+  const [skipChallengeQuestions, setSkipChallengeQuestions] = useState<any[]>([]);
+  const [currentSkipQuestion, setCurrentSkipQuestion] = useState(0);
+  const [skipChallengeAnswers, setSkipChallengeAnswers] = useState<string[]>([]);
   
   // 考核相关状态
   const [showExamDialog, setShowExamDialog] = useState(false);
@@ -797,23 +801,105 @@ export default function Levels() {
     if (!skipToLevel || !user) return;
     
     try {
-      await apiRequest("/api/user/skip-level", "POST", {
-        targetLevel: skipToLevel
-      });
+      // Generate challenge questions for the skip level test
+      const challengeQuestions = [
+        {
+          id: 1,
+          question: "在台球中，什么是'拉杆'技术？",
+          options: ["向前推杆", "向后拉杆使球产生回旋", "左右摆杆", "用力击球"],
+          correctAnswer: 1,
+          explanation: "拉杆是向后拉动球杆，使母球产生后旋，撞击目标球后会向后退。"
+        },
+        {
+          id: 2,
+          question: "进行走位时，最重要的考虑因素是什么？",
+          options: ["击球力度", "下一球的位置", "球杆角度", "击球速度"],
+          correctAnswer: 1,
+          explanation: "走位的核心是控制母球到达有利于下一球进攻的位置。"
+        },
+        {
+          id: 3,
+          question: "什么情况下应该选择防守？",
+          options: ["任何时候", "没有好的进攻机会时", "对手犯规时", "比分领先时"],
+          correctAnswer: 1,
+          explanation: "当没有把握的进攻机会时，选择防守可以避免给对手留下机会。"
+        }
+      ];
       
-      toast({
-        title: "跳级成功！",
-        description: `已跳级到等级 ${skipToLevel}`,
-      });
-      
+      setSkipChallengeQuestions(challengeQuestions);
+      setCurrentSkipQuestion(0);
+      setSkipChallengeAnswers([]);
       setShowSkipDialog(false);
-      setSkipToLevel(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      setShowSkipChallenge(true);
       
     } catch (error) {
-      console.error("跳级失败:", error);
+      console.error("开始挑战失败:", error);
       toast({
-        title: "跳级失败",
+        title: "挑战开始失败",
+        description: "请稍后重试",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSkipChallengeAnswer = (answerIndex: number) => {
+    const newAnswers = [...skipChallengeAnswers];
+    newAnswers[currentSkipQuestion] = answerIndex.toString();
+    setSkipChallengeAnswers(newAnswers);
+  };
+
+  const handleSkipChallengeNext = () => {
+    if (currentSkipQuestion < skipChallengeQuestions.length - 1) {
+      setCurrentSkipQuestion(prev => prev + 1);
+    } else {
+      finishSkipChallenge();
+    }
+  };
+
+  const finishSkipChallenge = async () => {
+    if (!skipToLevel || !user) return;
+    
+    // Calculate score
+    let correctAnswers = 0;
+    skipChallengeQuestions.forEach((question, index) => {
+      if (skipChallengeAnswers[index] === question.correctAnswer.toString()) {
+        correctAnswers++;
+      }
+    });
+    
+    const score = (correctAnswers / skipChallengeQuestions.length) * 100;
+    const passed = score >= 80; // Need 80% to pass
+    
+    try {
+      if (passed) {
+        await apiRequest("/api/user/skip-level", "POST", {
+          targetLevel: skipToLevel,
+          challengeScore: score
+        });
+        
+        toast({
+          title: "挑战成功！",
+          description: `恭喜！已成功跳级到等级 ${skipToLevel}，所有中间关卡已解锁！`,
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      } else {
+        toast({
+          title: "挑战失败",
+          description: `得分：${score.toFixed(0)}%，需要80%以上才能通过。请继续练习后重试！`,
+          variant: "destructive",
+        });
+      }
+      
+      setShowSkipChallenge(false);
+      setSkipToLevel(null);
+      setCurrentSkipQuestion(0);
+      setSkipChallengeAnswers([]);
+      
+    } catch (error) {
+      console.error("处理挑战结果失败:", error);
+      toast({
+        title: "处理结果失败",
         description: "请稍后重试",
         variant: "destructive",
       });
@@ -1430,6 +1516,118 @@ export default function Levels() {
                 </div>
               </div>
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Skip Level Challenge Dialog */}
+      <Dialog open={showSkipDialog} onOpenChange={setShowSkipDialog}>
+        <DialogContent className="max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-bold text-orange-600">
+              跳级挑战
+            </DialogTitle>
+            <DialogDescription className="text-center mt-4">
+              想要跳级到等级 {skipToLevel}？
+              <br />
+              完成挑战后，所有被跳过的关卡都将解锁！
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-6">
+            <div className="bg-orange-50 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-center mb-3">
+                <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center text-white">
+                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                  </svg>
+                </div>
+              </div>
+              <div className="text-center">
+                <h3 className="font-semibold text-gray-800 mb-2">挑战规则</h3>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• 需要完成 3 道技能验证题</li>
+                  <li>• 每题都需要达到标准要求</li>
+                  <li>• 挑战成功后解锁到目标等级</li>
+                  <li>• 失败可以重新挑战</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="text-center text-sm text-gray-500 mb-4">
+              当前等级: {user?.level} → 目标等级: {skipToLevel}
+            </div>
+          </div>
+
+          <div className="flex space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowSkipDialog(false)}
+              className="flex-1"
+            >
+              取消
+            </Button>
+            <Button 
+              onClick={confirmSkipToLevel}
+              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              开始挑战
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Skip Level Challenge Test Dialog */}
+      <Dialog open={showSkipChallenge} onOpenChange={setShowSkipChallenge}>
+        <DialogContent className="max-w-2xl mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-bold text-orange-600">
+              跳级挑战测试
+            </DialogTitle>
+            <DialogDescription className="text-center mt-2">
+              题目 {currentSkipQuestion + 1} / {skipChallengeQuestions.length}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {skipChallengeQuestions.length > 0 && (
+            <div className="py-6">
+              <div className="bg-orange-50 rounded-lg p-6 mb-6">
+                <h3 className="font-semibold text-lg text-gray-800 mb-4">
+                  {skipChallengeQuestions[currentSkipQuestion]?.question}
+                </h3>
+                
+                <div className="space-y-3">
+                  {skipChallengeQuestions[currentSkipQuestion]?.options.map((option: string, index: number) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSkipChallengeAnswer(index)}
+                      className={`w-full text-left p-4 rounded-lg border transition-all ${
+                        skipChallengeAnswers[currentSkipQuestion] === index.toString()
+                          ? 'border-orange-500 bg-orange-100 text-orange-800'
+                          : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                      }`}
+                    >
+                      <span className="font-medium">{String.fromCharCode(65 + index)}. </span>
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-sm text-gray-500 mb-4">
+                  请选择正确答案后点击继续
+                </div>
+                
+                <Button 
+                  onClick={handleSkipChallengeNext}
+                  disabled={!skipChallengeAnswers[currentSkipQuestion]}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-8"
+                >
+                  {currentSkipQuestion < skipChallengeQuestions.length - 1 ? '下一题' : '完成挑战'}
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
