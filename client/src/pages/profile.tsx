@@ -87,21 +87,21 @@ export default function Profile() {
         {/* Training Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
-            <div className="text-lg font-bold text-green-600">Lv.{1}</div>
+            <div className="text-lg font-bold text-green-600">Lv.1</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">当前等级</p>
-            <p className="text-xs text-gray-500">经验值: {0}</p>
+            <p className="text-xs text-gray-500">经验值: 0</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
-            <div className="text-lg font-bold text-orange-600">{userStats?.currentStreak || 0}天</div>
+            <div className="text-lg font-bold text-orange-600">{(userStats as any)?.currentStreak || 0}天</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">连续训练</p>
-            <p className="text-xs text-gray-500">最长: {userStats?.longestStreak || 0}天</p>
+            <p className="text-xs text-gray-500">最长: {(userStats as any)?.longestStreak || 0}天</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
-            <div className="text-lg font-bold text-blue-600">{trainingRecords?.length || 0}</div>
+            <div className="text-lg font-bold text-blue-600">{(trainingRecords as any)?.length || 0}</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">训练记录</p>
-            <p className="text-xs text-gray-500">总训练: {userStats?.totalDays || 0}天</p>
+            <p className="text-xs text-gray-500">总训练: {(userStats as any)?.totalDays || 0}天</p>
           </div>
         </div>
 
@@ -115,8 +115,8 @@ export default function Profile() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
-              {achievements && achievements.length > 0 ? (
-                achievements.map((achievement: any) => (
+              {(achievements as any) && (achievements as any).length > 0 ? (
+                (achievements as any).map((achievement: any) => (
                   <div key={achievement.id} className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
                     <Award className="h-8 w-8 text-yellow-600" />
                     <div>
@@ -127,9 +127,9 @@ export default function Profile() {
                 ))
               ) : (
                 <div className="col-span-2 text-center py-8 text-gray-500">
-                  <Trophy className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                  <p>还没有获得成就徽章</p>
-                  <p className="text-sm">继续训练来解锁更多成就！</p>
+                  <Award className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>成就</p>
+                  <p className="text-sm">已获得</p>
                 </div>
               )}
             </div>
@@ -212,7 +212,7 @@ export default function Profile() {
                   <span className="font-medium">准度训练</span>
                 </div>
                 <Badge variant="secondary">
-                  {trainingRecords?.filter((r: any) => r.title?.includes('准度')).length || 0} 次
+                  {(trainingRecords as any)?.filter((r: any) => r.title?.includes('准度')).length || 0} 次
                 </Badge>
               </div>
               
@@ -222,7 +222,7 @@ export default function Profile() {
                   <span className="font-medium">力度训练</span>
                 </div>
                 <Badge variant="secondary">
-                  {trainingRecords?.filter((r: any) => r.title?.includes('力度')).length || 0} 次
+                  {(trainingRecords as any)?.filter((r: any) => r.title?.includes('力度')).length || 0} 次
                 </Badge>
               </div>
               

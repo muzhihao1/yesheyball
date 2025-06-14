@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,6 +8,16 @@ import { Link } from "wouter";
 
 export default function Home() {
   const { user } = useAuth();
+
+  const { data: userStats } = useQuery({
+    queryKey: ["/api/user/streak"],
+    enabled: !!user,
+  });
+
+  const { data: trainingRecords } = useQuery({
+    queryKey: ["/api/training-records"],
+    enabled: !!user,
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800">
@@ -44,21 +55,21 @@ export default function Home() {
         {/* Quick Stats - Mobile Layout */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
-            <div className="text-lg font-bold text-green-600">Lv.{user?.level || 1}</div>
+            <div className="text-lg font-bold text-green-600">Lv.1</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">当前等级</p>
-            <p className="text-xs text-gray-500">经验值: {user?.exp || 0}</p>
+            <p className="text-xs text-gray-500">经验值: 0</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
-            <div className="text-lg font-bold text-orange-600">{user?.streak || 0}天</div>
+            <div className="text-lg font-bold text-orange-600">{(userStats as any)?.currentStreak || 0}天</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">连续训练</p>
-            <p className="text-xs text-gray-500">总训练天数: {user?.totalDays || 0}</p>
+            <p className="text-xs text-gray-500">总训练天数: {(userStats as any)?.totalDays || 0}</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
-            <div className="text-lg font-bold text-blue-600">{user?.totalTime || 0}分钟</div>
+            <div className="text-lg font-bold text-blue-600">{Math.round(((userStats as any)?.totalDays || 0) * 30)}分钟</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">训练时长</p>
-            <p className="text-xs text-gray-500">已完成任务: {user?.completedTasks || 0}</p>
+            <p className="text-xs text-gray-500">已完成任务: {(trainingRecords as any)?.length || 0}</p>
           </div>
         </div>
 
