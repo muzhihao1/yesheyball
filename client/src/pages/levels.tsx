@@ -113,179 +113,80 @@ export default function Levels() {
     queryKey: ["/api/user"],
   });
 
-  // Floating button for returning to current level
+  // Floating navigation button
   useEffect(() => {
-    console.log('🔴 Creating floating button in levels-new');
+    if (!user) return;
     
-    const createButton = () => {
-      // Remove any existing buttons
-      const existing = document.querySelectorAll('.level-floating-btn, .floating-nav-button');
-      existing.forEach(btn => btn.remove());
-      
-      const button = document.createElement('button');
-      button.className = 'level-floating-btn';
-      button.type = 'button';
-      // Determine arrow direction based on current level position
-      const getCurrentLevelPosition = () => {
-        if (!user) return { shouldShowDown: true };
-        
-        // Look for current level elements more specifically
-        const allElements = document.querySelectorAll('div, h1, h2, h3, span');
-        let currentLevelElement = null;
-        
-        // First try to find level header
-        for (const el of allElements) {
-          const text = el.textContent || '';
-          if (text.includes(`等级 ${user.level}`) && text.includes('•')) {
-            const rect = el.getBoundingClientRect();
-            if (rect.height > 20 && rect.width > 100) {
-              currentLevelElement = el;
-              break;
-            }
-          }
-        }
-        
-        // Fallback: look for any element with current level number
-        if (!currentLevelElement) {
-          for (const el of allElements) {
-            const text = el.textContent || '';
-            if (text.includes(`等级 ${user.level}`) || text.includes(`Level ${user.level}`)) {
-              const rect = el.getBoundingClientRect();
-              if (rect.height > 20) {
-                currentLevelElement = el;
-                break;
-              }
-            }
-          }
-        }
-        
-        if (currentLevelElement) {
-          const rect = currentLevelElement.getBoundingClientRect();
-          const viewportHeight = window.innerHeight;
-          // If element is below the middle of screen, show down arrow
-          return { shouldShowDown: rect.top > viewportHeight * 0.4 };
-        }
-        
-        // Default behavior: if we can't find current level, assume it's below
-        return { shouldShowDown: true };
-      };
-      
-      const { shouldShowDown } = getCurrentLevelPosition();
-      const arrowDirection = shouldShowDown ? '↓' : '↑';
-      
-      button.innerHTML = arrowDirection;
-      
-      // Apply styles directly - 匹配参考设计
-      const styles = [
-        'position: fixed',
-        'bottom: 100px',
-        'right: 16px', 
-        'width: 48px',
-        'height: 48px',
-        'background: white',
-        'border: 2px solid #22c55e',
-        'border-radius: 12px',
-        'box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3)',
-        'display: flex',
-        'align-items: center',
-        'justify-content: center',
-        'font-size: 24px',
-        'color: #22c55e',
-        'font-weight: 800',
-        'cursor: pointer',
-        'z-index: 999999',
-        'transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        'backdrop-filter: blur(8px)'
-      ].map(s => s + ' !important').join('; ');
-      
-      button.setAttribute('style', styles);
-      
-      // Simple click handler that works immediately
-      const handleClick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🔴 CLICK DETECTED - User level:', user?.level);
-        
-        if (!user) {
-          console.log('🔴 No user, scrolling to top');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          return;
-        }
-        
-        // Find level 3 header directly
-        const levelElements = document.querySelectorAll('*');
-        let targetElement = null;
-        
-        for (let i = 0; i < levelElements.length; i++) {
-          const el = levelElements[i];
-          const text = el.textContent || '';
-          if (text.includes(`等级 ${user.level} •`)) {
-            targetElement = el;
-            console.log('🔴 Found target level header');
-            break;
-          }
-        }
-        
-        if (targetElement) {
-          const rect = targetElement.getBoundingClientRect();
-          const scrollY = window.scrollY + rect.top - 100;
-          window.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' });
-          console.log('🔴 Scrolled to level', user.level);
-        } else {
-          console.log('🔴 Level not found, scrolling to 30% of page');
-          window.scrollTo({ top: document.body.scrollHeight * 0.3, behavior: 'smooth' });
-        }
-      };
-      
-      // Add multiple event listeners to ensure it works
-      button.onclick = handleClick;
-      button.addEventListener('click', handleClick);
-      button.addEventListener('touchend', handleClick);
-      
-      // Add hover effects
-      button.addEventListener('mouseenter', () => {
-        button.style.transform = 'scale(1.1) translateY(-2px) !important';
-        button.style.boxShadow = '0 8px 24px rgba(34, 197, 94, 0.4) !important';
-      });
-      
-      button.addEventListener('mouseleave', () => {
-        button.style.transform = 'scale(1) translateY(0) !important';
-        button.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.3) !important';
-      });
-      
-      // Add active/pressed effect
-      button.addEventListener('mousedown', () => {
-        button.style.transform = 'scale(0.95) translateY(1px) !important';
-      });
-      
-      button.addEventListener('mouseup', () => {
-        button.style.transform = 'scale(1.1) translateY(-2px) !important';
-      });
-      
-      return button;
-    };
+    console.log('🔴 Creating navigation button for level', user.level);
     
-    // Create button immediately
-    const btn = createButton();
-    document.body.appendChild(btn);
+    // Remove any existing floating buttons
+    const existing = document.querySelectorAll('.level-floating-btn');
+    existing.forEach(btn => btn.remove());
+    
+    const button = document.createElement('button');
+    button.className = 'level-floating-btn';
+    button.innerHTML = '↑';
+    
+    // Apply styles
+    button.style.cssText = `
+      position: fixed !important;
+      bottom: 100px !important;
+      right: 16px !important;
+      width: 48px !important;
+      height: 48px !important;
+      background-color: white !important;
+      border: 2px solid #22c55e !important;
+      border-radius: 12px !important;
+      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 24px !important;
+      color: #22c55e !important;
+      font-weight: 800 !important;
+      cursor: pointer !important;
+      z-index: 999999 !important;
+      transition: all 0.2s ease !important;
+      outline: none !important;
+    `;
+    
+    // Add click handler
+    button.addEventListener('click', (e: any) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🔴 CLICK DETECTED - User level:', user.level);
+      
+      // Find level header for current user level
+      const elements = document.querySelectorAll('*');
+      let targetElement = null;
+      
+      for (let i = 0; i < elements.length; i++) {
+        const el = elements[i];
+        const text = el.textContent || '';
+        if (text.includes(`等级 ${user.level} •`)) {
+          targetElement = el;
+          break;
+        }
+      }
+      
+      if (targetElement) {
+        const rect = targetElement.getBoundingClientRect();
+        const scrollY = window.scrollY + rect.top - 100;
+        window.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' });
+        console.log('🔴 Scrolled to level', user.level);
+      } else {
+        console.log('🔴 Level not found');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+    
+    // Add to page
+    document.body.appendChild(button);
     console.log('🔴 Button added to DOM');
     
-    // Retry creation multiple times to ensure it appears
-    const timeouts = [100, 300, 600, 1000].map(delay => 
-      setTimeout(() => {
-        if (!document.querySelector('.level-floating-btn')) {
-          const retryBtn = createButton();
-          document.body.appendChild(retryBtn);
-          console.log(`🔴 Retry button created at ${delay}ms`);
-        }
-      }, delay)
-    );
-    
+    // Cleanup function
     return () => {
-      timeouts.forEach(clearTimeout);
-      const buttons = document.querySelectorAll('.level-floating-btn');
-      buttons.forEach(btn => btn.remove());
-      console.log('🔴 Button cleanup completed');
+      button.remove();
     };
   }, [user]);
 
