@@ -455,12 +455,7 @@ export default function Levels() {
       completedExercises: (() => {
         if (!user.completedExercises) return 0;
         const exercises = user.completedExercises as Record<string, number>;
-        const currentProgress = exercises['1'] || 0;
-        // If user has any progress in this level or higher levels, unlock more exercises
-        if (user.level > 1 || currentProgress > 0) {
-          return Math.max(currentProgress, 1); // At minimum unlock first exercise if any progress
-        }
-        return currentProgress;
+        return exercises['1'] || 0;
       })()
     },
     {
@@ -472,7 +467,11 @@ export default function Levels() {
       unlocked: user.level >= 2,
       completed: user.level > 2,
       progress: user.level > 2 ? 100 : user.level === 2 ? Math.min(((user.exp - 1000) / 1000) * 100, 95) : 0,
-      completedExercises: 0
+      completedExercises: (() => {
+        if (!user.completedExercises) return 0;
+        const exercises = user.completedExercises as Record<string, number>;
+        return exercises['2'] || 0;
+      })()
     },
     {
       level: 3,
@@ -483,7 +482,11 @@ export default function Levels() {
       unlocked: user.level >= 3,
       completed: user.level > 3,
       progress: user.level > 3 ? 100 : user.level === 3 ? Math.min(((user.exp - 2000) / 1000) * 100, 95) : 0,
-      completedExercises: 0
+      completedExercises: (() => {
+        if (!user.completedExercises) return 0;
+        const exercises = user.completedExercises as Record<string, number>;
+        return exercises['3'] || 0;
+      })()
     },
     {
       level: 4,
@@ -494,7 +497,11 @@ export default function Levels() {
       unlocked: user.level >= 4,
       completed: user.level > 4,
       progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
-      completedExercises: user.level > 4 ? 60 : user.level === 4 ? Math.floor((user.exp / 400) * 60) : 0
+      completedExercises: (() => {
+        if (!user.completedExercises) return 0;
+        const exercises = user.completedExercises as Record<string, number>;
+        return exercises['4'] || 0;
+      })()
     },
     {
       level: 5,
@@ -505,7 +512,11 @@ export default function Levels() {
       unlocked: user.level >= 5,
       completed: user.level > 5,
       progress: user.level > 5 ? 100 : user.level === 5 ? Math.min((user.exp / 500) * 100, 95) : 0,
-      completedExercises: user.level > 5 ? 60 : user.level === 5 ? Math.floor((user.exp / 500) * 60) : 0
+      completedExercises: (() => {
+        if (!user.completedExercises) return 0;
+        const exercises = user.completedExercises as Record<string, number>;
+        return exercises['5'] || 0;
+      })()
     },
     {
       level: 6,
@@ -516,7 +527,11 @@ export default function Levels() {
       unlocked: user.level >= 6,
       completed: user.level > 6,
       progress: user.level > 6 ? 100 : user.level === 6 ? Math.min((user.exp / 600) * 100, 95) : 0,
-      completedExercises: user.level > 6 ? 60 : user.level === 6 ? Math.floor((user.exp / 600) * 60) : 0
+      completedExercises: (() => {
+        if (!user.completedExercises) return 0;
+        const exercises = user.completedExercises as Record<string, number>;
+        return exercises['6'] || 0;
+      })()
     },
     {
       level: 7,
@@ -527,7 +542,11 @@ export default function Levels() {
       unlocked: user.level >= 7,
       completed: user.level > 7,
       progress: user.level > 7 ? 100 : user.level === 7 ? Math.min((user.exp / 700) * 100, 95) : 0,
-      completedExercises: user.level > 7 ? 55 : user.level === 7 ? Math.floor((user.exp / 700) * 55) : 0
+      completedExercises: (() => {
+        if (!user.completedExercises) return 0;
+        const exercises = user.completedExercises as Record<string, number>;
+        return exercises['7'] || 0;
+      })()
     },
     {
       level: 8,
@@ -538,7 +557,11 @@ export default function Levels() {
       unlocked: user.level >= 8,
       completed: user.level > 8,
       progress: user.level > 8 ? 100 : user.level === 8 ? Math.min((user.exp / 800) * 100, 95) : 0,
-      completedExercises: user.level > 8 ? 55 : user.level === 8 ? Math.floor((user.exp / 800) * 55) : 0
+      completedExercises: (() => {
+        if (!user.completedExercises) return 0;
+        const exercises = user.completedExercises as Record<string, number>;
+        return exercises['8'] || 0;
+      })()
     }
   ];
 
@@ -1037,17 +1060,23 @@ export default function Levels() {
                 <div className="relative">
                   {exercises.map((exercise, exerciseIndex) => {
                     const positionInGroup = exerciseIndex % 5; // 0-4 within each group
-                    // 练习解锁逻辑：完成任何练习后，所有之前的练习都解锁
+                    
+                    // Get actual completion data from user
+                    const userCompletedExercises = (user?.completedExercises as Record<string, number>) || {};
+                    const currentLevelCompleted = userCompletedExercises[stage.level.toString()] || 0;
+                    
+                    // 练习解锁逻辑：基于用户实际完成数据
                     const isUnlocked = stage.unlocked && (
-                      (stage.completedExercises > 0) || // 如果有任何完成进度，解锁所有练习供练习
+                      (currentLevelCompleted > 0) || // 如果当前等级有任何完成进度，解锁所有练习供练习
                       (user && user.level > stage.level) || // 如果用户等级超过当前关卡，所有练习都解锁
-                      exerciseIndex === 0 // 第一个练习总是解锁
+                      exerciseIndex === 0 || // 第一个练习总是解锁
+                      (exerciseIndex <= currentLevelCompleted) // 已完成的练习及下一个练习解锁
                     );
                     const isMilestone = (exerciseIndex + 1) % 5 === 0; // Every 5th exercise
                     const groupNumber = Math.ceil((exerciseIndex + 1) / 5);
                     const showSeparator = (exerciseIndex + 1) % 5 === 0 && exerciseIndex < exercises.length - 1;
-                    const isCurrentExercise = exerciseIndex === stage.completedExercises; // Next exercise to complete
-                    const isThisExerciseCompleted = exerciseIndex < stage.completedExercises || isExerciseCompleted(exercise);
+                    const isCurrentExercise = exerciseIndex === currentLevelCompleted; // Next exercise to complete
+                    const isThisExerciseCompleted = exerciseIndex < currentLevelCompleted || isExerciseCompleted(exercise);
                     
                     // Position exercises - first 4 further to the left
                     let paddingLeft = 60; // Move milestone center position to the left
