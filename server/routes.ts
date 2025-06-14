@@ -143,11 +143,26 @@ async function generateAICoachingFeedback(sessionData: {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Setup Replit Auth middleware
+  await setupAuth(app);
+  
   // Serve assessment images as static files
   const assessmentsPath = path.join(process.cwd(), 'assessments');
   app.use('/assessments', express.static(assessmentsPath));
   
-  // Get current user (defaulting to user ID 1 for demo)
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  // Get current user
   app.get("/api/user", async (req, res) => {
     try {
       // Prevent caching to ensure fresh data after training completions
