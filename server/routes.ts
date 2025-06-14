@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Save feedback to storage
       await storage.createFeedback({
-        userId: req.user.claims.sub,
+        userId: (req.user as any)?.claims?.sub || req.user.id,
         taskId: taskData.taskId,
         content: aiFeedback,
         rating: rating,
@@ -380,7 +380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { content, duration, rating, exerciseCompleted } = req.body;
       
       const entryData = {
-        userId: req.user.claims.sub,
+        userId: (req.user as any)?.claims?.sub || req.user?.id,
         content,
         duration: duration ? parseInt(duration) : null,
         rating: rating ? parseInt(rating) : null,
