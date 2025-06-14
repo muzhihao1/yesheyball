@@ -1168,12 +1168,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const newExp = getExpForLevel(targetLevel);
       
-      // Update user level and experience
-      const updatedUser = await storage.updateUser(userId, {
-        level: targetLevel,
-        exp: newExp
-      });
-
       // Mark all exercises from previous levels as completed
       const currentCompletedExercises: Record<string, number> = (user.completedExercises as Record<string, number>) || {};
       
@@ -1200,10 +1194,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentCompletedExercises[targetLevel.toString()] = 0;
       }
 
-      // Update user with completed exercises, target level starts from beginning
-      await storage.updateUser(userId, {
-        completedExercises: currentCompletedExercises,
+      // Update user with all changes at once
+      const updatedUser = await storage.updateUser(userId, {
         level: targetLevel,
+        exp: newExp,
+        completedExercises: currentCompletedExercises,
         currentExercise: Math.max(1, currentCompletedExercises[targetLevel.toString()] + 1)
       });
 

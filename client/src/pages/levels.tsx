@@ -394,6 +394,11 @@ export default function Levels() {
         return true;
       }
       
+      // Debug skip challenge completion
+      if (exercise.level === 1) {
+        console.log(`Level 1 Exercise ${exercise.exerciseNumber}: levelCompleted=${levelCompleted}, isCompleted=${isCompleted}`);
+      }
+      
       // Only check override if the exercise isn't already completed in the database
       if (isCompleted) {
         return true;
