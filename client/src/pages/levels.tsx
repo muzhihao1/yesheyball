@@ -199,8 +199,20 @@ export default function Levels() {
       
       button.setAttribute('style', styles);
       
+      // Add debugging for button interaction
+      button.addEventListener('mousedown', () => {
+        console.log('🔴 Button mousedown detected');
+      });
+      
+      button.addEventListener('touchstart', () => {
+        console.log('🔴 Button touchstart detected');
+      });
+      
       // Add click handler to find current level
-      button.addEventListener('click', () => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔴 Button clicked, user level:', user?.level);
         console.log('🔴 Button clicked, finding current level');
         
         if (!user) {
