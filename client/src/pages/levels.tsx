@@ -263,12 +263,12 @@ export default function Levels() {
     
     button.addEventListener('touchstart', (e) => {
       console.log('🔴 TOUCHSTART FIRED!');
-      button.style.backgroundColor = '#aa2222';
+      button.style.setProperty('background-color', '#1ea84b', 'important'); // 更深的绿色表示按下
     });
     
     button.addEventListener('touchend', (e) => {
       console.log('🔴 TOUCHEND FIRED!');
-      button.style.backgroundColor = '#ff4444';
+      button.style.setProperty('background-color', '#22c55e', 'important'); // 恢复正常绿色
       handleClick(e);
     });
     
