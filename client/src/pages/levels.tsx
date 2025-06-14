@@ -199,16 +199,17 @@ export default function Levels() {
         if (targetElement) {
           const rect = targetElement.getBoundingClientRect();
           const currentScroll = window.scrollY;
-          const targetScroll = currentScroll + rect.top - 100;
-          console.log('🔴 Current scroll:', currentScroll, 'Target scroll:', targetScroll);
+          const elementTop = rect.top + currentScroll;
+          const targetScroll = Math.max(0, elementTop - 150); // Leave some space at top
+          console.log('🔴 Current scroll:', currentScroll, 'Element top:', elementTop, 'Target scroll:', targetScroll);
           
           // Force scroll multiple times to override any conflicting behavior
-          window.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+          window.scrollTo({ top: targetScroll, behavior: 'smooth' });
           
           // Backup immediate scroll
           setTimeout(() => {
-            window.scrollTo({ top: Math.max(0, targetScroll), behavior: 'auto' });
-            console.log('🔴 Backup scroll executed');
+            window.scrollTo({ top: targetScroll, behavior: 'auto' });
+            console.log('🔴 Backup scroll executed to:', targetScroll);
           }, 100);
           
           console.log('🔴 Scrolled to level', user.level);
