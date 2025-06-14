@@ -928,17 +928,19 @@ export default function Levels() {
     
     try {
       if (passed) {
-        await apiRequest("/api/user/skip-level", "POST", {
+        const response = await apiRequest("/api/user/skip-level", "POST", {
           targetLevel: skipToLevel,
           challengeScore: score
         });
         
-        toast({
-          title: "挑战成功！",
-          description: `恭喜！已成功跳级到等级 ${skipToLevel}，所有中间关卡已解锁！`,
-        });
-        
-        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        if (response.success) {
+          toast({
+            title: "挑战成功！",
+            description: `恭喜！已成功跳级到等级 ${skipToLevel}，所有中间关卡已解锁！`,
+          });
+          
+          queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        }
       } else {
         toast({
           title: "挑战失败",
@@ -947,18 +949,31 @@ export default function Levels() {
         });
       }
       
+    } catch (error: any) {
+      console.error("处理挑战结果失败:", error);
+      
+      // Handle specific error cases
+      if (error.message?.includes("Cannot skip to a level already reached") || 
+          error.message?.includes("Cannot skip to a level at or below")) {
+        toast({
+          title: "跳级完成",
+          description: "您已经达到目标等级！",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      } else {
+        toast({
+          title: "处理结果失败",
+          description: "请稍后重试",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      // Always clean up dialog state
       setShowSkipChallenge(false);
       setSkipToLevel(null);
       setCurrentSkipQuestion(0);
       setSkipChallengeAnswers([]);
-      
-    } catch (error) {
-      console.error("处理挑战结果失败:", error);
-      toast({
-        title: "处理结果失败",
-        description: "请稍后重试",
-        variant: "destructive",
-      });
+      setSkipChallengeQuestions([]);
     }
   };
 
