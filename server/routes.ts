@@ -393,7 +393,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Award experience and update user progress if this is an exercise completion
       if (exerciseCompleted && rating) {
-        const user = await storage.getUser("1");
+        const userId = (req.user as any)?.claims?.sub || req.user?.id;
+        const user = await storage.getUser(userId);
         if (user) {
           // Extract exercise info from diary content
           const exerciseMatch = content.match(/第(\d+)题练习/);
@@ -427,7 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const levelInfo = calculateUserLevel(newExp);
             
             // Update user data - completing any exercise advances progress
-            await storage.updateUser("1", {
+            await storage.updateUser(userId, {
               exp: newExp,
               level: levelInfo.level,
               completedTasks: newCompletedTasks,
@@ -438,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`Exercise ${exerciseNumber} completed! User gained ${expGained} exp. Level ${currentLevel} progress: ${newLevelCompleted} exercises completed. New level: ${levelInfo.level}`);
             
             // Check if user should advance to next level
-            const levelExerciseCounts = {
+            const levelExerciseCounts: Record<number, number> = {
               1: 35, 2: 40, 3: 50, 4: 60, 5: 52, 6: 62, 7: 72, 8: 72, 9: 72
             };
             const exercisesNeededForNextLevel = levelExerciseCounts[currentLevel] || 35;
@@ -446,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (newLevelCompleted >= Math.ceil(exercisesNeededForNextLevel * 0.7)) { // 70% completion threshold
               const nextLevel = currentLevel + 1;
               if (nextLevel <= 9) { // Max level is 9
-                await storage.updateUser("1", {
+                await storage.updateUser(userId, {
                   level: nextLevel,
                   currentExercise: 1,
                   exp: newExp
