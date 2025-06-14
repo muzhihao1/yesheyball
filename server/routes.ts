@@ -1012,7 +1012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/training-programs/:id/reset-progress", async (req, res) => {
     try {
       const programId = parseInt(req.params.id);
-      const userId = req.user.claims.sub; // Current user
+      const userId = (req.user as any)?.claims?.sub || req.user?.id; // Current user
       
       // Get all remaining completed guided sessions for this program
       const allSessions = await storage.getUserTrainingSessions(userId);
@@ -1060,7 +1060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create new session for next episode
         const newSession = await storage.createTrainingSession({
-          userId: req.user.claims.sub,
+          userId: (req.user as any)?.claims?.sub || req.user?.id,
           programId: beginnerProgram.id,
           dayId: nextDay,
           title: `第${nextDay}集：${nextDay <= 17 ? '基础技能训练' : nextDay <= 34 ? '中级技术提升' : '高级技巧掌握'}`,
@@ -1194,7 +1194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }));
 
       const learningPath = adaptiveLearning.generateLearningPath(
-        userId,
+        String(userId),
         user.level,
         performance
       );
