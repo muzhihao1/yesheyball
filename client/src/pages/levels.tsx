@@ -127,29 +127,31 @@ export default function Levels() {
     button.className = 'level-floating-btn';
     button.innerHTML = '↑';
     
-    // Apply styles with higher z-index and ensure clickability
+    // Apply styles with maximum z-index and force clickability
     button.style.cssText = `
       position: fixed !important;
-      bottom: 100px !important;
-      right: 16px !important;
-      width: 48px !important;
-      height: 48px !important;
-      background-color: white !important;
-      border: 2px solid #22c55e !important;
-      border-radius: 12px !important;
-      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3) !important;
+      bottom: 80px !important;
+      right: 20px !important;
+      width: 56px !important;
+      height: 56px !important;
+      background-color: #22c55e !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 50% !important;
+      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4) !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      font-size: 24px !important;
-      color: #22c55e !important;
-      font-weight: 800 !important;
+      font-size: 28px !important;
+      font-weight: 900 !important;
       cursor: pointer !important;
-      z-index: 9999999 !important;
-      transition: all 0.2s ease !important;
+      z-index: 2147483647 !important;
+      transition: all 0.3s ease !important;
       outline: none !important;
       pointer-events: auto !important;
       user-select: none !important;
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: transparent !important;
     `;
     
     // Add multiple click handlers to ensure detection
@@ -196,37 +198,45 @@ export default function Levels() {
       }
     };
     
-    // Add debug test on button creation
+    // Add comprehensive event handlers
     button.onclick = (e) => {
-      console.log('🔴 ONCLICK TRIGGERED!');
+      console.log('🔴 Manual click detected!');
       handleClick(e);
     };
     
-    // Add multiple event listeners with immediate test
     button.addEventListener('click', (e) => {
-      console.log('🔴 CLICK EVENT TRIGGERED!');
+      console.log('🔴 Click event triggered!');
       handleClick(e);
-    }, true);
+    }, { capture: true, passive: false });
     
-    button.addEventListener('touchstart', (e) => {
-      console.log('🔴 TOUCH EVENT TRIGGERED!');
+    button.addEventListener('touchend', (e) => {
+      console.log('🔴 Touch end triggered!');
+      e.preventDefault();
       handleClick(e);
+    }, { passive: false });
+    
+    // Add hover effects
+    button.addEventListener('mouseenter', () => {
+      button.style.transform = 'scale(1.1) !important';
+      button.style.boxShadow = '0 8px 25px rgba(34, 197, 94, 0.6) !important';
     });
     
-    button.addEventListener('mousedown', (e) => {
-      console.log('🔴 MOUSEDOWN EVENT TRIGGERED!');
-      handleClick(e);
+    button.addEventListener('mouseleave', () => {
+      button.style.transform = 'scale(1) !important';
+      button.style.boxShadow = '0 6px 20px rgba(34, 197, 94, 0.4) !important';
+    });
+    
+    button.addEventListener('mousedown', () => {
+      button.style.transform = 'scale(0.95) !important';
+    });
+    
+    button.addEventListener('mouseup', () => {
+      button.style.transform = 'scale(1.1) !important';
     });
     
     // Add to page
     document.body.appendChild(button);
     console.log('🔴 Button added to DOM');
-    
-    // Test button immediately after creation
-    setTimeout(() => {
-      console.log('🔴 Testing button click programmatically...');
-      button.click();
-    }, 500);
     
     // Cleanup function
     return () => {
