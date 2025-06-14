@@ -383,20 +383,25 @@ export default function Levels() {
 
   // Check if exercise is completed (considering overrides for re-practice)
   const isExerciseCompleted = (exercise: Exercise) => {
+    // First check the user's actual completion data
+    if (user && user.completedExercises) {
+      const exercises = user.completedExercises as Record<string, number>;
+      const levelCompleted = exercises[exercise.level.toString()] || 0;
+      const isCompleted = exercise.exerciseNumber <= levelCompleted;
+      
+      // Only check override if the exercise isn't already completed in the database
+      if (isCompleted) {
+        return true;
+      }
+    }
+    
+    // Check override only for incomplete exercises (for temporary practice states)
     const overrideKey = `${exercise.level}-${exercise.exerciseNumber}`;
     if (exerciseOverride[overrideKey] !== undefined) {
       return exerciseOverride[overrideKey];
     }
     
-    // Use sequential progression data from user
-    if (user && user.completedExercises) {
-      const exercises = user.completedExercises as Record<string, number>;
-      const levelCompleted = exercises[exercise.level.toString()] || 0;
-      const isCompleted = exercise.exerciseNumber <= levelCompleted;
-      return isCompleted;
-    }
-    
-    // Check based on level stage progress
+    // Fallback to stage progress
     const stage = levelStages.find(s => s.level === exercise.level);
     if (stage) {
       return exercise.exerciseNumber <= stage.completedExercises;
@@ -701,8 +706,15 @@ export default function Levels() {
   const handleAbortPractice = () => {
     setIsPracticing(false);
     setPracticeTime(0);
-    // 放弃练习不改变完成状态，保持原有状态
-    // 不设置任何override，让系统使用原始的完成状态
+    // 放弃练习后清除任何override，恢复到数据库的真实状态
+    if (selectedExercise) {
+      const overrideKey = `${selectedExercise.level}-${selectedExercise.exerciseNumber}`;
+      setExerciseOverride(prev => {
+        const newOverride = { ...prev };
+        delete newOverride[overrideKey];
+        return newOverride;
+      });
+    }
   };
 
   const handleResetPractice = () => {
