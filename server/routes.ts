@@ -1090,6 +1090,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Skip level challenge endpoint
+  app.post("/api/user/skip-level", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { targetLevel, challengeScore } = req.body;
+      
+      if (!targetLevel || challengeScore === undefined) {
+        return res.status(400).json({ message: "Missing targetLevel or challengeScore" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Validate that user is eligible to skip to this level
+      if (targetLevel <= user.level) {
+        return res.status(400).json({ message: "Cannot skip to a level at or below current level" });
+      }
+
+      if (targetLevel > user.level + 3) {
+        return res.status(400).json({ message: "Cannot skip more than 3 levels at once" });
+      }
+
+      // Check if challenge score is sufficient (80% required)
+      if (challengeScore < 80) {
+        return res.status(400).json({ 
+          message: "Challenge score too low", 
+          score: challengeScore,
+          required: 80 
+        });
+      }
+
+      // Calculate experience needed for target level
+      const getExpForLevel = (level: number) => {
+        if (level <= 1) return 0;
+        if (level === 2) return 1000;
+        if (level === 3) return 2000;
+        if (level === 4) return 3000;
+        if (level === 5) return 4000;
+        if (level === 6) return 5000;
+        if (level === 7) return 6000;
+        if (level === 8) return 7000;
+        return (level - 1) * 1000;
+      };
+
+      const newExp = getExpForLevel(targetLevel);
+      
+      // Update user level and experience
+      const updatedUser = await storage.updateUser(userId, {
+        level: targetLevel,
+        exp: newExp
+      });
+
+      // Create diary entry for the skip level achievement
+      await storage.createDiaryEntry({
+        userId,
+        content: `成功完成跳级挑战！从等级 ${user.level} 跳级到等级 ${targetLevel}。挑战得分：${challengeScore.toFixed(0)}%`,
+        rating: 5,
+        duration: 15,
+        exerciseCompleted: true
+      });
+
+      res.json({
+        success: true,
+        user: updatedUser,
+        message: `Successfully skipped to level ${targetLevel}`,
+        challengeScore
+      });
+
+    } catch (error) {
+      console.error("Skip level error:", error);
+      res.status(500).json({ message: "Failed to process skip level challenge" });
+    }
+  });
+
   // Get user statistics
   app.get("/api/user/stats", async (req, res) => {
     try {
