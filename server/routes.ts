@@ -302,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Save feedback to storage
       await storage.createFeedback({
-        userId: "1",
+        userId: req.user.claims.sub,
         taskId: taskData.taskId,
         content: aiFeedback,
         rating: rating,
@@ -335,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { content, duration, rating, exerciseCompleted } = req.body;
       
       const entryData = {
-        userId: "1",
+        userId: req.user.claims.sub,
         content,
         duration: duration ? parseInt(duration) : null,
         rating: rating ? parseInt(rating) : null,
@@ -967,7 +967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/training-programs/:id/reset-progress", async (req, res) => {
     try {
       const programId = parseInt(req.params.id);
-      const userId = "1"; // Current user
+      const userId = req.user.claims.sub; // Current user
       
       // Get all remaining completed guided sessions for this program
       const allSessions = await storage.getUserTrainingSessions(userId);
@@ -1015,7 +1015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create new session for next episode
         const newSession = await storage.createTrainingSession({
-          userId: "1",
+          userId: req.user.claims.sub,
           programId: beginnerProgram.id,
           dayId: nextDay,
           title: `第${nextDay}集：${nextDay <= 17 ? '基础技能训练' : nextDay <= 34 ? '中级技术提升' : '高级技巧掌握'}`,
