@@ -163,14 +163,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get current user
-  app.get("/api/user", async (req, res) => {
+  app.get("/api/user", isAuthenticated, async (req: any, res) => {
     try {
       // Prevent caching to ensure fresh data after training completions
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const user = await storage.getUser("1");
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -181,9 +182,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user training streak data
-  app.get("/api/user/streak", async (req, res) => {
+  app.get("/api/user/streak", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = "1";
+      const userId = req.user.claims.sub;
       const sessions = await storage.getUserTrainingSessions(userId);
       const completedSessions = sessions.filter(s => s.completed);
       
@@ -198,9 +199,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user streak
-  app.post("/api/user/streak", async (req, res) => {
+  app.post("/api/user/streak", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.updateUserStreak("1");
+      const userId = req.user.claims.sub;
+      const user = await storage.updateUserStreak(userId);
       res.json(user);
     } catch (error) {
       res.status(500).json({ message: "Failed to update streak" });
@@ -254,9 +256,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get today's tasks for user
-  app.get("/api/user/tasks/today", async (req, res) => {
+  app.get("/api/user/tasks/today", isAuthenticated, async (req: any, res) => {
     try {
-      const userTasks = await storage.getTodayUserTasks("1");
+      const userId = req.user.claims.sub;
+      const userTasks = await storage.getTodayUserTasks(userId);
       res.json(userTasks);
     } catch (error) {
       res.status(500).json({ message: "Failed to get today's tasks" });
