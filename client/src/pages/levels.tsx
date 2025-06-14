@@ -405,10 +405,7 @@ export default function Levels() {
     if (exerciseOverride[overrideKey] !== undefined) {
       const overrideValue = exerciseOverride[overrideKey];
       
-      // Debug logging for overrides
-      if (exercise.level === 2 && exercise.exerciseNumber <= 10) {
-        console.log(`Exercise ${exercise.level}-${exercise.exerciseNumber}: override=${overrideValue}`);
-      }
+
       
       return overrideValue;
     }
@@ -418,10 +415,7 @@ export default function Levels() {
     if (stage) {
       const stageCompleted = exercise.exerciseNumber <= stage.completedExercises;
       
-      // Debug logging for stage progress
-      if (exercise.level === 2 && exercise.exerciseNumber <= 10) {
-        console.log(`Exercise ${exercise.level}-${exercise.exerciseNumber}: stage.completedExercises=${stage.completedExercises}, stageCompleted=${stageCompleted}`);
-      }
+
       
       return stageCompleted;
     }
