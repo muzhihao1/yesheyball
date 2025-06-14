@@ -356,6 +356,7 @@ export default function Levels() {
   };
 
   return (
+    <div className="relative">
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="text-center mb-8">
@@ -668,15 +669,16 @@ export default function Levels() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
 
-      {/* 返回当前关卡浮动按钮 */}
-      <button
-        onClick={scrollToCurrentLevel}
-        className="fixed bottom-24 right-6 z-[9999] w-12 h-12 bg-white rounded-xl shadow-2xl border border-gray-300 flex items-center justify-center hover:shadow-xl transition-all duration-200 hover:scale-105"
-        style={{ position: 'fixed' }}
-      >
-        <ArrowUp className="w-5 h-5 text-blue-600" />
-      </button>
+    {/* 返回当前关卡浮动按钮 */}
+    <button
+      onClick={scrollToCurrentLevel}
+      className="fixed bottom-24 right-6 z-[9999] w-12 h-12 bg-white rounded-xl shadow-2xl border border-gray-300 flex items-center justify-center hover:shadow-xl transition-all duration-200 hover:scale-105"
+      style={{ position: 'fixed' }}
+    >
+      <ArrowUp className="w-5 h-5 text-blue-600" />
+    </button>
     </div>
   );
 }
