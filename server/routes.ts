@@ -209,6 +209,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get users ranking (only real users)
+  app.get("/api/users/ranking", isAuthenticated, async (req: any, res) => {
+    try {
+      // Only return the current authenticated user for now
+      // Since we only have one real user in the database
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return only the current user in ranking format
+      const rankings = [{
+        id: user.id,
+        name: user.firstName || user.email?.split('@')[0] || 'User',
+        level: 1,
+        exp: 0,
+        streak: 0,
+        totalTime: 0,
+        achievements: 0,
+        profileImageUrl: user.profileImageUrl,
+        rank: 1
+      }];
+
+      res.json(rankings);
+    } catch (error) {
+      console.error("Ranking error:", error);
+      res.status(500).json({ message: "Failed to get rankings" });
+    }
+  });
+
   // Get all tasks
   app.get("/api/tasks", async (req, res) => {
     try {
