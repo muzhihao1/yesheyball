@@ -174,42 +174,59 @@ export default function Levels() {
         // Look for level 3 section more specifically
         console.log('🔴 Searching for level sections...');
         
-        // More precise calculation for level 3 position
+        // Smart search for user's current level position
         const pageHeight = document.body.scrollHeight;
         console.log('🔴 Total page height:', pageHeight);
         
-        // Try to find actual level elements first
-        const levelElements = Array.from(document.querySelectorAll('h2, h3, .text-xl, .text-2xl, [class*="level"]'))
+        // First, try to find level section containers or dividers
+        const allSections = Array.from(document.querySelectorAll('div, section'))
+          .filter(el => el.children.length > 5 && el.getBoundingClientRect().height > 300);
+        
+        console.log('🔴 Found', allSections.length, 'potential level sections');
+        
+        // Look for level 3 specifically in different ways
+        let targetPosition = null;
+        
+        // Method 1: Look for specific level 3 indicators
+        const level3Indicators = Array.from(document.querySelectorAll('*'))
           .filter(el => {
-            const text = el.textContent || '';
-            return text.includes('等级 3') || text.includes('Level 3') || text.includes('第3') || text.includes('3级');
+            const text = (el.textContent || '').trim();
+            return text === '等级 3' || text === 'Level 3' || text === '第3关' || text === '3级';
           });
         
-        if (levelElements.length > 0) {
-          const targetElement = levelElements[0];
-          const rect = targetElement.getBoundingClientRect();
-          const elementTop = rect.top + window.scrollY;
-          const targetPosition = Math.max(0, elementTop - 200);
+        if (level3Indicators.length > 0) {
+          const element = level3Indicators[0];
+          const rect = element.getBoundingClientRect();
+          targetPosition = rect.top + window.scrollY - 150;
+          console.log('🔴 Found level 3 indicator, position:', targetPosition);
+        }
+        
+        // Method 2: If no specific indicator, find the 3rd major section
+        else if (allSections.length >= 3) {
+          const thirdSection = allSections[2]; // Index 2 for 3rd section
+          const rect = thirdSection.getBoundingClientRect();
+          targetPosition = rect.top + window.scrollY - 100;
+          console.log('🔴 Using 3rd section, position:', targetPosition);
+        }
+        
+        // Method 3: Mathematical estimation based on typical level layouts
+        else {
+          // Assume 10 levels distributed evenly, level 3 at 30% down
+          targetPosition = Math.floor(pageHeight * 0.25);
+          console.log('🔴 Using mathematical estimate, position:', targetPosition);
+        }
+        
+        // Execute the scroll
+        if (targetPosition !== null) {
+          const finalPosition = Math.max(0, targetPosition);
+          console.log('🔴 Scrolling to final position:', finalPosition);
           
-          console.log('🔴 Found level 3 element, scrolling to:', targetPosition);
-          window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+          window.scrollTo({ top: finalPosition, behavior: 'smooth' });
           
           setTimeout(() => {
-            window.scrollTo({ top: targetPosition, behavior: 'auto' });
-            console.log('🔴 Final scroll to found element:', targetPosition);
-          }, 300);
-        } else {
-          // Fallback: More accurate calculation based on level progression
-          // Levels 1-3 are typically in the first 25% of the page
-          const levelPosition = Math.floor(pageHeight * 0.15); // Earlier in the page for level 3
-          
-          console.log('🔴 Using calculated position for level 3:', levelPosition);
-          window.scrollTo({ top: levelPosition, behavior: 'smooth' });
-          
-          setTimeout(() => {
-            window.scrollTo({ top: levelPosition, behavior: 'auto' });
-            console.log('🔴 Final scroll to calculated position:', levelPosition);
-          }, 300);
+            window.scrollTo({ top: finalPosition, behavior: 'auto' });
+            console.log('🔴 Backup scroll to:', finalPosition);
+          }, 400);
         }
       }, 50); // Small delay to override conflicting scrolls
     };
