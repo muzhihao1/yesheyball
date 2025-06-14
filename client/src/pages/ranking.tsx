@@ -12,7 +12,8 @@ import {
   Target,
   Flame,
   Calendar,
-  Users
+  Users,
+  Clock
 } from "lucide-react";
 
 // Real user data interface
@@ -130,7 +131,7 @@ export default function Ranking() {
           <Card>
             <CardContent className="p-3 text-center">
               <Trophy className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-              <div className="text-lg font-bold text-gray-900">#{getCurrentUserRank('achievements')}</div>
+              <div className="text-lg font-bold text-gray-900">#1</div>
               <p className="text-xs text-gray-600">总排名</p>
             </CardContent>
           </Card>
@@ -138,7 +139,7 @@ export default function Ranking() {
           <Card>
             <CardContent className="p-3 text-center">
               <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
-              <div className="text-lg font-bold text-gray-900">↗{Math.abs(userCurrentRank - getCurrentUserRank('totalTime'))}</div>
+              <div className="text-lg font-bold text-gray-900">-</div>
               <p className="text-xs text-gray-600">排名变化</p>
             </CardContent>
           </Card>
@@ -146,7 +147,7 @@ export default function Ranking() {
           <Card>
             <CardContent className="p-3 text-center">
               <Target className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-              <div className="text-lg font-bold text-gray-900">{Math.round((rankingUsers.length - userCurrentRank) / rankingUsers.length * 100)}%</div>
+              <div className="text-lg font-bold text-gray-900">100%</div>
               <p className="text-xs text-gray-600">胜过用户</p>
             </CardContent>
           </Card>
@@ -171,36 +172,44 @@ export default function Ranking() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {rankingUsers.sort((a, b) => b.streak - a.streak).map((player, index) => (
-                    <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center justify-center w-8">
-                        {getRankIcon(index + 1)}
-                      </div>
-                      
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={player.profileImageUrl || undefined} />
-                        <AvatarFallback className="bg-green-100 text-green-700">
-                          {player.name[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{player.name}</span>
-                          <Badge variant="outline" className={getLevelBadgeColor(player.level)}>
-                            Lv.{player.level}
-                          </Badge>
+                  {rankingUsers.length > 0 ? (
+                    rankingUsers.map((player, index) => (
+                      <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center justify-center w-8">
+                          {getRankIcon(index + 1)}
                         </div>
-                        <p className="text-sm text-gray-600">
-                          连胜 {player.streak} 天 • {player.exp} 经验
-                        </p>
+                        
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={player.profileImageUrl || undefined} />
+                          <AvatarFallback className="bg-green-100 text-green-700">
+                            {player.name[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{player.name}</span>
+                            <Badge variant="outline" className={getLevelBadgeColor(player.level)}>
+                              Lv.{player.level}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            连胜 {player.streak} 天 • {player.exp} 经验
+                          </p>
+                        </div>
+                        
+                        <div className="text-right">
+                          <Badge variant="secondary">#{index + 1}</Badge>
+                        </div>
                       </div>
-                      
-                      <div className="text-right">
-                        {getChangeIndicator(player.change || 0)}
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Crown className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                      <p>还没有其他用户</p>
+                      <p className="text-sm">邀请朋友一起训练吧！</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -217,36 +226,44 @@ export default function Ranking() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {rankingUsers.sort((a, b) => b.totalTime - a.totalTime).map((player, index) => (
-                    <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center justify-center w-8">
-                        {getRankIcon(index + 1)}
-                      </div>
-                      
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={player.profileImageUrl || undefined} />
-                        <AvatarFallback className="bg-green-100 text-green-700">
-                          {player.name[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{player.name}</span>
-                          <Badge variant="outline" className={getLevelBadgeColor(player.level)}>
-                            Lv.{player.level}
-                          </Badge>
+                  {rankingUsers.length > 0 ? (
+                    rankingUsers.map((player, index) => (
+                      <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center justify-center w-8">
+                          {getRankIcon(index + 1)}
                         </div>
-                        <p className="text-sm text-gray-600">
-                          训练 {player.totalTime} 分钟 • {player.exp} 经验
-                        </p>
+                        
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={player.profileImageUrl || undefined} />
+                          <AvatarFallback className="bg-green-100 text-green-700">
+                            {player.name[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{player.name}</span>
+                            <Badge variant="outline" className={getLevelBadgeColor(player.level)}>
+                              Lv.{player.level}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            训练 {player.totalTime} 分钟 • {player.exp} 经验
+                          </p>
+                        </div>
+                        
+                        <div className="text-right">
+                          <Badge variant="secondary">#{index + 1}</Badge>
+                        </div>
                       </div>
-                      
-                      <div className="text-right">
-                        {getChangeIndicator(player.change || 0)}
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                      <p>还没有训练记录</p>
+                      <p className="text-sm">开始训练来获得排名！</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -263,32 +280,44 @@ export default function Ranking() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {rankingUsers.sort((a, b) => b.achievements - a.achievements).map((player, index) => (
-                    <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center justify-center w-8">
-                        {getRankIcon(index + 1)}
-                      </div>
-                      
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={player.profileImageUrl || undefined} />
-                        <AvatarFallback className="bg-green-100 text-green-700">
-                          {player.name[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{player.name}</span>
-                          <Badge variant="outline" className={getLevelBadgeColor(player.level)}>
-                            Lv.{player.level}
-                          </Badge>
+                  {rankingUsers.length > 0 ? (
+                    rankingUsers.map((player, index) => (
+                      <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center justify-center w-8">
+                          {getRankIcon(index + 1)}
                         </div>
-                        <p className="text-sm text-gray-600">
-                          {player.achievements} 个成就 • {player.exp} 经验
-                        </p>
+                        
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={player.profileImageUrl || undefined} />
+                          <AvatarFallback className="bg-green-100 text-green-700">
+                            {player.name[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{player.name}</span>
+                            <Badge variant="outline" className={getLevelBadgeColor(player.level)}>
+                              Lv.{player.level}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {player.achievements} 个成就 • {player.exp} 经验
+                          </p>
+                        </div>
+                        
+                        <div className="text-right">
+                          <Badge variant="secondary">#{index + 1}</Badge>
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Trophy className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                      <p>还没有成就记录</p>
+                      <p className="text-sm">完成训练来获得成就！</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
