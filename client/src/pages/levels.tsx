@@ -47,85 +47,83 @@ export default function Levels() {
     queryKey: ["/api/user"],
   });
 
-  // Multiple test buttons to debug positioning issues
+  // Floating button using React portal approach
   useEffect(() => {
-    // Test 1: Full screen overlay
-    const overlay = document.createElement('div');
-    overlay.innerHTML = 'OVERLAY TEST';
-    overlay.style.cssText = `
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      background-color: rgba(255,0,0,0.5) !important;
-      z-index: 999999 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      font-size: 48px !important;
-      color: white !important;
-      font-weight: bold !important;
-      pointer-events: none !important;
-    `;
-    
-    // Test 2: Top-left corner
-    const topButton = document.createElement('div');
-    topButton.innerHTML = 'TOP';
-    topButton.style.cssText = `
-      position: fixed !important;
-      top: 20px !important;
-      left: 20px !important;
-      z-index: 999999 !important;
-      width: 80px !important;
-      height: 60px !important;
-      background-color: #00ff00 !important;
-      color: black !important;
-      font-weight: bold !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    `;
-    
-    // Test 3: Bottom-right corner
-    const bottomButton = document.createElement('div');
-    bottomButton.innerHTML = 'BOT';
-    bottomButton.style.cssText = `
-      position: fixed !important;
-      bottom: 20px !important;
-      right: 20px !important;
-      z-index: 999999 !important;
-      width: 80px !important;
-      height: 60px !important;
-      background-color: #0000ff !important;
-      color: white !important;
-      font-weight: bold !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    `;
-    
-    document.body.appendChild(overlay);
-    document.body.appendChild(topButton);
-    document.body.appendChild(bottomButton);
-    
-    console.log('Multiple test elements added to DOM');
-    console.log('Body children count:', document.body.children.length);
-    console.log('Viewport size:', window.innerWidth, 'x', window.innerHeight);
-    
-    // Auto-remove overlay after 3 seconds
-    setTimeout(() => {
-      if (document.body.contains(overlay)) {
-        document.body.removeChild(overlay);
-      }
-    }, 3000);
-    
-    return () => {
-      [overlay, topButton, bottomButton].forEach(el => {
-        if (document.body.contains(el)) {
-          document.body.removeChild(el);
+    const createFloatingButton = () => {
+      const button = document.createElement('div');
+      button.id = 'floating-level-button';
+      button.innerHTML = '↑';
+      button.style.cssText = `
+        position: fixed !important;
+        bottom: 100px !important;
+        right: 20px !important;
+        z-index: 2147483647 !important;
+        width: 56px !important;
+        height: 56px !important;
+        background: white !important;
+        border: 2px solid #0070f3 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        font-size: 24px !important;
+        color: #0070f3 !important;
+        font-weight: bold !important;
+        transition: all 0.2s ease !important;
+        user-select: none !important;
+      `;
+      
+      button.addEventListener('mouseenter', () => {
+        button.style.transform = 'scale(1.1)';
+        button.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+      });
+      
+      button.addEventListener('mouseleave', () => {
+        button.style.transform = 'scale(1)';
+        button.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
+      });
+      
+      button.addEventListener('click', () => {
+        // Find current level and scroll to it
+        const currentLevel = document.querySelector('[data-level="2"]') as HTMLElement;
+        if (currentLevel) {
+          currentLevel.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       });
+      
+      return button;
+    };
+
+    // Wait for DOM to be ready
+    const addButton = () => {
+      const existingButton = document.getElementById('floating-level-button');
+      if (existingButton) {
+        existingButton.remove();
+      }
+      
+      const button = createFloatingButton();
+      document.body.appendChild(button);
+      console.log('Floating button added to body');
+    };
+
+    // Multiple attempts to ensure button appears
+    addButton();
+    
+    const timer1 = setTimeout(addButton, 100);
+    const timer2 = setTimeout(addButton, 500);
+    const timer3 = setTimeout(addButton, 1000);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      
+      const button = document.getElementById('floating-level-button');
+      if (button) {
+        button.remove();
+      }
     };
   }, []);
 
@@ -144,32 +142,7 @@ export default function Levels() {
           </div>
         </div>
         
-        {/* 返回当前关卡浮动按钮 - 加载状态 */}
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            zIndex: 999999,
-            width: '60px',
-            height: '60px',
-            backgroundColor: '#ff0000',
-            borderRadius: '15px',
-            boxShadow: '0 8px 32px rgba(255,0,0,0.8)',
-            border: '4px solid #ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            fontSize: '30px',
-            color: 'white',
-            fontWeight: 'bold',
-            left: 'auto',
-            top: 'auto'
-          }}
-        >
-          ↑
-        </div>
+
       </>
     );
   }
@@ -179,32 +152,7 @@ export default function Levels() {
       <>
         <div className="text-center py-8">数据加载失败</div>
         
-        {/* 返回当前关卡浮动按钮 - 错误状态 */}
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            zIndex: 999999,
-            width: '60px',
-            height: '60px',
-            backgroundColor: '#ff0000',
-            borderRadius: '15px',
-            boxShadow: '0 8px 32px rgba(255,0,0,0.8)',
-            border: '4px solid #ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            fontSize: '30px',
-            color: 'white',
-            fontWeight: 'bold',
-            left: 'auto',
-            top: 'auto'
-          }}
-        >
-          ↑
-        </div>
+
       </>
     );
   }
@@ -534,6 +482,7 @@ export default function Levels() {
             <div 
               key={stage.level} 
               className="relative"
+              data-level={stage.level}
               ref={stage.level === user.level ? currentLevelRef : null}
             >
               {/* 等级标题卡片 */}
@@ -811,33 +760,7 @@ export default function Levels() {
         </DialogContent>
       </Dialog>
 
-      {/* 返回当前关卡浮动按钮 - 测试版本 */}
-      <div
-        onClick={scrollToCurrentLevel}
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          zIndex: 999999,
-          width: '60px',
-          height: '60px',
-          backgroundColor: '#ff0000',
-          borderRadius: '15px',
-          boxShadow: '0 8px 32px rgba(255,0,0,0.8)',
-          border: '4px solid #ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          fontSize: '30px',
-          color: 'white',
-          fontWeight: 'bold',
-          left: 'auto',
-          top: 'auto'
-        }}
-      >
-        ↑
-      </div>
+
     </div>
   );
 }
