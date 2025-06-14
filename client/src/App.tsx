@@ -10,7 +10,7 @@ import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import Levels from "@/pages/levels-new";
 import Tasks from "@/pages/tasks";
-import Growth from "@/pages/growth";
+import Ranking from "@/pages/ranking";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
 
@@ -29,7 +29,7 @@ function Router() {
           <Route path="/training" component={Levels} />
           <Route path="/levels" component={Levels} />
           <Route path="/tasks" component={Tasks} />
-          <Route path="/growth" component={Growth} />
+          <Route path="/growth" component={Ranking} />
           <Route path="/diary" component={Diary} />
           <Route path="/profile" component={Profile} />
         </>
