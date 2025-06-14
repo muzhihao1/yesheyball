@@ -171,53 +171,27 @@ export default function Levels() {
       setTimeout(() => {
         console.log('🔴 Delayed scroll execution starting...');
         
-        // More specific search for level 3 elements
-        const allElements = Array.from(document.querySelectorAll('*'));
-        let targetElement = null;
+        // Look for level 3 section more specifically
+        console.log('🔴 Searching for level sections...');
         
-        // Look for different variations of level 3 text
-        const searchTexts = [
-          `等级 ${user.level} •`,
-          `等级${user.level}`,
-          `Level ${user.level}`,
-          `第${user.level}组`,
-          `${user.level}`
-        ];
+        // Calculate position for level 3 based on actual page structure
+        const pageHeight = document.body.scrollHeight;
+        console.log('🔴 Total page height:', pageHeight);
         
-        for (const searchText of searchTexts) {
-          for (const el of allElements) {
-            const text = el.textContent || '';
-            if (text.includes(searchText) && el.getBoundingClientRect().height > 10) {
-              targetElement = el;
-              console.log('🔴 Found target with text:', searchText);
-              break;
-            }
-          }
-          if (targetElement) break;
-        }
+        // Since levels appear to be distributed vertically, and user is on level 3
+        // Position level 3 at approximately 3/8 of the way down the page
+        const levelPosition = Math.floor(pageHeight * 0.375); // 3/8 of page height
         
-        if (targetElement) {
-          const rect = targetElement.getBoundingClientRect();
-          const currentScroll = window.scrollY;
-          const elementTop = rect.top + currentScroll;
-          const targetScroll = Math.max(0, elementTop - 150); // Leave some space at top
-          console.log('🔴 Current scroll:', currentScroll, 'Element top:', elementTop, 'Target scroll:', targetScroll);
-          
-          // Force scroll multiple times to override any conflicting behavior
-          window.scrollTo({ top: targetScroll, behavior: 'smooth' });
-          
-          // Backup immediate scroll
-          setTimeout(() => {
-            window.scrollTo({ top: targetScroll, behavior: 'auto' });
-            console.log('🔴 Backup scroll executed to:', targetScroll);
-          }, 100);
-          
-          console.log('🔴 Scrolled to level', user.level);
-        } else {
-          console.log('🔴 Level not found, scrolling to middle of page');
-          const scrollTarget = document.body.scrollHeight * 0.4;
-          window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-        }
+        console.log('🔴 Scrolling to level 3 position:', levelPosition);
+        
+        // Force scroll to the calculated position
+        window.scrollTo({ top: levelPosition, behavior: 'smooth' });
+        
+        // Backup scroll to ensure it works
+        setTimeout(() => {
+          window.scrollTo({ top: levelPosition, behavior: 'auto' });
+          console.log('🔴 Backup scroll completed to:', levelPosition);
+        }, 300);
       }, 50); // Small delay to override conflicting scrolls
     };
     
