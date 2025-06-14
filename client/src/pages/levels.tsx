@@ -85,6 +85,13 @@ export default function Levels() {
   const [skipChallengeQuestions, setSkipChallengeQuestions] = useState<any[]>([]);
   const [currentSkipQuestion, setCurrentSkipQuestion] = useState(0);
   const [skipChallengeAnswers, setSkipChallengeAnswers] = useState<string[]>([]);
+
+  // Force close skip dialogs on component mount
+  useEffect(() => {
+    setShowSkipDialog(false);
+    setShowSkipChallenge(false);
+    setSkipToLevel(null);
+  }, []);
   
   // 考核相关状态
   const [showExamDialog, setShowExamDialog] = useState(false);
