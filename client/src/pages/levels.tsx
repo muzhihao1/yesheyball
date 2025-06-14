@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +47,41 @@ export default function Levels() {
     queryKey: ["/api/user"],
   });
 
+  // Direct DOM manipulation test for floating button
+  useEffect(() => {
+    const testButton = document.createElement('div');
+    testButton.innerHTML = '🔴TEST';
+    testButton.style.cssText = `
+      position: fixed !important;
+      bottom: 20px !important;
+      right: 20px !important;
+      z-index: 999999 !important;
+      width: 80px !important;
+      height: 60px !important;
+      background-color: #ff0000 !important;
+      border-radius: 15px !important;
+      box-shadow: 0 8px 32px rgba(255,0,0,0.8) !important;
+      border: 4px solid #ffffff !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      font-size: 14px !important;
+      color: white !important;
+      font-weight: bold !important;
+    `;
+    
+    document.body.appendChild(testButton);
+    console.log('Test button added to DOM');
+    
+    return () => {
+      if (document.body.contains(testButton)) {
+        document.body.removeChild(testButton);
+        console.log('Test button removed from DOM');
+      }
+    };
+  }, []);
+
   if (userLoading) {
     return (
       <>
@@ -66,22 +101,24 @@ export default function Levels() {
         <div
           style={{
             position: 'fixed',
-            bottom: '120px',
-            right: '16px',
+            bottom: '20px',
+            right: '20px',
             zIndex: 999999,
-            width: '50px',
-            height: '50px',
+            width: '60px',
+            height: '60px',
             backgroundColor: '#ff0000',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(255,0,0,0.5)',
-            border: '3px solid #000',
+            borderRadius: '15px',
+            boxShadow: '0 8px 32px rgba(255,0,0,0.8)',
+            border: '4px solid #ffffff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            fontSize: '24px',
+            fontSize: '30px',
             color: 'white',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            left: 'auto',
+            top: 'auto'
           }}
         >
           ↑
@@ -99,22 +136,24 @@ export default function Levels() {
         <div
           style={{
             position: 'fixed',
-            bottom: '120px',
-            right: '16px',
+            bottom: '20px',
+            right: '20px',
             zIndex: 999999,
-            width: '50px',
-            height: '50px',
+            width: '60px',
+            height: '60px',
             backgroundColor: '#ff0000',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(255,0,0,0.5)',
-            border: '3px solid #000',
+            borderRadius: '15px',
+            boxShadow: '0 8px 32px rgba(255,0,0,0.8)',
+            border: '4px solid #ffffff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            fontSize: '24px',
+            fontSize: '30px',
             color: 'white',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            left: 'auto',
+            top: 'auto'
           }}
         >
           ↑
@@ -730,22 +769,24 @@ export default function Levels() {
         onClick={scrollToCurrentLevel}
         style={{
           position: 'fixed',
-          bottom: '120px',
-          right: '16px',
+          bottom: '20px',
+          right: '20px',
           zIndex: 999999,
-          width: '50px',
-          height: '50px',
-          backgroundColor: '#ff0000', // 红色背景便于测试
-          borderRadius: '12px',
-          boxShadow: '0 8px 32px rgba(255,0,0,0.5)',
-          border: '3px solid #000',
+          width: '60px',
+          height: '60px',
+          backgroundColor: '#ff0000',
+          borderRadius: '15px',
+          boxShadow: '0 8px 32px rgba(255,0,0,0.8)',
+          border: '4px solid #ffffff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          fontSize: '24px',
+          fontSize: '30px',
           color: 'white',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          left: 'auto',
+          top: 'auto'
         }}
       >
         ↑
