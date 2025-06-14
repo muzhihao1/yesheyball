@@ -209,44 +209,52 @@ export default function Levels() {
           return;
         }
         
-        // 查找当前用户等级对应的第一个可解锁/可点击的练习
+        // Find current level section based on user's actual level
         let targetElement = null;
         
-        // 方法1: 查找带有绿色高亮边框的元素（当前关卡标识）
-        const highlightedElements = document.querySelectorAll('.ring-4, .ring-green-400, .border-green-400, .border-4');
-        if (highlightedElements.length > 0) {
-          targetElement = highlightedElements[0];
-          console.log('🔴 Found highlighted current level element');
+        // Method 1: Look for current level header with specific pattern
+        const levelHeaders = document.querySelectorAll('h2, h3, div');
+        for (let i = 0; i < levelHeaders.length; i++) {
+          const el = levelHeaders[i];
+          const text = el.textContent || '';
+          if (text.includes(`等级 ${user.level}`) && text.includes('•')) {
+            const rect = el.getBoundingClientRect();
+            if (rect.height > 20 && rect.width > 100) {
+              targetElement = el;
+              console.log('🔴 Found current level header');
+              break;
+            }
+          }
         }
         
-        // 方法2: 查找第一个未锁定的练习节点
+        // Method 2: Look for level container or section
         if (!targetElement) {
-          const allNodes = document.querySelectorAll('div');
-          for (const node of allNodes) {
-            const rect = node.getBoundingClientRect();
-            if (rect.height > 50 && rect.width > 50) { // 合理大小的元素
-              const hasClickHandler = node.getAttribute('onclick') || node.style.cursor === 'pointer';
-              const isNotLocked = !node.textContent?.includes('🔒');
-              const isVisible = rect.top >= 0;
-              
-              if (hasClickHandler && isNotLocked && isVisible) {
-                targetElement = node;
-                console.log('🔴 Found unlocked exercise node');
+          const allDivs = document.querySelectorAll('div');
+          for (let i = 0; i < allDivs.length; i++) {
+            const div = allDivs[i];
+            const text = div.textContent || '';
+            if (text.includes(`等级 ${user.level}`) && div.children.length > 2) {
+              const rect = div.getBoundingClientRect();
+              if (rect.height > 200) { // Level sections are typically large
+                targetElement = div;
+                console.log('🔴 Found current level section');
                 break;
               }
             }
           }
         }
         
-        // 方法3: 备用方案 - 寻找等级标题
+        // Method 3: Find any element mentioning current level
         if (!targetElement) {
           const allElements = document.querySelectorAll('*');
-          for (const el of allElements) {
-            if (el.textContent?.includes(`等级 ${user.level}`) || el.textContent?.includes(`Level ${user.level}`)) {
+          for (let i = 0; i < allElements.length; i++) {
+            const el = allElements[i];
+            const text = el.textContent || '';
+            if (text.includes(`等级 ${user.level}`)) {
               const rect = el.getBoundingClientRect();
-              if (rect.height > 0) {
+              if (rect.height > 30) {
                 targetElement = el;
-                console.log('🔴 Found level title element');
+                console.log('🔴 Found level element');
                 break;
               }
             }
