@@ -232,7 +232,7 @@ export default function Profile() {
                   <span className="font-medium">总训练时长</span>
                 </div>
                 <Badge variant="secondary">
-                  {Math.round((userStats?.totalDays || 0) * 30)} 分钟
+                  {Math.round(((userStats as any)?.totalDays || 0) * 30)} 分钟
                 </Badge>
               </div>
             </div>
@@ -248,9 +248,9 @@ export default function Profile() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {trainingRecords && trainingRecords.length > 0 ? (
+            {(trainingRecords as any) && (trainingRecords as any).length > 0 ? (
               <div className="space-y-3">
-                {trainingRecords.slice(0, 3).map((record: any) => (
+                {(trainingRecords as any).slice(0, 3).map((record: any) => (
                   <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <p className="font-medium">{record.title}</p>
