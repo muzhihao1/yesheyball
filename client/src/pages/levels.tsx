@@ -867,6 +867,10 @@ export default function Levels() {
     try {
       // Generate challenge questions using actual exercises from the target level
       const targetLevelExercises = generateExercisesForLevel(skipToLevel);
+      console.log('🟡 Skip challenge - target level:', skipToLevel);
+      console.log('🟡 Skip challenge - exercises generated:', targetLevelExercises.length);
+      console.log('🟡 Skip challenge - first exercise:', targetLevelExercises[0]);
+      
       const challengeQuestions = targetLevelExercises.slice(0, 3).map((exercise, index) => ({
         id: exercise.id,
         question: `完成${exercise.title}练习`,
@@ -880,6 +884,9 @@ export default function Levels() {
         correctAnswer: 0, // First option is correct - confident completion
         explanation: `${exercise.title}: ${exercise.description}`
       }));
+      
+      console.log('🟡 Skip challenge - challenge questions generated:', challengeQuestions.length);
+      console.log('🟡 Skip challenge - first question:', challengeQuestions[0]);
       
       setSkipChallengeQuestions(challengeQuestions);
       setCurrentSkipQuestion(0);
@@ -1602,8 +1609,8 @@ export default function Levels() {
               <div className="text-center">
                 <h3 className="font-semibold text-gray-800 mb-2">挑战规则</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• 需要完成 3 道技能验证题</li>
-                  <li>• 每题都需要达到标准要求</li>
+                  <li>• 需要完成等级 {skipToLevel} 的 3 道实际练习题</li>
+                  <li>• 每题都需要自评能够完成</li>
                   <li>• 挑战成功后解锁到目标等级</li>
                   <li>• 失败可以重新挑战</li>
                 </ul>
