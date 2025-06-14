@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 import Landing from "@/pages/Landing";
-import Home from "@/pages/home";
+
 import Levels from "@/pages/levels";
 import Tasks from "@/pages/tasks";
 import Ranking from "@/pages/ranking";
@@ -25,7 +25,7 @@ function Router() {
         <Route path="/" component={Landing} />
       ) : (
         <>
-          <Route path="/" component={Home} />
+          <Route path="/" component={Levels} />
           <Route path="/training" component={Levels} />
           <Route path="/levels" component={Levels} />
           <Route path="/tasks" component={Tasks} />
