@@ -120,49 +120,96 @@ export default function Levels() {
       button.className = 'level-floating-btn';
       button.innerHTML = '↑';
       
-      // Apply styles directly
+      // Apply styles directly - 匹配参考设计
       const styles = [
         'position: fixed',
         'bottom: 100px',
-        'right: 20px', 
-        'width: 56px',
-        'height: 56px',
+        'right: 16px', 
+        'width: 48px',
+        'height: 48px',
         'background: white',
-        'border: 2px solid #22c55e',
-        'border-radius: 16px',
-        'box-shadow: 0 8px 24px rgba(0,0,0,0.15)',
+        'border: 2px solid #3b82f6',
+        'border-radius: 12px',
+        'box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3)',
         'display: flex',
         'align-items: center',
         'justify-content: center',
-        'font-size: 24px',
-        'color: #22c55e',
-        'font-weight: bold',
+        'font-size: 20px',
+        'color: #3b82f6',
+        'font-weight: 600',
         'cursor: pointer',
         'z-index: 999999',
-        'transition: all 0.2s ease'
+        'transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        'backdrop-filter: blur(8px)'
       ].map(s => s + ' !important').join('; ');
       
       button.setAttribute('style', styles);
       
       // Add click handler
       button.addEventListener('click', () => {
-        console.log('🔴 Button clicked');
+        console.log('🔴 Button clicked, user level:', user?.level);
+        
         if (user) {
-          // Find current level element and scroll to it
-          const currentLevelEl = document.querySelector(`[data-level="${user.level}"]`);
-          if (currentLevelEl) {
-            currentLevelEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // 方法1: 尝试通过data-level属性找到元素
+          let targetElement = document.querySelector(`[data-level="${user.level}"]`);
+          
+          // 方法2: 如果没找到，尝试查找包含当前等级的元素
+          if (!targetElement) {
+            const levelTexts = document.querySelectorAll('*');
+            for (let el of levelTexts) {
+              if (el.textContent?.includes(`等级 ${user.level}`) || 
+                  el.textContent?.includes(`Level ${user.level}`)) {
+                targetElement = el;
+                break;
+              }
+            }
+          }
+          
+          // 方法3: 查找当前用户等级对应的卡片
+          if (!targetElement) {
+            targetElement = document.querySelector('.ring-4'); // 当前等级有ring-4样式
+          }
+          
+          console.log('🔴 Target element found:', !!targetElement);
+          
+          if (targetElement) {
+            targetElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center',
+              inline: 'nearest'
+            });
+            
+            // 添加高亮效果
+            targetElement.style.transition = 'transform 0.3s ease';
+            targetElement.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+              targetElement.style.transform = 'scale(1)';
+            }, 1000);
+          } else {
+            console.log('🔴 No target element found, scrolling to top');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }
         }
       });
       
       // Add hover effects
       button.addEventListener('mouseenter', () => {
-        button.style.transform = 'scale(1.1) !important';
+        button.style.transform = 'scale(1.1) translateY(-2px) !important';
+        button.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.4) !important';
       });
       
       button.addEventListener('mouseleave', () => {
-        button.style.transform = 'scale(1) !important';
+        button.style.transform = 'scale(1) translateY(0) !important';
+        button.style.boxShadow = '0 4px 16px rgba(59, 130, 246, 0.3) !important';
+      });
+      
+      // Add active/pressed effect
+      button.addEventListener('mousedown', () => {
+        button.style.transform = 'scale(0.95) translateY(1px) !important';
+      });
+      
+      button.addEventListener('mouseup', () => {
+        button.style.transform = 'scale(1.1) translateY(-2px) !important';
       });
       
       return button;
