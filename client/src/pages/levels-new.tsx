@@ -150,71 +150,66 @@ export default function Levels() {
         console.log('🔴 Button clicked, user level:', user?.level);
         
         if (user) {
-          // 方法1: 尝试通过data-level属性找到元素
-          let targetElement = document.querySelector(`[data-level="${user.level}"]`);
+          console.log('🔴 Looking for user level:', user.level);
           
-          // 方法2: 查找当前用户等级对应的卡片(有高亮边框的)
-          if (!targetElement) {
-            targetElement = document.querySelector('.ring-4, .ring-yellow-400'); 
+          // 重新设计滚动逻辑：查找当前等级对应的第一个练习节点
+          let targetElement: Element | null = null;
+          
+          // 查找当前等级的第一个解锁的练习节点（圆形图标）
+          const allExerciseNodes = document.querySelectorAll('[class*="w-16"][class*="h-16"][class*="rounded-full"], [class*="w-24"][class*="h-24"]');
+          
+          console.log('🔴 Found exercise nodes:', allExerciseNodes.length);
+          
+          // 找到第一个可点击的（非锁定的）练习节点
+          for (let node of allExerciseNodes) {
+            const rect = node.getBoundingClientRect();
+            const isVisible = rect.height > 0 && rect.width > 0;
+            const isNotLocked = !node.textContent?.includes('🔒') && !node.querySelector('.text-gray-500');
+            
+            if (isVisible && isNotLocked) {
+              targetElement = node;
+              console.log('🔴 Found unlocked exercise node');
+              break;
+            }
           }
           
-          // 方法3: 查找包含当前等级文本的元素
+          // 如果没找到练习节点，查找等级标题
           if (!targetElement) {
-            const allElements = Array.from(document.querySelectorAll('*'));
-            targetElement = allElements.find(el => 
-              el.textContent?.includes(`等级 ${user.level}`) || 
-              el.textContent?.includes(`Level ${user.level}`)
-            );
-          }
-          
-          // 方法4: 查找第一个可见的等级卡片
-          if (!targetElement) {
-            const levelCards = document.querySelectorAll('[class*="bg-gradient"], [class*="rounded-lg"]');
-            for (let card of levelCards) {
-              if (card.textContent?.includes('等级') && card.getBoundingClientRect().height > 0) {
-                targetElement = card;
+            const titleElements = document.querySelectorAll('*');
+            for (let el of titleElements) {
+              if (el.textContent?.includes(`等级 ${user.level}`) && el.getBoundingClientRect().height > 0) {
+                targetElement = el;
+                console.log('🔴 Found level title');
                 break;
               }
             }
           }
           
-          console.log('🔴 Target element found:', !!targetElement);
-          console.log('🔴 Target element:', targetElement);
-          console.log('🔴 Current scroll position:', window.scrollY);
+          console.log('🔴 Final target element:', targetElement);
           
           if (targetElement) {
-            const rect = targetElement.getBoundingClientRect();
-            console.log('🔴 Element position:', rect);
-            
+            // 简单直接的滚动到元素
             targetElement.scrollIntoView({ 
               behavior: 'smooth', 
-              block: 'center',
-              inline: 'nearest'
+              block: 'center' 
             });
             
-            // 强制滚动确保到达目标位置
-            setTimeout(() => {
-              const elementTop = targetElement.offsetTop;
-              const offsetPosition = elementTop - (window.innerHeight / 2);
-              window.scrollTo({
-                top: Math.max(0, offsetPosition),
-                behavior: 'smooth'
-              });
-              console.log('🔴 Force scrolled to:', offsetPosition);
-            }, 100);
-            
-            // 添加高亮效果
+            // 添加绿色高亮效果
             if (targetElement instanceof HTMLElement) {
-              targetElement.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
-              targetElement.style.transform = 'scale(1.05)';
-              targetElement.style.boxShadow = '0 0 20px rgba(37, 99, 235, 0.5)';
+              const originalTransform = targetElement.style.transform;
+              const originalBoxShadow = targetElement.style.boxShadow;
+              
+              targetElement.style.transition = 'all 0.5s ease';
+              targetElement.style.transform = 'scale(1.1)';
+              targetElement.style.boxShadow = '0 0 25px rgba(34, 197, 94, 0.8)';
+              
               setTimeout(() => {
-                targetElement.style.transform = 'scale(1)';
-                targetElement.style.boxShadow = '';
+                targetElement.style.transform = originalTransform;
+                targetElement.style.boxShadow = originalBoxShadow;
               }, 2000);
             }
           } else {
-            console.log('🔴 No target element found, scrolling to top');
+            console.log('🔴 No target found, scrolling to top');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }
         }
