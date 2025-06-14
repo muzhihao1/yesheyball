@@ -1155,13 +1155,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         exp: newExp
       });
 
+      // Mark all exercises from previous levels as completed
+      const currentCompletedExercises: Record<string, number> = (user.completedExercises as Record<string, number>) || {};
+      
+      for (let level = 1; level < targetLevel; level++) {
+        // Calculate how many exercises exist for each level
+        let exerciseCount;
+        if (level === 1) exerciseCount = 37; // Level 1 has 37 exercises
+        else if (level === 2) exerciseCount = 40; // Level 2 has 40 exercises  
+        else if (level === 3) exerciseCount = 52; // Level 3 has 52 exercises
+        else if (level === 4) exerciseCount = 62; // Level 4 has 62 exercises
+        else if (level === 5) exerciseCount = 62; // Level 5 has 62 exercises
+        else if (level === 6) exerciseCount = 62; // Level 6 has 62 exercises
+        else exerciseCount = 62; // Default for higher levels
+
+        // Mark all exercises in this level as completed
+        currentCompletedExercises[level.toString()] = exerciseCount;
+      }
+
+      // Update user with completed exercises
+      await storage.updateUser(userId, {
+        completedExercises: currentCompletedExercises,
+        currentLevel: targetLevel,
+        currentExercise: 1 // Start at first exercise of target level
+      });
+
       // Create diary entry for the skip level achievement
       await storage.createDiaryEntry({
         userId,
         content: `成功完成跳级挑战！从等级 ${user.level} 跳级到等级 ${targetLevel}。挑战得分：${challengeScore.toFixed(0)}%`,
         rating: 5,
-        duration: 15,
-        exerciseCompleted: true
+        duration: 15
       });
 
       res.json({
