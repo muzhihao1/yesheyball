@@ -391,8 +391,17 @@ export default function Levels() {
     return <div className="text-center py-8">用户数据加载失败</div>;
   }
 
-  // 基于实际验证数据的等级关卡配置 (总计411个习题)
-  const levelStages: LevelStage[] = [
+  // Memoized level stages calculation to improve performance
+  const levelStages: LevelStage[] = useMemo(() => {
+    if (!user) return [];
+    
+    const getCompletedExercises = (level: number) => {
+      if (!user.completedExercises) return 0;
+      const exercises = user.completedExercises as Record<string, number>;
+      return exercises[level.toString()] || 0;
+    };
+    
+    return [
     {
       level: 1,
       name: "初窥门径",
@@ -402,11 +411,7 @@ export default function Levels() {
       unlocked: true,
       completed: user.level > 1,
       progress: user.level > 1 ? 100 : Math.min((user.exp / 1000) * 100, 95),
-      completedExercises: (() => {
-        if (!user.completedExercises) return 0;
-        const exercises = user.completedExercises as Record<string, number>;
-        return exercises['1'] || 0;
-      })()
+      completedExercises: getCompletedExercises(1)
     },
     {
       level: 2,
@@ -417,11 +422,7 @@ export default function Levels() {
       unlocked: user.level >= 2,
       completed: user.level > 2,
       progress: user.level > 2 ? 100 : user.level === 2 ? Math.min(((user.exp - 1000) / 1000) * 100, 95) : 0,
-      completedExercises: (() => {
-        if (!user.completedExercises) return 0;
-        const exercises = user.completedExercises as Record<string, number>;
-        return exercises['2'] || 0;
-      })()
+      completedExercises: getCompletedExercises(2)
     },
     {
       level: 3,
@@ -432,11 +433,7 @@ export default function Levels() {
       unlocked: user.level >= 3,
       completed: user.level > 3,
       progress: user.level > 3 ? 100 : user.level === 3 ? Math.min(((user.exp - 2000) / 1000) * 100, 95) : 0,
-      completedExercises: (() => {
-        if (!user.completedExercises) return 0;
-        const exercises = user.completedExercises as Record<string, number>;
-        return exercises['3'] || 0;
-      })()
+      completedExercises: getCompletedExercises(3)
     },
     {
       level: 4,
@@ -447,11 +444,7 @@ export default function Levels() {
       unlocked: user.level >= 4,
       completed: user.level > 4,
       progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
-      completedExercises: (() => {
-        if (!user.completedExercises) return 0;
-        const exercises = user.completedExercises as Record<string, number>;
-        return exercises['4'] || 0;
-      })()
+      completedExercises: getCompletedExercises(4)
     },
     {
       level: 5,
@@ -514,6 +507,7 @@ export default function Levels() {
       })()
     }
   ];
+  }, [user, user?.exp, user?.level, user?.completedExercises]);
 
   const getLevelColors = (level: number) => {
     const colorSchemes = {
