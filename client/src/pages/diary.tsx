@@ -20,6 +20,8 @@ export default function Diary() {
 
   const { data: diaryEntries, isLoading } = useQuery<DiaryEntry[]>({
     queryKey: ["/api/diary"],
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const createEntryMutation = useMutation({
