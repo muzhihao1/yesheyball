@@ -89,6 +89,9 @@ export default function Tasks() {
   // Special training states
   const [currentSpecialTraining, setCurrentSpecialTraining] = useState<SpecialTraining | null>(null);
   
+  // Tab state
+  const [activeTab, setActiveTab] = useState<string>("guided");
+  
   // Dialog states
   const [showTrainingComplete, setShowTrainingComplete] = useState(false);
   const [showRecordDetails, setShowRecordDetails] = useState(false);
@@ -170,31 +173,32 @@ export default function Tasks() {
     };
   };
 
-  // Get training programs
+  // Get training programs with caching
   const { data: programs = [] } = useQuery<TrainingProgram[]>({
     queryKey: ["/api/training-programs"],
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Get training days for the main program
+  // Get training days for the main program only when needed
   const mainProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
   const { data: trainingDays = [] } = useQuery<TrainingDay[]>({
     queryKey: [`/api/training-programs/${mainProgram?.id}/days`],
-    enabled: !!mainProgram?.id,
+    enabled: !!mainProgram?.id && (isGuidedTraining || activeTab === "guided"),
+    staleTime: 15 * 60 * 1000, // 15 minutes
   });
 
-  // Get current session
+  // Get current session only when training is active
   const { data: currentSession } = useQuery<TrainingSession | null>({
     queryKey: ["/api/training-sessions/current"],
+    enabled: isGuidedTraining || isCustomTraining || isSpecialTraining,
+    refetchInterval: isGuidedTraining || isCustomTraining || isSpecialTraining ? 30000 : false,
   });
 
-  // Get training sessions (history)
-  const { data: sessions = [] } = useQuery<TrainingSession[]>({
-    queryKey: ["/api/training-sessions"],
-  });
-
-  // Get completed training records
+  // Get training records only when history tab is active
   const { data: trainingRecords = [] } = useQuery<TrainingRecord[]>({
     queryKey: ["/api/training-records"],
+    enabled: activeTab === "history",
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   // Delete training record mutation
