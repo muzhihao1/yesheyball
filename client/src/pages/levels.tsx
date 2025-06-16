@@ -117,6 +117,108 @@ export default function Levels() {
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  // Memoized level stages calculation - must be before any conditional returns
+  const levelStages: LevelStage[] = useMemo(() => {
+    if (!user) return [];
+    
+    const getCompletedExercises = (level: number) => {
+      if (!user.completedExercises) return 0;
+      const exercises = user.completedExercises as Record<string, number>;
+      return exercises[level.toString()] || 0;
+    };
+    
+    return [
+    {
+      level: 1,
+      name: "初窥门径",
+      totalExercises: 35,
+      category: "启明星",
+      description: "在启明星教准轨道，让台球成为你的第一颗卫星！台球技术基础框架搭建",
+      unlocked: true,
+      completed: user.level > 1,
+      progress: user.level > 1 ? 100 : Math.min((user.exp / 1000) * 100, 95),
+      completedExercises: getCompletedExercises(1)
+    },
+    {
+      level: 2,
+      name: "小有所成",
+      totalExercises: 40,
+      category: "启明星",
+      description: "台球技术基础框架搭建",
+      unlocked: user.level >= 2,
+      completed: user.level > 2,
+      progress: user.level > 2 ? 100 : user.level === 2 ? Math.min(((user.exp - 1000) / 1000) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(2)
+    },
+    {
+      level: 3,
+      name: "渐入佳境",
+      totalExercises: 50,
+      category: "启明星",
+      description: "掌握基本走位与控球技巧",
+      unlocked: user.level >= 3,
+      completed: user.level > 3,
+      progress: user.level > 3 ? 100 : user.level === 3 ? Math.min(((user.exp - 2000) / 1000) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(3)
+    },
+    {
+      level: 4,
+      name: "炉火纯青",
+      totalExercises: 60,
+      category: "超新星",
+      description: "在超新星的引力场中，精准控制每一次撞击！",
+      unlocked: user.level >= 4,
+      completed: user.level > 4,
+      progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(4)
+    },
+    {
+      level: 5,
+      name: "登堂入室",
+      totalExercises: 60,
+      category: "超新星",
+      description: "技术日臻成熟，走位精准",
+      unlocked: user.level >= 5,
+      completed: user.level > 5,
+      progress: user.level > 5 ? 100 : user.level === 5 ? Math.min((user.exp / 500) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(5)
+    },
+    {
+      level: 6,
+      name: "超群绝伦",
+      totalExercises: 60,
+      category: "超新星",
+      description: "精确走位与复杂球局",
+      unlocked: user.level >= 6,
+      completed: user.level > 6,
+      progress: user.level > 6 ? 100 : user.level === 6 ? Math.min((user.exp / 600) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(6)
+    },
+    {
+      level: 7,
+      name: "登峰造极",
+      totalExercises: 55,
+      category: "智子星",
+      description: "在智子星的宏观维度，用一杆终结所有因果链！台球桌上的战略思维",
+      unlocked: user.level >= 7,
+      completed: user.level > 7,
+      progress: user.level > 7 ? 100 : user.level === 7 ? Math.min((user.exp / 700) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(7)
+    },
+    {
+      level: 8,
+      name: "出神入化",
+      totalExercises: 55,
+      category: "智子星",
+      description: "超越技巧的艺术境界",
+      unlocked: user.level >= 8,
+      completed: user.level > 8,
+      progress: user.level > 8 ? 100 : user.level === 8 ? Math.min((user.exp / 800) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(8)
+    }
+  ];
+  }, [user, user?.exp, user?.level, user?.completedExercises]);
+
   // Floating navigation button to jump to current level
   useEffect(() => {
     if (!user) return;
@@ -256,6 +358,17 @@ export default function Levels() {
     };
   }, [user]);
 
+  // Load exercise data automatically on component mount
+  useEffect(() => {
+    if (!exerciseData && !exerciseDataLoading) {
+      setExerciseDataLoading(true);
+      loadExerciseData()
+        .then(setExerciseData)
+        .catch(error => console.error('Failed to load exercise data:', error))
+        .finally(() => setExerciseDataLoading(false));
+    }
+  }, [exerciseData, exerciseDataLoading]);
+
   // Load exercise data only when needed (lazy loading)
   const loadExerciseDataWhenNeeded = useCallback(async () => {
     if (exerciseData || exerciseDataLoading) return;
@@ -371,7 +484,7 @@ export default function Levels() {
     };
   };
 
-  if (userLoading || !exerciseData) {
+  if (userLoading) {
     return (
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="text-center mb-6 sm:mb-8">
@@ -390,108 +503,6 @@ export default function Levels() {
   if (!user) {
     return <div className="text-center py-8">用户数据加载失败</div>;
   }
-
-  // Memoized level stages calculation to improve performance
-  const levelStages: LevelStage[] = useMemo(() => {
-    if (!user) return [];
-    
-    const getCompletedExercises = (level: number) => {
-      if (!user.completedExercises) return 0;
-      const exercises = user.completedExercises as Record<string, number>;
-      return exercises[level.toString()] || 0;
-    };
-    
-    return [
-    {
-      level: 1,
-      name: "初窥门径",
-      totalExercises: 35,
-      category: "启明星",
-      description: "在启明星教准轨道，让台球成为你的第一颗卫星！台球技术基础框架搭建",
-      unlocked: true,
-      completed: user.level > 1,
-      progress: user.level > 1 ? 100 : Math.min((user.exp / 1000) * 100, 95),
-      completedExercises: getCompletedExercises(1)
-    },
-    {
-      level: 2,
-      name: "小有所成",
-      totalExercises: 40,
-      category: "启明星",
-      description: "台球技术基础框架搭建",
-      unlocked: user.level >= 2,
-      completed: user.level > 2,
-      progress: user.level > 2 ? 100 : user.level === 2 ? Math.min(((user.exp - 1000) / 1000) * 100, 95) : 0,
-      completedExercises: getCompletedExercises(2)
-    },
-    {
-      level: 3,
-      name: "渐入佳境",
-      totalExercises: 50,
-      category: "启明星",
-      description: "掌握基本走位与控球技巧",
-      unlocked: user.level >= 3,
-      completed: user.level > 3,
-      progress: user.level > 3 ? 100 : user.level === 3 ? Math.min(((user.exp - 2000) / 1000) * 100, 95) : 0,
-      completedExercises: getCompletedExercises(3)
-    },
-    {
-      level: 4,
-      name: "炉火纯青",
-      totalExercises: 60,
-      category: "超新星",
-      description: "在超新星的引力场中，精准控制每一次撞击！",
-      unlocked: user.level >= 4,
-      completed: user.level > 4,
-      progress: user.level > 4 ? 100 : user.level === 4 ? Math.min((user.exp / 400) * 100, 95) : 0,
-      completedExercises: getCompletedExercises(4)
-    },
-    {
-      level: 5,
-      name: "登堂入室",
-      totalExercises: 60,
-      category: "超新星",
-      description: "技术日臻成熟，走位精准",
-      unlocked: user.level >= 5,
-      completed: user.level > 5,
-      progress: user.level > 5 ? 100 : user.level === 5 ? Math.min((user.exp / 500) * 100, 95) : 0,
-      completedExercises: getCompletedExercises(5)
-    },
-    {
-      level: 6,
-      name: "超群绝伦",
-      totalExercises: 60,
-      category: "超新星",
-      description: "精确走位与复杂球局",
-      unlocked: user.level >= 6,
-      completed: user.level > 6,
-      progress: user.level > 6 ? 100 : user.level === 6 ? Math.min((user.exp / 600) * 100, 95) : 0,
-      completedExercises: getCompletedExercises(6)
-    },
-    {
-      level: 7,
-      name: "登峰造极",
-      totalExercises: 55,
-      category: "智子星",
-      description: "在智子星的宏观维度，用一杆终结所有因果链！台球桌上的战略思维",
-      unlocked: user.level >= 7,
-      completed: user.level > 7,
-      progress: user.level > 7 ? 100 : user.level === 7 ? Math.min((user.exp / 700) * 100, 95) : 0,
-      completedExercises: getCompletedExercises(7)
-    },
-    {
-      level: 8,
-      name: "出神入化",
-      totalExercises: 55,
-      category: "智子星",
-      description: "超越技巧的艺术境界",
-      unlocked: user.level >= 8,
-      completed: user.level > 8,
-      progress: user.level > 8 ? 100 : user.level === 8 ? Math.min((user.exp / 800) * 100, 95) : 0,
-      completedExercises: getCompletedExercises(8)
-    }
-  ];
-  }, [user, user?.exp, user?.level, user?.completedExercises]);
 
   const getLevelColors = (level: number) => {
     const colorSchemes = {
