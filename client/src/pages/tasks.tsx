@@ -236,7 +236,7 @@ export default function Tasks() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: 1,
+          userId: "1",
           title,
           duration,
           rating,
@@ -249,7 +249,8 @@ export default function Tasks() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to save training session");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Failed to save training session`);
       }
       
       return response.json();
@@ -273,10 +274,11 @@ export default function Tasks() {
       handleCancelTraining();
       toast({ title: "训练记录已保存，已自动进入下一集训练" });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Training session save error:', error);
       toast({ 
         title: "保存失败", 
-        description: "请重试",
+        description: error?.message || "请重试",
         variant: "destructive"
       });
     }
