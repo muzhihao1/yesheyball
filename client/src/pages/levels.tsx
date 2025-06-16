@@ -455,11 +455,7 @@ export default function Levels() {
       unlocked: user.level >= 5,
       completed: user.level > 5,
       progress: user.level > 5 ? 100 : user.level === 5 ? Math.min((user.exp / 500) * 100, 95) : 0,
-      completedExercises: (() => {
-        if (!user.completedExercises) return 0;
-        const exercises = user.completedExercises as Record<string, number>;
-        return exercises['5'] || 0;
-      })()
+      completedExercises: getCompletedExercises(5)
     },
     {
       level: 6,
@@ -470,11 +466,7 @@ export default function Levels() {
       unlocked: user.level >= 6,
       completed: user.level > 6,
       progress: user.level > 6 ? 100 : user.level === 6 ? Math.min((user.exp / 600) * 100, 95) : 0,
-      completedExercises: (() => {
-        if (!user.completedExercises) return 0;
-        const exercises = user.completedExercises as Record<string, number>;
-        return exercises['6'] || 0;
-      })()
+      completedExercises: getCompletedExercises(6)
     },
     {
       level: 7,
@@ -485,11 +477,7 @@ export default function Levels() {
       unlocked: user.level >= 7,
       completed: user.level > 7,
       progress: user.level > 7 ? 100 : user.level === 7 ? Math.min((user.exp / 700) * 100, 95) : 0,
-      completedExercises: (() => {
-        if (!user.completedExercises) return 0;
-        const exercises = user.completedExercises as Record<string, number>;
-        return exercises['7'] || 0;
-      })()
+      completedExercises: getCompletedExercises(7)
     },
     {
       level: 8,
@@ -500,11 +488,7 @@ export default function Levels() {
       unlocked: user.level >= 8,
       completed: user.level > 8,
       progress: user.level > 8 ? 100 : user.level === 8 ? Math.min((user.exp / 800) * 100, 95) : 0,
-      completedExercises: (() => {
-        if (!user.completedExercises) return 0;
-        const exercises = user.completedExercises as Record<string, number>;
-        return exercises['8'] || 0;
-      })()
+      completedExercises: getCompletedExercises(8)
     }
   ];
   }, [user, user?.exp, user?.level, user?.completedExercises]);
