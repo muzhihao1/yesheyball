@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,11 +94,13 @@ export default function Levels() {
   const [examTimeRemaining, setExamTimeRemaining] = useState(0);
   const [examInProgress, setExamInProgress] = useState(false);
   
-  // Exercise data state
+  // Exercise data state with lazy loading
   const [exerciseData, setExerciseData] = useState<{
     exerciseRequirementsData: any;
     exerciseDescriptionsData: any;
   } | null>(null);
+  
+  const [exerciseDataLoading, setExerciseDataLoading] = useState(false);
 
   const { toast } = useToast();
 
@@ -111,6 +113,8 @@ export default function Levels() {
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ["/api/user"],
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Floating navigation button to jump to current level
@@ -252,10 +256,20 @@ export default function Levels() {
     };
   }, [user]);
 
-  // Load exercise data on component mount
-  useEffect(() => {
-    loadExerciseData().then(setExerciseData);
-  }, []);
+  // Load exercise data only when needed (lazy loading)
+  const loadExerciseDataWhenNeeded = useCallback(async () => {
+    if (exerciseData || exerciseDataLoading) return;
+    
+    setExerciseDataLoading(true);
+    try {
+      const data = await loadExerciseData();
+      setExerciseData(data);
+    } catch (error) {
+      console.error('Failed to load exercise data:', error);
+    } finally {
+      setExerciseDataLoading(false);
+    }
+  }, [exerciseData, exerciseDataLoading]);
 
   // Timer effect for practice session
   useEffect(() => {
@@ -893,7 +907,8 @@ export default function Levels() {
           challengeScore: score
         });
         
-        if (response.success) {
+        const data = await response.json();
+        if (data && data.success) {
           toast({
             title: "挑战成功！",
             description: `恭喜！已成功跳级到等级 ${skipToLevel}，所有中间关卡已解锁！`,
