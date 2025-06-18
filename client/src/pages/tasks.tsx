@@ -338,7 +338,7 @@ export default function Tasks() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <Clock className="h-5 w-5 text-green-600" />
-                      <span className="font-mono text-lg">{formatTime(guidedElapsedTime)}</span>
+                      <span className="font-mono text-2xl font-bold text-green-800">{formatTime(guidedElapsedTime)}</span>
                     </div>
                     <div className="flex space-x-2">
                       <Button
@@ -396,9 +396,20 @@ export default function Tasks() {
                     )}
                   </div>
                   
+                  {/* 训练心得记录区域 */}
+                  <div className="p-4 bg-white rounded-lg border border-green-200">
+                    <h4 className="text-sm font-medium text-green-800 mb-2">训练心得记录</h4>
+                    <textarea
+                      value={trainingNotes}
+                      onChange={(e) => setTrainingNotes(e.target.value)}
+                      placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
+                      className="w-full h-20 p-2 text-sm border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  
                   <Button
                     onClick={handleStopTraining}
-                    className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                    className="w-full mt-4 bg-green-600 hover:bg-green-700 touch-target"
                   >
                     <Square className="h-4 w-4 mr-2" />
                     完成训练
@@ -462,28 +473,42 @@ export default function Tasks() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-purple-100 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Clock className="h-5 w-5 text-purple-600" />
-                    <span className="font-mono text-lg">{formatTime(specialElapsedTime)}</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-purple-100 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Clock className="h-5 w-5 text-purple-600" />
+                      <span className="font-mono text-2xl font-bold text-purple-800">{formatTime(specialElapsedTime)}</span>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={() => setIsSpecialPaused(!isSpecialPaused)}
+                        variant="outline"
+                        size="sm"
+                        className="touch-target"
+                      >
+                        {isSpecialPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        onClick={handleStopTraining}
+                        variant="default"
+                        size="sm"
+                        className="bg-purple-600 hover:bg-purple-700 touch-target"
+                      >
+                        <Square className="h-4 w-4 mr-1" />
+                        完成特训
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => setIsSpecialPaused(!isSpecialPaused)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      {isSpecialPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      onClick={handleStopTraining}
-                      variant="default"
-                      size="sm"
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      <Square className="h-4 w-4 mr-1" />
-                      完成特训
-                    </Button>
+                  
+                  {/* 训练心得记录区域 */}
+                  <div className="p-4 bg-white rounded-lg border border-purple-200">
+                    <h4 className="text-sm font-medium text-purple-800 mb-2">训练心得记录</h4>
+                    <textarea
+                      value={trainingNotes}
+                      onChange={(e) => setTrainingNotes(e.target.value)}
+                      placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
+                      className="w-full h-20 p-2 text-sm border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
                   </div>
                 </div>
               </div>
@@ -512,28 +537,42 @@ export default function Tasks() {
             </Button>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-blue-100 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  <span className="font-mono text-lg">{formatTime(customElapsedTime)}</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-blue-100 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                    <span className="font-mono text-2xl font-bold text-blue-800">{formatTime(customElapsedTime)}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => setIsCustomPaused(!isCustomPaused)}
+                      variant="outline"
+                      size="sm"
+                      className="touch-target"
+                    >
+                      {isCustomPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      onClick={handleStopTraining}
+                      variant="default"
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 touch-target"
+                    >
+                      <Square className="h-4 w-4 mr-1" />
+                      完成训练
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={() => setIsCustomPaused(!isCustomPaused)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {isCustomPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    onClick={handleStopTraining}
-                    variant="default"
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Square className="h-4 w-4 mr-1" />
-                    完成训练
-                  </Button>
+                
+                {/* 训练心得记录区域 */}
+                <div className="p-4 bg-white rounded-lg border border-blue-200">
+                  <h4 className="text-sm font-medium text-blue-800 mb-2">训练心得记录</h4>
+                  <textarea
+                    value={trainingNotes}
+                    onChange={(e) => setTrainingNotes(e.target.value)}
+                    placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
+                    className="w-full h-20 p-2 text-sm border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
               </div>
             </div>
