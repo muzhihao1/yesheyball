@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Clock, Play, Pause, Square, BookOpen, Target, Zap } from "lucide-react";
 
 export default function Tasks() {
@@ -19,6 +24,13 @@ export default function Tasks() {
   const [isGuidedPaused, setIsGuidedPaused] = useState(false);
   const [isCustomPaused, setIsCustomPaused] = useState(false);
   const [isSpecialPaused, setIsSpecialPaused] = useState(false);
+  
+  // Training completion states
+  const [showTrainingComplete, setShowTrainingComplete] = useState(false);
+  const [trainingNotes, setTrainingNotes] = useState("");
+  const [completionRating, setCompletionRating] = useState("");
+  const [currentSessionType, setCurrentSessionType] = useState("");
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
 
   // Get training programs with error handling
   const { data: programs = [], isLoading: programsLoading } = useQuery({
@@ -39,6 +51,49 @@ export default function Tasks() {
   });
 
   const trainingDaysArray = Array.isArray(trainingDays) ? trainingDays : [];
+
+  // Create training session mutation
+  const createSessionMutation = useMutation({
+    mutationFn: async (sessionData: any) => {
+      const response = await apiRequest("/api/training-sessions", "POST", sessionData);
+      return response.json();
+    },
+    onSuccess: (session) => {
+      setCurrentSessionId(session.id);
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+    },
+  });
+
+  // Complete training session mutation
+  const completeSessionMutation = useMutation({
+    mutationFn: async (sessionData: any) => {
+      if (!currentSessionId) throw new Error("No active session");
+      const response = await apiRequest(`/api/training-sessions/${currentSessionId}/complete`, "POST", sessionData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      setShowTrainingComplete(false);
+      setTrainingNotes("");
+      setCompletionRating("");
+      setCurrentSessionId(null);
+      resetTrainingStates();
+      toast({
+        title: "训练完成",
+        description: "训练记录已保存，经验值已获得"
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Complete session error:", error);
+      toast({
+        title: "保存失败",
+        description: error.message || "训练记录保存失败，请重试",
+        variant: "destructive"
+      });
+    }
+  });
 
   // Timer effects with cleanup
   useEffect(() => {
@@ -92,6 +147,19 @@ export default function Tasks() {
     return { label: "高级", color: "bg-red-100 text-red-800" };
   };
 
+  // Reset training states
+  const resetTrainingStates = () => {
+    setIsGuidedTraining(false);
+    setIsCustomTraining(false);
+    setIsSpecialTraining(false);
+    setGuidedElapsedTime(0);
+    setCustomElapsedTime(0);
+    setSpecialElapsedTime(0);
+    setIsGuidedPaused(false);
+    setIsCustomPaused(false);
+    setIsSpecialPaused(false);
+  };
+
   // Training control handlers
   const handleStartTraining = () => {
     if (isGuidedTraining || isCustomTraining || isSpecialTraining) {
@@ -102,9 +170,22 @@ export default function Tasks() {
       });
       return;
     }
+    
+    // Create training session
+    const sessionData = {
+      programId: mainProgram?.id,
+      dayId: currentDayTraining?.id,
+      title: `第${currentDay}集：${currentDayTraining?.title || "训练"}`,
+      description: currentDayTraining?.description || "",
+      sessionType: "guided"
+    };
+    
+    createSessionMutation.mutate(sessionData);
+    setCurrentSessionType("系统训练");
     setIsGuidedTraining(true);
     setGuidedElapsedTime(0);
     setIsGuidedPaused(false);
+    
     toast({ 
       title: "系统训练开始", 
       description: `第${currentDay}集：${currentDayTraining?.title || "训练"}已开始` 
@@ -120,9 +201,19 @@ export default function Tasks() {
       });
       return;
     }
+    
+    const sessionData = {
+      title: "自主训练",
+      description: "根据个人需要进行针对性练习",
+      sessionType: "custom"
+    };
+    
+    createSessionMutation.mutate(sessionData);
+    setCurrentSessionType("自主训练");
     setIsCustomTraining(true);
     setCustomElapsedTime(0);
     setIsCustomPaused(false);
+    
     toast({ 
       title: "自主训练开始", 
       description: "根据个人需要进行练习" 
@@ -138,9 +229,19 @@ export default function Tasks() {
       });
       return;
     }
+    
+    const sessionData = {
+      title: "特训",
+      description: "专注于力度和准度的针对性训练",
+      sessionType: "custom"
+    };
+    
+    createSessionMutation.mutate(sessionData);
+    setCurrentSessionType("特训");
     setIsSpecialTraining(true);
     setSpecialElapsedTime(0);
     setIsSpecialPaused(false);
+    
     toast({ 
       title: "特训开始", 
       description: "专注于力度和准度的针对性训练" 
@@ -148,24 +249,32 @@ export default function Tasks() {
   };
 
   const handleStopTraining = () => {
-    const wasGuided = isGuidedTraining;
-    const wasCustom = isCustomTraining;
-    const wasSpecial = isSpecialTraining;
+    // Open completion dialog instead of immediately stopping
+    setShowTrainingComplete(true);
+  };
+
+  const handleCompleteTraining = () => {
+    if (!completionRating) {
+      toast({ 
+        title: "请选择训练评分", 
+        variant: "destructive" 
+      });
+      return;
+    }
     
-    setIsGuidedTraining(false);
-    setIsCustomTraining(false);
-    setIsSpecialTraining(false);
-    setGuidedElapsedTime(0);
-    setCustomElapsedTime(0);
-    setSpecialElapsedTime(0);
-    setIsGuidedPaused(false);
-    setIsCustomPaused(false);
-    setIsSpecialPaused(false);
+    const duration = isGuidedTraining ? guidedElapsedTime : 
+                    isCustomTraining ? customElapsedTime : 
+                    specialElapsedTime;
     
-    toast({ 
-      title: "训练结束", 
-      description: wasGuided ? "系统训练已完成" : wasCustom ? "自主训练已完成" : wasSpecial ? "特训已完成" : "训练已结束"
-    });
+    const sessionData = {
+      duration,
+      notes: trainingNotes,
+      rating: parseInt(completionRating),
+      programId: currentSessionType === "系统训练" ? mainProgram?.id : undefined,
+      dayId: currentSessionType === "系统训练" ? currentDayTraining?.id : undefined
+    };
+    
+    completeSessionMutation.mutate(sessionData);
   };
 
   // Loading state
@@ -459,6 +568,61 @@ export default function Tasks() {
           )}
         </CardContent>
       </Card>
+
+      {/* Training Completion Dialog */}
+      <Dialog open={showTrainingComplete} onOpenChange={setShowTrainingComplete}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>完成训练</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="training-notes">训练心得</Label>
+              <Textarea
+                id="training-notes"
+                placeholder="记录训练过程中的感受、收获或需要改进的地方..."
+                value={trainingNotes}
+                onChange={(e) => setTrainingNotes(e.target.value)}
+                className="mt-1"
+                rows={4}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="completion-rating">训练评分</Label>
+              <Select value={completionRating} onValueChange={setCompletionRating}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="选择训练完成度" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1分 - 很不满意</SelectItem>
+                  <SelectItem value="2">2分 - 不满意</SelectItem>
+                  <SelectItem value="3">3分 - 一般</SelectItem>
+                  <SelectItem value="4">4分 - 满意</SelectItem>
+                  <SelectItem value="5">5分 - 很满意</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowTrainingComplete(false)}
+                className="flex-1"
+              >
+                继续训练
+              </Button>
+              <Button
+                onClick={handleCompleteTraining}
+                disabled={completeSessionMutation.isPending}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {completeSessionMutation.isPending ? "保存中..." : "完成训练"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
