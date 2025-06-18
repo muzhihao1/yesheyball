@@ -371,7 +371,7 @@ export default function TrainingPage() {
                   )}
 
                   <Button 
-                    onClick={() => createGuidedSession(beginnerProgram.id, selectedDay)}
+                    onClick={() => createGuidedSession(mainProgram.id, selectedDay)}
                     disabled={createSessionMutation.isPending}
                     className="w-full"
                   >
