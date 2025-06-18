@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Play, Pause, Square, BookOpen } from "lucide-react";
+import { Clock, Play, Pause, Square, BookOpen, Target, Zap } from "lucide-react";
 
 export default function Tasks() {
   const { toast } = useToast();
@@ -11,10 +11,13 @@ export default function Tasks() {
   // Training states
   const [isGuidedTraining, setIsGuidedTraining] = useState(false);
   const [isCustomTraining, setIsCustomTraining] = useState(false);
+  const [isSpecialTraining, setIsSpecialTraining] = useState(false);
   const [guidedElapsedTime, setGuidedElapsedTime] = useState(0);
   const [customElapsedTime, setCustomElapsedTime] = useState(0);
+  const [specialElapsedTime, setSpecialElapsedTime] = useState(0);
   const [isGuidedPaused, setIsGuidedPaused] = useState(false);
   const [isCustomPaused, setIsCustomPaused] = useState(false);
+  const [isSpecialPaused, setIsSpecialPaused] = useState(false);
 
   // Timer effects with cleanup
   useEffect(() => {
@@ -41,6 +44,18 @@ export default function Tasks() {
     };
   }, [isCustomTraining, isCustomPaused]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isSpecialTraining && !isSpecialPaused) {
+      interval = setInterval(() => {
+        setSpecialElapsedTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isSpecialTraining, isSpecialPaused]);
+
   // Format time helper
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -51,7 +66,7 @@ export default function Tasks() {
 
   // Training control handlers
   const handleStartTraining = () => {
-    if (isGuidedTraining || isCustomTraining) {
+    if (isGuidedTraining || isCustomTraining || isSpecialTraining) {
       toast({ 
         title: "无法开始训练", 
         description: "请先完成或取消当前训练",
@@ -69,7 +84,7 @@ export default function Tasks() {
   };
 
   const handleStartCustomTraining = () => {
-    if (isGuidedTraining || isCustomTraining) {
+    if (isGuidedTraining || isCustomTraining || isSpecialTraining) {
       toast({ 
         title: "无法开始训练", 
         description: "请先完成或取消当前训练",
@@ -86,27 +101,49 @@ export default function Tasks() {
     });
   };
 
+  const handleStartSpecialTraining = () => {
+    if (isGuidedTraining || isCustomTraining || isSpecialTraining) {
+      toast({ 
+        title: "无法开始训练", 
+        description: "请先完成或取消当前训练",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsSpecialTraining(true);
+    setSpecialElapsedTime(0);
+    setIsSpecialPaused(false);
+    toast({ 
+      title: "特训开始", 
+      description: "专注于力度和准度的针对性训练" 
+    });
+  };
+
   const handleStopTraining = () => {
     const wasGuided = isGuidedTraining;
     const wasCustom = isCustomTraining;
+    const wasSpecial = isSpecialTraining;
     
     setIsGuidedTraining(false);
     setIsCustomTraining(false);
+    setIsSpecialTraining(false);
     setGuidedElapsedTime(0);
     setCustomElapsedTime(0);
+    setSpecialElapsedTime(0);
     setIsGuidedPaused(false);
     setIsCustomPaused(false);
+    setIsSpecialPaused(false);
     
     toast({ 
       title: "训练结束", 
-      description: wasGuided ? "系统训练已完成" : wasCustom ? "自主训练已完成" : "训练已结束"
+      description: wasGuided ? "系统训练已完成" : wasCustom ? "自主训练已完成" : wasSpecial ? "特训已完成" : "训练已结束"
     });
   };
 
   // Safe data access
   const currentDay = 1;
   const currentEpisode = `第${currentDay}集`;
-  const isAnyTrainingActive = isGuidedTraining || isCustomTraining;
+  const isAnyTrainingActive = isGuidedTraining || isCustomTraining || isSpecialTraining;
 
   return (
     <div className="p-4 space-y-6 pb-24">
@@ -170,6 +207,88 @@ export default function Tasks() {
                     >
                       <Square className="h-4 w-4 mr-1" />
                       完成训练
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Special Training Section */}
+      <Card className="border-2 border-purple-200 bg-purple-50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Target className="h-6 w-6 text-purple-600" />
+              <div>
+                <CardTitle className="text-lg text-purple-800">特训</CardTitle>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Badge className="bg-purple-100 text-purple-800 text-xs">
+                专项训练
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h3 className="text-xl font-semibold mb-2">
+              力度与准度专项训练
+            </h3>
+            <p className="text-gray-600 mb-4">
+              针对性训练，专注于提升击球力度控制和瞄准准确度，快速突破技术瓶颈。
+            </p>
+            
+            {!isSpecialTraining ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={handleStartSpecialTraining}
+                    className="bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center space-x-2"
+                    disabled={isAnyTrainingActive}
+                  >
+                    <Zap className="h-4 w-4" />
+                    <span>力度训练</span>
+                  </Button>
+                  <Button
+                    onClick={handleStartSpecialTraining}
+                    className="bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center space-x-2"
+                    disabled={isAnyTrainingActive}
+                  >
+                    <Target className="h-4 w-4" />
+                    <span>准度训练</span>
+                  </Button>
+                </div>
+                {isAnyTrainingActive && (
+                  <p className="text-sm text-gray-500 text-center">其他训练进行中</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-purple-100 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="h-5 w-5 text-purple-600" />
+                    <span className="font-mono text-lg">{formatTime(specialElapsedTime)}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => setIsSpecialPaused(!isSpecialPaused)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {isSpecialPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      onClick={handleStopTraining}
+                      variant="default"
+                      size="sm"
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Square className="h-4 w-4 mr-1" />
+                      完成特训
                     </Button>
                   </div>
                 </div>
