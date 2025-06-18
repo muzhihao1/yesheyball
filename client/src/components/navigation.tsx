@@ -5,7 +5,7 @@ export default function Navigation() {
   const [location] = useLocation();
 
   const navItems = [
-    { path: "/levels", label: "关卡地图", icon: Target },
+    { path: "/", label: "关卡地图", icon: Target },
     { path: "/tasks", label: "训练计划", icon: Calendar },
     { path: "/growth", label: "排行榜", icon: Trophy },
     { path: "/profile", label: "个人档案", icon: User },
@@ -16,7 +16,7 @@ export default function Navigation() {
       <div className="flex justify-around items-center py-2 px-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location === item.path || (item.path === "/levels" && location === "/");
+          const isActive = location === item.path;
           
           return (
             <Link

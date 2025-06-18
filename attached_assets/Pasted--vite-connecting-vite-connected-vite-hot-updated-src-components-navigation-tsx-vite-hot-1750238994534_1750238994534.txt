@@ -1,0 +1,66 @@
+[vite] connecting...
+[vite] connected.
+[vite] hot updated: /src/components/navigation.tsx
+[vite] hot updated: /src/index.css?v=vmHsWiVCJ4lfxLaGUG6uM
+[vite] hot updated: /src/components/navigation.tsx
+[vite] hot updated: /src/index.css?v=vmHsWiVCJ4lfxLaGUG6uM
+[vite] hot updated: /src/pages/training.tsx
+[vite] hot updated: /src/index.css?v=vmHsWiVCJ4lfxLaGUG6uM
+beginnerProgram is not defined
+beginnerProgram is not defined
+The above error occurred in the <TrainingPage> component:
+
+    at TrainingPage (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/src/pages/training.tsx?t=1750238983890:33:39)
+    at Route (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=54b45aa8:323:16)
+    at Switch (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=54b45aa8:379:17)
+    at Router (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/src/App.tsx?v=JIuU4L0sHkVldfML6tk_n:36:42)
+    at main
+    at div
+    at Provider (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PLT6GTVM.js?v=54b45aa8:38:15)
+    at TooltipProvider (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=54b45aa8:64:5)
+    at AppContent (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/src/App.tsx?v=JIuU4L0sHkVldfML6tk_n:120:42)
+    at QueryClientProvider (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=54b45aa8:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+at TrainingPage (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/src/pages/training.tsx?t=1750238983890:33:39)
+at Route (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=54b45aa8:323:16)
+at Switch (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=54b45aa8:379:17)
+at Router (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/src/App.tsx?v=JIuU4L0sHkVldfML6tk_n:36:42)
+at main
+at div
+at Provider (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PLT6GTVM.js?v=54b45aa8:38:15)
+at TooltipProvider (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=54b45aa8:64:5)
+at AppContent (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/src/App.tsx?v=JIuU4L0sHkVldfML6tk_n:120:42)
+at QueryClientProvider (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=54b45aa8:2805:3)
+at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+at t.value (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+beginnerProgram is not defined
+[vite] hot updated: /src/pages/training.tsx
+[vite] hot updated: /src/index.css?v=vmHsWiVCJ4lfxLaGUG6uM
+beginnerProgram is not defined
+beginnerProgram is not defined
+The above error occurred in the <TrainingPage> component:
+
+    at TrainingPage (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/src/pages/training.tsx?t=1750238991064:33:39)
+    at Route (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=54b45aa8:323:16)
+    at Switch (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=54b45aa8:379:17)
+    at Router (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/src/App.tsx?v=JIuU4L0sHkVldfML6tk_n:36:42)
+    at main
+    at div
+    at Provider (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PLT6GTVM.js?v=54b45aa8:38:15)
+    at TooltipProvider (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=54b45aa8:64:5)
+    at AppContent (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/src/App.tsx?v=JIuU4L0sHkVldfML6tk_n:120:42)
+    at QueryClientProvider (https://797e1790-98a1-4061-8221-19c32de71e85-00-idnp63hfro3d.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=54b45aa8:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
