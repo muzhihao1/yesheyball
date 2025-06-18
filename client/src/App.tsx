@@ -10,7 +10,7 @@ import { RouteDebugger } from "@/components/RouteDebugger";
 import Landing from "@/pages/Landing";
 
 import Levels from "@/pages/levels";
-import TasksMinimal from "@/pages/tasks-minimal";
+import TasksStable from "@/pages/tasks-stable";
 import Ranking from "@/pages/ranking";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
@@ -33,7 +33,7 @@ function Router() {
       <Route path="/" component={isAuthenticated ? Levels : Landing} />
       <Route path="/training" component={isAuthenticated ? Levels : Landing} />
       <Route path="/levels" component={isAuthenticated ? Levels : Landing} />
-      <Route path="/tasks" component={isAuthenticated ? TasksMinimal : Landing} />
+      <Route path="/tasks" component={isAuthenticated ? TasksStable : Landing} />
       <Route path="/growth" component={isAuthenticated ? Ranking : Landing} />
       <Route path="/diary" component={isAuthenticated ? Diary : Landing} />
       <Route path="/profile" component={isAuthenticated ? Profile : Landing} />

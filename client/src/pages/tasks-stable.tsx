@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Clock, Play, Pause, Square, BookOpen } from "lucide-react";
 
-export default function Tasks() {
+export default function TasksStable() {
   const { toast } = useToast();
   
   // Training states
@@ -15,6 +17,26 @@ export default function Tasks() {
   const [customElapsedTime, setCustomElapsedTime] = useState(0);
   const [isGuidedPaused, setIsGuidedPaused] = useState(false);
   const [isCustomPaused, setIsCustomPaused] = useState(false);
+
+  // Get training programs with error handling
+  const { data: programs = [], isLoading: programsLoading } = useQuery({
+    queryKey: ["/api/training-programs"],
+    retry: 1,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const programsArray = Array.isArray(programs) ? programs : [];
+  const mainProgram = programsArray.find((p: any) => p?.name === "耶氏台球学院系统教学");
+  
+  // Get training days with error handling
+  const { data: trainingDays = [], isLoading: daysLoading } = useQuery({
+    queryKey: [`/api/training-programs/${mainProgram?.id}/days`],
+    enabled: !!mainProgram?.id,
+    retry: 1,
+    staleTime: 15 * 60 * 1000,
+  });
+
+  const trainingDaysArray = Array.isArray(trainingDays) ? trainingDays : [];
 
   // Timer effects with cleanup
   useEffect(() => {
@@ -49,6 +71,13 @@ export default function Tasks() {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Difficulty badge helper
+  const getDifficultyBadge = (day: number) => {
+    if (day <= 17) return { label: "初级", color: "bg-green-100 text-green-800" };
+    if (day <= 34) return { label: "中级", color: "bg-yellow-100 text-yellow-800" };
+    return { label: "高级", color: "bg-red-100 text-red-800" };
+  };
+
   // Training control handlers
   const handleStartTraining = () => {
     if (isGuidedTraining || isCustomTraining) {
@@ -62,10 +91,6 @@ export default function Tasks() {
     setIsGuidedTraining(true);
     setGuidedElapsedTime(0);
     setIsGuidedPaused(false);
-    toast({ 
-      title: "系统训练开始", 
-      description: "第1集：握杆基础训练已开始" 
-    });
   };
 
   const handleStartCustomTraining = () => {
@@ -80,32 +105,62 @@ export default function Tasks() {
     setIsCustomTraining(true);
     setCustomElapsedTime(0);
     setIsCustomPaused(false);
-    toast({ 
-      title: "自主训练开始", 
-      description: "根据个人需要进行练习" 
-    });
   };
 
   const handleStopTraining = () => {
-    const wasGuided = isGuidedTraining;
-    const wasCustom = isCustomTraining;
-    
     setIsGuidedTraining(false);
     setIsCustomTraining(false);
     setGuidedElapsedTime(0);
     setCustomElapsedTime(0);
     setIsGuidedPaused(false);
     setIsCustomPaused(false);
-    
     toast({ 
       title: "训练结束", 
-      description: wasGuided ? "系统训练已完成" : wasCustom ? "自主训练已完成" : "训练已结束"
+      description: "训练已成功结束" 
     });
   };
 
+  // Loading state
+  if (programsLoading || daysLoading) {
+    return (
+      <div className="p-4 space-y-6 pb-24">
+        <Card className="border-2 border-green-200 bg-green-50">
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (!mainProgram) {
+    return (
+      <div className="p-4 space-y-6 pb-24">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-600 mb-4">训练计划加载中...</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+            >
+              刷新页面
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Safe data access
-  const currentDay = 1;
+  const currentDay = mainProgram?.currentDay || 1;
   const currentEpisode = `第${currentDay}集`;
+  const difficultyBadge = getDifficultyBadge(currentDay);
+  const currentDayTraining = trainingDaysArray.find((day: any) => day?.day === currentDay);
   const isAnyTrainingActive = isGuidedTraining || isCustomTraining;
 
   return (
@@ -121,11 +176,11 @@ export default function Tasks() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Badge className="bg-green-100 text-green-800 text-xs">
-                初级
+              <Badge className={`${difficultyBadge.color} text-xs`}>
+                {difficultyBadge.label}
               </Badge>
               <Badge variant="outline" className="text-xs">
-                第1周
+                第{Math.ceil(currentDay / 7)}周
               </Badge>
             </div>
           </div>
@@ -133,10 +188,10 @@ export default function Tasks() {
         <CardContent className="space-y-4">
           <div>
             <h3 className="text-xl font-semibold mb-2">
-              第1集：握杆基础
+              第{currentDay}集：{currentDayTraining?.title || "握杆"}
             </h3>
             <p className="text-gray-600 mb-4">
-              学习正确的握杆姿势和基本击球技巧，为后续训练打下坚实基础。
+              {currentDayTraining?.description || `第${currentDay}集训练内容，持续提升台球技能。`}
             </p>
             
             {!isGuidedTraining ? (
