@@ -164,7 +164,7 @@ export default function TrainingPage() {
     );
   }
 
-  const mainProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
+  const beginnerProgram = programs.find(p => p.name === "新手指导计划");
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -309,24 +309,24 @@ export default function TrainingPage() {
         /* Training Selection */
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Guided Training Program */}
-          {mainProgram && (
+          {beginnerProgram && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="h-5 w-5 text-green-600" />
-                  耶氏台球学院系统教学
+                  新手指导计划
                 </CardTitle>
-                <p className="text-gray-600">{mainProgram.description}</p>
+                <p className="text-gray-600">{beginnerProgram.description}</p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between text-sm">
                     <span>训练难度：</span>
-                    <Badge variant="outline">{mainProgram.difficulty}</Badge>
+                    <Badge variant="outline">{beginnerProgram.difficulty}</Badge>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span>总天数：</span>
-                    <span>{mainProgram.totalDays}天</span>
+                    <span>{beginnerProgram.totalDays}天</span>
                   </div>
                   
                   <Separator />
@@ -338,7 +338,7 @@ export default function TrainingPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: mainProgram.totalDays }, (_, i) => i + 1).map((day) => {
+                        {Array.from({ length: beginnerProgram.totalDays }, (_, i) => i + 1).map((day) => {
                           const dayData = trainingDays.find(d => d.day === day);
                           return (
                             <SelectItem key={day} value={day.toString()}>
@@ -371,7 +371,7 @@ export default function TrainingPage() {
                   )}
 
                   <Button 
-                    onClick={() => createGuidedSession(mainProgram.id, selectedDay)}
+                    onClick={() => createGuidedSession(beginnerProgram.id, selectedDay)}
                     disabled={createSessionMutation.isPending}
                     className="w-full"
                   >
