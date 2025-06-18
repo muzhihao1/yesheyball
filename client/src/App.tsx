@@ -9,7 +9,7 @@ import Navigation from "@/components/navigation";
 import Landing from "@/pages/Landing";
 
 import Levels from "@/pages/levels";
-import Tasks from "@/pages/tasks";
+import TasksSimple from "@/pages/tasks-simple";
 import Ranking from "@/pages/ranking";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
@@ -39,7 +39,7 @@ function Router() {
           <Route path="/" component={Levels} />
           <Route path="/training" component={Levels} />
           <Route path="/levels" component={Levels} />
-          <Route path="/tasks" component={Tasks} />
+          <Route path="/tasks" component={TasksSimple} />
           <Route path="/growth" component={Ranking} />
           <Route path="/diary" component={Diary} />
           <Route path="/profile" component={Profile} />
