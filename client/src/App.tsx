@@ -37,7 +37,7 @@ function Router() {
         </>
       ) : (
         <>
-          <Route path="/" component={Training} />
+          <Route path="/" component={LevelsSimple} />
           <Route path="/training" component={Training} />
           <Route path="/levels" component={LevelsSimple} />
           <Route path="/tasks" component={Tasks} />
