@@ -634,10 +634,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/training-sessions", async (req, res) => {
+  app.post("/api/training-sessions", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req.user as any)?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
       console.log('Training session request body:', JSON.stringify(req.body, null, 2));
-      const validatedData = insertTrainingSessionSchema.parse(req.body);
+      const requestData = { ...req.body, userId };
+      const validatedData = insertTrainingSessionSchema.parse(requestData);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       
       // Generate AI coaching feedback if session is completed
@@ -803,7 +808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/training-sessions/:id/complete", async (req, res) => {
+  app.post("/api/training-sessions/:id/complete", isAuthenticated, async (req, res) => {
     try {
       const { duration, rating, notes } = req.body;
       const sessionId = parseInt(req.params.id);
