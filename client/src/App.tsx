@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/header";
 import Navigation from "@/components/navigation";
+import { RouteDebugger } from "@/components/RouteDebugger";
 import Landing from "@/pages/Landing";
 
 import Levels from "@/pages/levels";
@@ -60,6 +61,7 @@ function AppContent() {
         
         <main className="pb-4">
           <Router />
+          <RouteDebugger />
         </main>
         
         {isAuthenticated && !isLoading && <Navigation />}
