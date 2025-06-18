@@ -181,13 +181,6 @@ export default function Tasks() {
       return;
     }
     
-    const sessionData = {
-      title: "自主训练",
-      description: "根据个人需要进行针对性练习",
-      sessionType: "custom"
-    };
-    
-    createSessionMutation.mutate(sessionData);
     setCurrentSessionType("自主训练");
     setIsCustomTraining(true);
     setCustomElapsedTime(0);
@@ -209,13 +202,6 @@ export default function Tasks() {
       return;
     }
     
-    const sessionData = {
-      title: "特训",
-      description: "专注于力度和准度的针对性训练",
-      sessionType: "custom"
-    };
-    
-    createSessionMutation.mutate(sessionData);
     setCurrentSessionType("特训");
     setIsSpecialTraining(true);
     setSpecialElapsedTime(0);
@@ -246,14 +232,21 @@ export default function Tasks() {
                     specialElapsedTime;
     
     const sessionData = {
+      title: currentSessionType === "系统训练" ? 
+        `第${currentDay}集：${currentDayTraining?.title || "训练"}` : 
+        currentSessionType,
+      description: currentSessionType === "系统训练" ? 
+        currentDayTraining?.description || "" : 
+        currentSessionType === "特训" ? "专注于力度和准度的针对性训练" : "根据个人需要进行针对性练习",
+      sessionType: currentSessionType === "系统训练" ? "guided" : "custom",
       duration,
       notes: trainingNotes,
       rating: parseInt(completionRating),
       programId: currentSessionType === "系统训练" ? mainProgram?.id : undefined,
-      dayId: currentSessionType === "系统训练" ? currentDayTraining?.id : undefined
+      dayId: currentSessionType === "系统训练" ? currentDayTraining?.day : undefined
     };
     
-    completeSessionMutation.mutate(sessionData);
+    completeTrainingMutation.mutate(sessionData);
   };
 
   // Loading state
@@ -593,10 +586,10 @@ export default function Tasks() {
               </Button>
               <Button
                 onClick={handleCompleteTraining}
-                disabled={completeSessionMutation.isPending}
+                disabled={completeTrainingMutation.isPending}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
-                {completeSessionMutation.isPending ? "保存中..." : "完成训练"}
+                {completeTrainingMutation.isPending ? "保存中..." : "完成训练"}
               </Button>
             </div>
           </div>
