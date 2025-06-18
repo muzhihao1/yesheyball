@@ -8,6 +8,7 @@ import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 import Landing from "@/pages/Landing";
 
+import Training from "@/pages/training";
 import LevelsSimple from "@/pages/levels-simple";
 import Tasks from "@/pages/tasks";
 import Ranking from "@/pages/ranking";
@@ -36,8 +37,8 @@ function Router() {
         </>
       ) : (
         <>
-          <Route path="/" component={LevelsSimple} />
-          <Route path="/training" component={LevelsSimple} />
+          <Route path="/" component={Training} />
+          <Route path="/training" component={Training} />
           <Route path="/levels" component={LevelsSimple} />
           <Route path="/tasks" component={Tasks} />
           <Route path="/growth" component={Ranking} />
