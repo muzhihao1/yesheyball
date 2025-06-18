@@ -1,10 +1,13 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Target, Zap, Crown, Lock, Play } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Trophy, Target, Zap, Crown, Lock, Play, BookOpen, ArrowLeft } from "lucide-react";
 
 interface LevelStage {
   level: number;
@@ -19,11 +22,36 @@ interface LevelStage {
 }
 
 export default function LevelsSimple() {
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
+  const [exerciseData, setExerciseData] = useState<any>(null);
+  const [showExerciseModal, setShowExerciseModal] = useState(false);
+
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ["/api/user"],
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
+
+  // Load exercise data
+  useEffect(() => {
+    const loadExerciseData = async () => {
+      try {
+        const [descriptionsRes, requirementsRes] = await Promise.all([
+          fetch('/src/data/exerciseDescriptions.json'),
+          fetch('/src/data/exerciseRequirements.json')
+        ]);
+        
+        const descriptions = await descriptionsRes.json();
+        const requirements = await requirementsRes.json();
+        
+        setExerciseData({ descriptions, requirements });
+      } catch (error) {
+        console.error('Failed to load exercise data:', error);
+      }
+    };
+    
+    loadExerciseData();
+  }, []);
 
   if (userLoading) {
     return (
@@ -221,7 +249,14 @@ export default function LevelsSimple() {
                         </span>
                         <div className="flex space-x-2">
                           {stage.unlocked ? (
-                            <Button size="sm" className={`${levelColors.node} hover:opacity-90 text-white`}>
+                            <Button 
+                              size="sm" 
+                              className={`${levelColors.node} hover:opacity-90 text-white`}
+                              onClick={() => {
+                                setSelectedLevel(stage.level);
+                                setShowExerciseModal(true);
+                              }}
+                            >
                               <Play className="w-4 h-4 mr-1" />
                               开始练习
                             </Button>
@@ -256,6 +291,62 @@ export default function LevelsSimple() {
             );
           })}
         </div>
+
+        {/* Exercise Modal */}
+        <Dialog open={showExerciseModal} onOpenChange={setShowExerciseModal}>
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                第{selectedLevel}级练习内容
+              </DialogTitle>
+            </DialogHeader>
+            
+            <ScrollArea className="max-h-[70vh]">
+              {selectedLevel && exerciseData && (
+                <div className="space-y-4 p-2">
+                  {Array.from({ length: levelStages.find(s => s.level === selectedLevel)?.totalExercises || 0 }, (_, i) => {
+                    const exerciseNum = i + 1;
+                    const exerciseKey = `${selectedLevel}-${exerciseNum}`;
+                    const description = exerciseData.descriptions[exerciseKey] || `第${exerciseNum}题练习`;
+                    const requirement = exerciseData.requirements[exerciseKey] || "连续完成5次不失误";
+                    
+                    return (
+                      <Card key={exerciseNum} className="border border-gray-200">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">第{exerciseNum}题</CardTitle>
+                            <Badge variant="outline">
+                              {requirement}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-gray-700 mb-3">{description}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">
+                              点击开始练习此题目
+                            </span>
+                            <Button size="sm" variant="outline">
+                              开始练习
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+            
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowExerciseModal(false)}>
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                返回关卡地图
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
