@@ -65,6 +65,9 @@ interface TrainingRecord {
 export default function Tasks() {
   const { toast } = useToast();
   
+  // Error boundary state
+  const [hasError, setHasError] = useState(false);
+  
   // Training states
   const [isGuidedTraining, setIsGuidedTraining] = useState(false);
   const [isCustomTraining, setIsCustomTraining] = useState(false);
@@ -424,7 +427,7 @@ export default function Tasks() {
   };
 
   // Show loading state if data is not available yet
-  if (!mainProgram || trainingDays.length === 0) {
+  if (!mainProgram) {
     return (
       <div className="p-4 space-y-6 pb-24">
         <Card className="border-2 border-green-200 bg-green-50">
@@ -453,7 +456,27 @@ export default function Tasks() {
   const difficultyBadge = getDifficultyBadge(currentDay);
   
   // Get current day training details
-  const currentDayTraining = trainingDays.find(day => day.day === currentDay);
+  const currentDayTraining = trainingDays?.find(day => day.day === currentDay);
+
+  // Error fallback
+  if (hasError) {
+    return (
+      <div className="p-4 space-y-6 pb-24">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-600">训练计划加载中，请稍候...</p>
+            <Button 
+              onClick={() => setHasError(false)} 
+              className="mt-4"
+              variant="outline"
+            >
+              重试
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 space-y-6 pb-24">
