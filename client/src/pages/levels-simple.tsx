@@ -83,6 +83,61 @@ export default function LevelsSimple() {
       completed: user.level > 3,
       progress: user.level > 3 ? 100 : user.level === 3 ? Math.min(((user.exp - 2000) / 1500) * 100, 95) : 0,
       completedExercises: getCompletedExercises(3)
+    },
+    {
+      level: 4,
+      name: "略有心得",
+      totalExercises: 50,
+      category: "超新星",
+      description: "掌握基本技巧，开始理解台球运动的精髓",
+      unlocked: user.level >= 4,
+      completed: user.level > 4,
+      progress: user.level > 4 ? 100 : user.level === 4 ? Math.min(((user.exp - 3500) / 2000) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(4)
+    },
+    {
+      level: 5,
+      name: "融会贯通",
+      totalExercises: 55,
+      category: "超新星",
+      description: "技术动作趋于稳定，战术意识开始形成",
+      unlocked: user.level >= 5,
+      completed: user.level > 5,
+      progress: user.level > 5 ? 100 : user.level === 5 ? Math.min(((user.exp - 5500) / 2500) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(5)
+    },
+    {
+      level: 6,
+      name: "炉火纯青",
+      totalExercises: 60,
+      category: "智子星",
+      description: "在智子星层面突破，掌控台球的奥秘！高级技术运用自如",
+      unlocked: user.level >= 6,
+      completed: user.level > 6,
+      progress: user.level > 6 ? 100 : user.level === 6 ? Math.min(((user.exp - 8000) / 3000) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(6)
+    },
+    {
+      level: 7,
+      name: "登峰造极",
+      totalExercises: 65,
+      category: "智子星",
+      description: "技艺精湛，具备职业选手的基本水准",
+      unlocked: user.level >= 7,
+      completed: user.level > 7,
+      progress: user.level > 7 ? 100 : user.level === 7 ? Math.min(((user.exp - 11000) / 3500) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(7)
+    },
+    {
+      level: 8,
+      name: "返璞归真",
+      totalExercises: 70,
+      category: "智子星",
+      description: "技术与心理的完美结合，台球大师之路的起点",
+      unlocked: user.level >= 8,
+      completed: user.level > 8,
+      progress: user.level > 8 ? 100 : user.level === 8 ? Math.min(((user.exp - 14500) / 4000) * 100, 95) : 0,
+      completedExercises: getCompletedExercises(8)
     }
   ];
 
