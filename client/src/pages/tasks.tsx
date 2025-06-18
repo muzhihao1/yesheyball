@@ -107,7 +107,7 @@ export default function Tasks() {
     setIsGuidedPaused(false);
     toast({ 
       title: "系统训练开始", 
-      description: "第1集：握杆基础训练已开始" 
+      description: `第${currentDay}集：${currentDayTraining?.title || "训练"}已开始` 
     });
   };
 
@@ -252,29 +252,76 @@ export default function Tasks() {
               </Button>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-green-100 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Clock className="h-5 w-5 text-green-600" />
-                    <span className="font-mono text-lg">{formatTime(guidedElapsedTime)}</span>
+                {/* Training Content Display */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-5 w-5 text-green-600" />
+                      <span className="font-mono text-lg">{formatTime(guidedElapsedTime)}</span>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={() => setIsGuidedPaused(!isGuidedPaused)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {isGuidedPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => setIsGuidedPaused(!isGuidedPaused)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      {isGuidedPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      onClick={handleStopTraining}
-                      variant="default"
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Square className="h-4 w-4 mr-1" />
-                      完成训练
-                    </Button>
+                  
+                  {/* Training Content */}
+                  <div className="space-y-3">
+                    {/* Training Objectives */}
+                    {currentDayTraining?.objectives && currentDayTraining.objectives.length > 0 && (
+                      <div className="bg-white p-3 rounded border">
+                        <h4 className="font-medium text-green-800 mb-2">训练目标</h4>
+                        <div className="space-y-1">
+                          {currentDayTraining.objectives.map((objective: string, index: number) => (
+                            <div key={index} className="flex items-start space-x-2">
+                              <span className="text-green-600 text-sm">•</span>
+                              <span className="text-sm text-gray-700">{objective}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Key Points */}
+                    {currentDayTraining?.keyPoints && currentDayTraining.keyPoints.length > 0 && (
+                      <div className="bg-white p-3 rounded border">
+                        <h4 className="font-medium text-blue-800 mb-2">技术要点</h4>
+                        <div className="space-y-1">
+                          {currentDayTraining.keyPoints.map((point: string, index: number) => (
+                            <div key={index} className="flex items-start space-x-2">
+                              <span className="text-blue-600 text-sm">•</span>
+                              <span className="text-sm text-gray-700">{point}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Duration Info */}
+                    {currentDayTraining?.estimatedDuration && (
+                      <div className="bg-white p-3 rounded border">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-600">预计训练时长</span>
+                          <Badge variant="outline" className="text-xs">
+                            {currentDayTraining.estimatedDuration} 分钟
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                  
+                  <Button
+                    onClick={handleStopTraining}
+                    className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                  >
+                    <Square className="h-4 w-4 mr-2" />
+                    完成训练
+                  </Button>
                 </div>
               </div>
             )}
