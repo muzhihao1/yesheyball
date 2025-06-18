@@ -52,33 +52,22 @@ export default function Tasks() {
 
   const trainingDaysArray = Array.isArray(trainingDays) ? trainingDays : [];
 
-  // Create training session mutation
-  const createSessionMutation = useMutation({
+  // Direct training completion mutation (simplified approach)
+  const completeTrainingMutation = useMutation({
     mutationFn: async (sessionData: any) => {
-      const response = await apiRequest("/api/training-sessions", "POST", sessionData);
-      return response.json();
-    },
-    onSuccess: (session) => {
-      setCurrentSessionId(session.id);
-      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
-    },
-  });
-
-  // Complete training session mutation
-  const completeSessionMutation = useMutation({
-    mutationFn: async (sessionData: any) => {
-      if (!currentSessionId) throw new Error("No active session");
-      const response = await apiRequest(`/api/training-sessions/${currentSessionId}/complete`, "POST", sessionData);
+      // Create and complete session in one step
+      const response = await apiRequest("/api/training-sessions", "POST", {
+        ...sessionData,
+        completed: true
+      });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/training-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       setShowTrainingComplete(false);
       setTrainingNotes("");
       setCompletionRating("");
-      setCurrentSessionId(null);
       resetTrainingStates();
       toast({
         title: "训练完成",
@@ -86,7 +75,7 @@ export default function Tasks() {
       });
     },
     onError: (error: Error) => {
-      console.error("Complete session error:", error);
+      console.error("Complete training error:", error);
       toast({
         title: "保存失败",
         description: error.message || "训练记录保存失败，请重试",
@@ -171,16 +160,6 @@ export default function Tasks() {
       return;
     }
     
-    // Create training session
-    const sessionData = {
-      programId: mainProgram?.id,
-      dayId: currentDayTraining?.id,
-      title: `第${currentDay}集：${currentDayTraining?.title || "训练"}`,
-      description: currentDayTraining?.description || "",
-      sessionType: "guided"
-    };
-    
-    createSessionMutation.mutate(sessionData);
     setCurrentSessionType("系统训练");
     setIsGuidedTraining(true);
     setGuidedElapsedTime(0);
