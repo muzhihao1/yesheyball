@@ -1051,10 +1051,10 @@ export default function Levels() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-50">
       {/* Duolingo-style Navigation Breadcrumb */}
-      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-full shadow-lg border border-blue-400">
-          <div className="flex items-center justify-between min-w-[280px]">
-            <span className="text-sm font-medium">
+      <div className="sticky top-2 left-1/2 transform -translate-x-1/2 z-40 mx-4 mb-6">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-full shadow-xl border border-blue-400 backdrop-blur-sm">
+          <div className="flex items-center justify-between min-w-[260px] max-w-[320px]">
+            <span className="text-sm font-medium truncate">
               第 {currentBreadcrumb.level} 阶段，第 {currentBreadcrumb.group} 部分
             </span>
             <button 
@@ -1071,17 +1071,18 @@ export default function Levels() {
                   if (levelContainer && levelContainer.textContent?.includes(`等级 ${currentBreadcrumb.level}`)) {
                     const rect = header.getBoundingClientRect();
                     window.scrollTo({ 
-                      top: rect.top + window.scrollY - 150, 
+                      top: rect.top + window.scrollY - 200, 
                       behavior: 'smooth' 
                     });
                     break;
                   }
                 }
               }}
-              className="ml-4 p-1 hover:bg-blue-400 rounded transition-colors"
+              className="ml-3 p-1.5 hover:bg-blue-400 hover:bg-opacity-50 rounded-full transition-colors duration-200"
+              title="跳转到当前组"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 12h18m-9-9l9 9-9 9"/>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M9 18l6-6-6-6"/>
               </svg>
             </button>
           </div>
@@ -1089,7 +1090,7 @@ export default function Levels() {
       </div>
 
       {/* Duolingo-style Level Map */}
-      <div className="max-w-lg mx-auto px-4 pb-12 pt-20">
+      <div className="max-w-lg mx-auto px-4 pb-12 pt-4">
         <div className="relative">
           {levelStages.map((stage, stageIndex) => {
             const levelColors = getLevelColors(stage.level);
