@@ -932,9 +932,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all training logs/notes for a user
-  app.get("/api/training-logs", async (req, res) => {
+  app.get("/api/training-logs", isAuthenticated, async (req, res) => {
     try {
-      const logs = await storage.getAllTrainingNotes("1");
+      const userId = (req.user as any)?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      const logs = await storage.getAllTrainingNotes(userId);
       res.json(logs);
     } catch (error) {
       res.status(500).json({ message: "Failed to get training logs" });
@@ -942,14 +947,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get training records (completed sessions) for a user
-  app.get("/api/training-records", async (req, res) => {
+  app.get("/api/training-records", isAuthenticated, async (req, res) => {
     try {
       // Prevent caching to ensure fresh data after deletions
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const sessions = await storage.getUserTrainingSessions("1");
+      const userId = (req.user as any)?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      const sessions = await storage.getUserTrainingSessions(userId);
       const completedSessions = sessions.filter(s => s.completed).map(s => ({
         id: s.id,
         userId: s.userId,
