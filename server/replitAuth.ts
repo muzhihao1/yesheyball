@@ -31,14 +31,22 @@ export function getSession() {
     ttl: sessionTtl,
     tableName: "sessions",
   });
+  
+  // Handle session store errors gracefully
+  sessionStore.on('error', (error: any) => {
+    console.error('Session store error:', error);
+  });
+  
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
-    resave: false,
+    resave: true, // Save session on every request to prevent loss
     saveUninitialized: false,
+    rolling: true, // Extend session on activity
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       maxAge: sessionTtl,
     },
   });
@@ -150,27 +158,38 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  // Check if user has claims (basic auth check)
+  if (!user.claims || !user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
+  
+  // Add 5 minute buffer to prevent frequent token refreshes
+  if (now <= (user.expires_at - 300)) {
     return next();
   }
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
+    console.log("No refresh token available, user needs to re-authenticate");
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
 
   try {
+    console.log("Refreshing access token...");
     const config = await getOidcConfig();
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
     updateUserSession(user, tokenResponse);
+    console.log("Token refreshed successfully");
     return next();
   } catch (error) {
+    console.error("Token refresh failed:", error);
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
