@@ -265,33 +265,27 @@ export default function Levels() {
     };
     
     const findUserLevelPosition = (userLevel: number): number | null => {
-      // Find the user's current level progress bar
-      const progressElements = Array.from(document.querySelectorAll('div')).filter(div => {
+      // Use same logic as auto-scroll for consistency
+      const levelContainers = Array.from(document.querySelectorAll('div[class*="bg-gradient"], div[class*="rounded"]')).filter(div => {
         const text = div.textContent || '';
-        return text.includes(`等级 ${userLevel} •`) && 
-               text.includes('进度') && 
-               text.includes('/');
+        const classes = div.className || '';
+        
+        const containsLevel = text.includes(`等级 ${userLevel} •`);
+        const hasGradientBg = classes.includes('bg-gradient');
+        const hasProgress = text.includes('进度');
+        const isSpecificLevel = !text.includes(`等级 ${userLevel + 1}`) && !text.includes(`等级 ${userLevel - 1}`);
+        
+        return containsLevel && hasProgress && isSpecificLevel;
       });
       
-      if (progressElements.length > 0) {
-        const progressElement = progressElements[0];
-        const rect = progressElement.getBoundingClientRect();
-        return rect.top + window.scrollY - 100;
-      }
-      
-      // Fallback: Look for level header
-      const levelHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
-        const text = el.textContent || '';
-        return text.includes(`等级 ${userLevel}`) && text.includes('•');
-      });
-      
-      if (levelHeaders.length > 0) {
-        const rect = levelHeaders[0].getBoundingClientRect();
-        return rect.top + window.scrollY - 150;
+      if (levelContainers.length > 0) {
+        const targetElement = levelContainers[0];
+        const rect = targetElement.getBoundingClientRect();
+        return rect.top + window.scrollY - 120;
       }
       
       // Mathematical fallback
-      return document.body.scrollHeight * (userLevel / 10) * 0.6;
+      return 200 + (userLevel - 1) * 800;
     };
     
     const scrollToUserLevel = () => {
@@ -354,48 +348,61 @@ export default function Levels() {
   useEffect(() => {
     if (user && !userLoading && exerciseData) {
       const scrollToUserProgress = () => {
-        // Find the user's current level progress bar
-        const progressElements = Array.from(document.querySelectorAll('div')).filter(div => {
+        // Find level containers with gradient backgrounds
+        const levelContainers = Array.from(document.querySelectorAll('div[class*="bg-gradient"], div[class*="rounded"]')).filter(div => {
           const text = div.textContent || '';
-          return text.includes(`等级 ${user.level} •`) && 
-                 text.includes('进度') && 
-                 text.includes('/');
+          const classes = div.className || '';
+          
+          // Look for elements that contain only one level's information
+          const containsLevel = text.includes(`等级 ${user.level} •`);
+          const hasGradientBg = classes.includes('bg-gradient');
+          const hasProgress = text.includes('进度');
+          const isSpecificLevel = !text.includes(`等级 ${user.level + 1}`) && !text.includes(`等级 ${user.level - 1}`);
+          
+          return containsLevel && hasProgress && isSpecificLevel;
         });
         
-        if (progressElements.length > 0) {
-          const progressElement = progressElements[0];
-          const rect = progressElement.getBoundingClientRect();
-          const targetPosition = rect.top + window.scrollY - 100;
+        let targetElement = null;
+        if (levelContainers.length > 0) {
+          targetElement = levelContainers[0];
+        }
+        
+        // Fallback search for level section
+        if (!targetElement) {
+          const allDivs = Array.from(document.querySelectorAll('div'));
+          for (const div of allDivs) {
+            const text = div.textContent || '';
+            if (text.includes(`等级 ${user.level}`) && text.includes('•')) {
+              targetElement = div;
+              break;
+            }
+          }
+        }
+        
+        if (targetElement) {
+          const rect = targetElement.getBoundingClientRect();
+          const targetPosition = rect.top + window.scrollY - 120;
           
           setTimeout(() => {
             window.scrollTo({ 
               top: Math.max(0, targetPosition), 
               behavior: 'smooth' 
             });
-          }, 800);
+          }, 600);
         } else {
-          // Fallback: Look for level header
-          const levelHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
-            const text = el.textContent || '';
-            return text.includes(`等级 ${user.level}`) && text.includes('•');
-          });
-          
-          if (levelHeaders.length > 0) {
-            const rect = levelHeaders[0].getBoundingClientRect();
-            const targetPosition = rect.top + window.scrollY - 150;
-            
-            setTimeout(() => {
-              window.scrollTo({ 
-                top: Math.max(0, targetPosition), 
-                behavior: 'smooth' 
-              });
-            }, 800);
-          }
+          // Mathematical fallback based on level position
+          const estimatedPosition = 200 + (user.level - 1) * 800;
+          setTimeout(() => {
+            window.scrollTo({ 
+              top: estimatedPosition, 
+              behavior: 'smooth' 
+            });
+          }, 600);
         }
       };
       
       // Wait for content to load
-      setTimeout(scrollToUserProgress, 1000);
+      setTimeout(scrollToUserProgress, 1200);
     }
   }, [user, userLoading, exerciseData]);
 
