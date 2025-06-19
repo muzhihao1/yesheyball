@@ -631,7 +631,16 @@ export default function Tasks() {
                         </span>
                       </div>
                       {record.notes && (
-                        <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">{record.notes}</p>
+                        <div className="mt-2">
+                          <p className="text-xs text-gray-600 mb-1">训练心得：</p>
+                          <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{record.notes}</p>
+                        </div>
+                      )}
+                      {record.aiFeedback && (
+                        <div className="mt-2">
+                          <p className="text-xs text-blue-600 mb-1">AI 教练反馈：</p>
+                          <p className="text-sm text-blue-700 bg-blue-50 p-2 rounded border-l-2 border-blue-200">{record.aiFeedback}</p>
+                        </div>
                       )}
                     </div>
                     <div className="text-xs text-gray-500 ml-4">
