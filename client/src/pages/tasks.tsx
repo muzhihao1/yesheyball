@@ -574,6 +574,54 @@ export default function Tasks() {
             根据个人需要进行针对性练习，可以专注于特定技巧或弱项改进。
           </p>
           
+          {/* Custom Training Details - Always Visible */}
+          <div className="space-y-3 mb-4">
+            <div className="bg-white p-3 rounded border">
+              <h4 className="font-medium text-blue-800 mb-2">自主训练特点</h4>
+              <div className="space-y-1">
+                <div className="flex items-start space-x-2">
+                  <span className="text-blue-600 text-sm">•</span>
+                  <span className="text-sm text-gray-700">灵活安排训练内容和时间</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-blue-600 text-sm">•</span>
+                  <span className="text-sm text-gray-700">针对个人弱项进行专项练习</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-blue-600 text-sm">•</span>
+                  <span className="text-sm text-gray-700">自由控制训练节奏和强度</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-3 rounded border">
+              <h4 className="font-medium text-green-800 mb-2">建议训练项目</h4>
+              <div className="space-y-1">
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-600 text-sm">•</span>
+                  <span className="text-sm text-gray-700">基础姿势和握杆练习</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-600 text-sm">•</span>
+                  <span className="text-sm text-gray-700">特定球型的反复练习</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-600 text-sm">•</span>
+                  <span className="text-sm text-gray-700">战术组合和连续击球</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-3 rounded border">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-600">建议训练时长</span>
+                <Badge variant="outline" className="text-xs">
+                  10-60 分钟
+                </Badge>
+              </div>
+            </div>
+          </div>
+          
           {!isCustomTraining ? (
             <Button
               onClick={handleStartCustomTraining}
@@ -599,20 +647,11 @@ export default function Tasks() {
                     >
                       {isCustomPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                     </Button>
-                    <Button
-                      onClick={handleStopTraining}
-                      variant="default"
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 touch-target"
-                    >
-                      <Square className="h-4 w-4 mr-1" />
-                      完成训练
-                    </Button>
                   </div>
                 </div>
                 
                 {/* 训练心得记录区域 */}
-                <div className="p-4 bg-white rounded-lg border border-blue-200">
+                <div className="p-4 bg-white rounded-lg border border-blue-200 mb-4">
                   <h4 className="text-sm font-medium text-blue-800 mb-2">训练心得记录</h4>
                   <textarea
                     value={trainingNotes}
@@ -620,6 +659,32 @@ export default function Tasks() {
                     placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
                     className="w-full h-20 p-2 text-sm border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => {
+                      setIsCustomTraining(false);
+                      setCustomElapsedTime(0);
+                      setIsCustomPaused(false);
+                      setTrainingNotes("");
+                      toast({
+                        title: "自主训练已取消",
+                        description: "你可以随时重新开始训练"
+                      });
+                    }}
+                    variant="outline"
+                    className="flex-1 touch-target"
+                  >
+                    取消训练
+                  </Button>
+                  <Button
+                    onClick={handleStopTraining}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 touch-target"
+                  >
+                    <Square className="h-4 w-4 mr-2" />
+                    完成训练
+                  </Button>
                 </div>
               </div>
             </div>
