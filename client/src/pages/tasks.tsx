@@ -335,6 +335,51 @@ export default function Tasks() {
               {currentDayTraining?.description || `第${currentDay}集训练内容，持续提升台球技能。`}
             </p>
             
+            {/* Training Details - Always Visible */}
+            <div className="space-y-3 mb-4">
+              {/* Training Objectives */}
+              {currentDayTraining?.objectives && currentDayTraining.objectives.length > 0 && (
+                <div className="bg-white p-3 rounded border">
+                  <h4 className="font-medium text-green-800 mb-2">训练目标</h4>
+                  <div className="space-y-1">
+                    {currentDayTraining.objectives.map((objective: string, index: number) => (
+                      <div key={index} className="flex items-start space-x-2">
+                        <span className="text-green-600 text-sm">•</span>
+                        <span className="text-sm text-gray-700">{objective}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Key Points */}
+              {currentDayTraining?.keyPoints && currentDayTraining.keyPoints.length > 0 && (
+                <div className="bg-white p-3 rounded border">
+                  <h4 className="font-medium text-blue-800 mb-2">技术要点</h4>
+                  <div className="space-y-1">
+                    {currentDayTraining.keyPoints.map((point: string, index: number) => (
+                      <div key={index} className="flex items-start space-x-2">
+                        <span className="text-blue-600 text-sm">•</span>
+                        <span className="text-sm text-gray-700">{point}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Duration Info */}
+              {currentDayTraining?.estimatedDuration && (
+                <div className="bg-white p-3 rounded border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">预计训练时长</span>
+                    <Badge variant="outline" className="text-xs">
+                      {currentDayTraining.estimatedDuration} 分钟
+                    </Badge>
+                  </div>
+                </div>
+              )}
+            </div>
+            
             {!isGuidedTraining ? (
               <Button
                 onClick={handleStartTraining}
@@ -363,53 +408,8 @@ export default function Tasks() {
                     </div>
                   </div>
                   
-                  {/* Training Content */}
-                  <div className="space-y-3">
-                    {/* Training Objectives */}
-                    {currentDayTraining?.objectives && currentDayTraining.objectives.length > 0 && (
-                      <div className="bg-white p-3 rounded border">
-                        <h4 className="font-medium text-green-800 mb-2">训练目标</h4>
-                        <div className="space-y-1">
-                          {currentDayTraining.objectives.map((objective: string, index: number) => (
-                            <div key={index} className="flex items-start space-x-2">
-                              <span className="text-green-600 text-sm">•</span>
-                              <span className="text-sm text-gray-700">{objective}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Key Points */}
-                    {currentDayTraining?.keyPoints && currentDayTraining.keyPoints.length > 0 && (
-                      <div className="bg-white p-3 rounded border">
-                        <h4 className="font-medium text-blue-800 mb-2">技术要点</h4>
-                        <div className="space-y-1">
-                          {currentDayTraining.keyPoints.map((point: string, index: number) => (
-                            <div key={index} className="flex items-start space-x-2">
-                              <span className="text-blue-600 text-sm">•</span>
-                              <span className="text-sm text-gray-700">{point}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Duration Info */}
-                    {currentDayTraining?.estimatedDuration && (
-                      <div className="bg-white p-3 rounded border">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-600">预计训练时长</span>
-                          <Badge variant="outline" className="text-xs">
-                            {currentDayTraining.estimatedDuration} 分钟
-                          </Badge>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
                   {/* 训练心得记录区域 */}
-                  <div className="p-4 bg-white rounded-lg border border-green-200">
+                  <div className="p-4 bg-white rounded-lg border border-green-200 mb-4">
                     <h4 className="text-sm font-medium text-green-800 mb-2">训练心得记录</h4>
                     <textarea
                       value={trainingNotes}
@@ -419,13 +419,31 @@ export default function Tasks() {
                     />
                   </div>
                   
-                  <Button
-                    onClick={handleStopTraining}
-                    className="w-full mt-4 bg-green-600 hover:bg-green-700 touch-target"
-                  >
-                    <Square className="h-4 w-4 mr-2" />
-                    完成训练
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => {
+                        setIsGuidedTraining(false);
+                        setGuidedElapsedTime(0);
+                        setIsGuidedPaused(false);
+                        setTrainingNotes("");
+                        toast({
+                          title: "训练已取消",
+                          description: "你可以随时重新开始训练"
+                        });
+                      }}
+                      variant="outline"
+                      className="flex-1 touch-target"
+                    >
+                      取消训练
+                    </Button>
+                    <Button
+                      onClick={handleStopTraining}
+                      className="flex-1 bg-green-600 hover:bg-green-700 touch-target"
+                    >
+                      <Square className="h-4 w-4 mr-2" />
+                      完成训练
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -500,20 +518,11 @@ export default function Tasks() {
                       >
                         {isSpecialPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                       </Button>
-                      <Button
-                        onClick={handleStopTraining}
-                        variant="default"
-                        size="sm"
-                        className="bg-purple-600 hover:bg-purple-700 touch-target"
-                      >
-                        <Square className="h-4 w-4 mr-1" />
-                        完成特训
-                      </Button>
                     </div>
                   </div>
                   
                   {/* 训练心得记录区域 */}
-                  <div className="p-4 bg-white rounded-lg border border-purple-200">
+                  <div className="p-4 bg-white rounded-lg border border-purple-200 mb-4">
                     <h4 className="text-sm font-medium text-purple-800 mb-2">训练心得记录</h4>
                     <textarea
                       value={trainingNotes}
@@ -521,6 +530,32 @@ export default function Tasks() {
                       placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
                       className="w-full h-20 p-2 text-sm border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => {
+                        setIsSpecialTraining(false);
+                        setSpecialElapsedTime(0);
+                        setIsSpecialPaused(false);
+                        setTrainingNotes("");
+                        toast({
+                          title: "特训已取消",
+                          description: "你可以随时重新开始特训"
+                        });
+                      }}
+                      variant="outline"
+                      className="flex-1 touch-target"
+                    >
+                      取消特训
+                    </Button>
+                    <Button
+                      onClick={handleStopTraining}
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 touch-target"
+                    >
+                      <Square className="h-4 w-4 mr-2" />
+                      完成特训
+                    </Button>
                   </div>
                 </div>
               </div>
