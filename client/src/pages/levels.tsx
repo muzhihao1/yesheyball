@@ -265,50 +265,33 @@ export default function Levels() {
     };
     
     const findUserLevelPosition = (userLevel: number): number | null => {
-      // Direct DOM-based approach to find the exact next exercise
-      const allExerciseElements = Array.from(document.querySelectorAll('button')).filter(btn => {
-        const rect = btn.getBoundingClientRect();
-        return rect.width >= 60 && rect.width <= 90 && rect.height >= 60 && rect.height <= 90;
+      // Find the user's current level progress bar
+      const progressElements = Array.from(document.querySelectorAll('div')).filter(div => {
+        const text = div.textContent || '';
+        return text.includes(`等级 ${userLevel} •`) && 
+               text.includes('进度') && 
+               text.includes('/');
       });
       
-      // Find exercise elements specifically in user's current level
-      const currentLevelElements = allExerciseElements.filter(btn => {
-        const levelContainer = btn.closest('div[class*="mb-"]');
-        return levelContainer?.textContent?.includes(`等级 ${userLevel}`);
-      });
-      
-      if (currentLevelElements.length > 0) {
-        // Get user's completed exercises for current level
-        const userCompletedExercises = (user?.completedExercises as Record<string, number>) || {};
-        const completedCount = userCompletedExercises[userLevel.toString()] || 0;
-        
-        // Check if all exercises in current level are completed
-        const totalExercisesInLevel = currentLevelElements.length;
-        
-        if (completedCount >= totalExercisesInLevel) {
-          // User completed current level, show level completion
-          const levelHeader = Array.from(document.querySelectorAll('div')).find(div => {
-            return div.textContent?.includes(`等级 ${userLevel} •`) && 
-                   div.textContent?.includes('进度');
-          });
-          
-          if (levelHeader) {
-            const rect = levelHeader.getBoundingClientRect();
-            return rect.top + window.scrollY - 150;
-          }
-        } else {
-          // Find the next exercise to complete
-          const nextExerciseIndex = completedCount;
-          if (nextExerciseIndex < currentLevelElements.length) {
-            const nextExerciseElement = currentLevelElements[nextExerciseIndex];
-            const rect = nextExerciseElement.getBoundingClientRect();
-            return rect.top + window.scrollY - 250;
-          }
-        }
+      if (progressElements.length > 0) {
+        const progressElement = progressElements[0];
+        const rect = progressElement.getBoundingClientRect();
+        return rect.top + window.scrollY - 100;
       }
       
-      // Fallback: Simple mathematical calculation based on level
-      return document.body.scrollHeight * (userLevel / 10) * 0.8;
+      // Fallback: Look for level header
+      const levelHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
+        const text = el.textContent || '';
+        return text.includes(`等级 ${userLevel}`) && text.includes('•');
+      });
+      
+      if (levelHeaders.length > 0) {
+        const rect = levelHeaders[0].getBoundingClientRect();
+        return rect.top + window.scrollY - 150;
+      }
+      
+      // Mathematical fallback
+      return document.body.scrollHeight * (userLevel / 10) * 0.6;
     };
     
     const scrollToUserLevel = () => {
@@ -367,81 +350,52 @@ export default function Levels() {
     }
   }, [exerciseData, exerciseDataLoading]);
 
-  // Auto-scroll to user's current exercise position on page load
+  // Auto-scroll to user's current progress on page load
   useEffect(() => {
     if (user && !userLoading && exerciseData) {
-      const scrollToCurrentExercise = () => {
-        // Direct DOM-based approach to find the exact next exercise
-        const findNextExercisePosition = () => {
-          // Look for all exercise circles/buttons in the current level
-          const allExerciseElements = Array.from(document.querySelectorAll('button')).filter(btn => {
-            const rect = btn.getBoundingClientRect();
-            // Exercise buttons are typically circular with specific size
-            return rect.width >= 60 && rect.width <= 90 && rect.height >= 60 && rect.height <= 90;
-          });
-          
-          // Find exercise elements specifically in user's current level
-          const currentLevelElements = allExerciseElements.filter(btn => {
-            const levelContainer = btn.closest('div[class*="mb-"]');
-            return levelContainer?.textContent?.includes(`等级 ${user.level}`);
-          });
-          
-          if (currentLevelElements.length > 0) {
-            // Get user's completed exercises for current level
-            const userCompletedExercises = (user.completedExercises as Record<string, number>) || {};
-            const completedCount = userCompletedExercises[user.level.toString()] || 0;
-            
-            // Check if all exercises in current level are completed
-            const totalExercisesInLevel = currentLevelElements.length;
-            
-            if (completedCount >= totalExercisesInLevel) {
-              // User completed current level, show level completion or next level
-              const levelHeader = Array.from(document.querySelectorAll('div')).find(div => {
-                return div.textContent?.includes(`等级 ${user.level} •`) && 
-                       div.textContent?.includes('进度');
-              });
-              
-              if (levelHeader) {
-                const rect = levelHeader.getBoundingClientRect();
-                return rect.top + window.scrollY - 150; // Show level completion
-              }
-            } else {
-              // Find the next exercise to complete
-              const nextExerciseIndex = completedCount;
-              if (nextExerciseIndex < currentLevelElements.length) {
-                const nextExerciseElement = currentLevelElements[nextExerciseIndex];
-                const rect = nextExerciseElement.getBoundingClientRect();
-                return rect.top + window.scrollY - 250;
-              }
-            }
-          }
-          
-          return null;
-        };
+      const scrollToUserProgress = () => {
+        // Find the user's current level progress bar
+        const progressElements = Array.from(document.querySelectorAll('div')).filter(div => {
+          const text = div.textContent || '';
+          return text.includes(`等级 ${user.level} •`) && 
+                 text.includes('进度') && 
+                 text.includes('/');
+        });
         
-        const targetPosition = findNextExercisePosition();
-        
-        if (targetPosition !== null) {
+        if (progressElements.length > 0) {
+          const progressElement = progressElements[0];
+          const rect = progressElement.getBoundingClientRect();
+          const targetPosition = rect.top + window.scrollY - 100;
+          
           setTimeout(() => {
             window.scrollTo({ 
               top: Math.max(0, targetPosition), 
               behavior: 'smooth' 
             });
-          }, 500);
+          }, 800);
         } else {
-          // Fallback: Simple mathematical calculation
-          const levelHeaderPosition = document.body.scrollHeight * 0.3; // Rough estimate for level 3
-          setTimeout(() => {
-            window.scrollTo({ 
-              top: levelHeaderPosition, 
-              behavior: 'smooth' 
-            });
-          }, 500);
+          // Fallback: Look for level header
+          const levelHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
+            const text = el.textContent || '';
+            return text.includes(`等级 ${user.level}`) && text.includes('•');
+          });
+          
+          if (levelHeaders.length > 0) {
+            const rect = levelHeaders[0].getBoundingClientRect();
+            const targetPosition = rect.top + window.scrollY - 150;
+            
+            setTimeout(() => {
+              window.scrollTo({ 
+                top: Math.max(0, targetPosition), 
+                behavior: 'smooth' 
+              });
+            }, 800);
+          }
         }
       };
       
-      // Wait for DOM to be fully rendered
-      setTimeout(scrollToCurrentExercise, 1200);
+      // Wait for content to load
+      setTimeout(scrollToUserProgress, 1000);
     }
   }, [user, userLoading, exerciseData]);
 
