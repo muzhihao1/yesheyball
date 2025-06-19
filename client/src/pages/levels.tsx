@@ -282,13 +282,28 @@ export default function Levels() {
         const userCompletedExercises = (user?.completedExercises as Record<string, number>) || {};
         const completedCount = userCompletedExercises[userLevel.toString()] || 0;
         
-        // The next exercise to complete is at index = completedCount
-        const nextExerciseIndex = completedCount;
+        // Check if all exercises in current level are completed
+        const totalExercisesInLevel = currentLevelElements.length;
         
-        if (nextExerciseIndex < currentLevelElements.length) {
-          const nextExerciseElement = currentLevelElements[nextExerciseIndex];
-          const rect = nextExerciseElement.getBoundingClientRect();
-          return rect.top + window.scrollY - 250;
+        if (completedCount >= totalExercisesInLevel) {
+          // User completed current level, show level completion
+          const levelHeader = Array.from(document.querySelectorAll('div')).find(div => {
+            return div.textContent?.includes(`等级 ${userLevel} •`) && 
+                   div.textContent?.includes('进度');
+          });
+          
+          if (levelHeader) {
+            const rect = levelHeader.getBoundingClientRect();
+            return rect.top + window.scrollY - 150;
+          }
+        } else {
+          // Find the next exercise to complete
+          const nextExerciseIndex = completedCount;
+          if (nextExerciseIndex < currentLevelElements.length) {
+            const nextExerciseElement = currentLevelElements[nextExerciseIndex];
+            const rect = nextExerciseElement.getBoundingClientRect();
+            return rect.top + window.scrollY - 250;
+          }
         }
       }
       
@@ -376,13 +391,28 @@ export default function Levels() {
             const userCompletedExercises = (user.completedExercises as Record<string, number>) || {};
             const completedCount = userCompletedExercises[user.level.toString()] || 0;
             
-            // The next exercise to complete is at index = completedCount
-            const nextExerciseIndex = completedCount;
+            // Check if all exercises in current level are completed
+            const totalExercisesInLevel = currentLevelElements.length;
             
-            if (nextExerciseIndex < currentLevelElements.length) {
-              const nextExerciseElement = currentLevelElements[nextExerciseIndex];
-              const rect = nextExerciseElement.getBoundingClientRect();
-              return rect.top + window.scrollY - 250; // Center on screen
+            if (completedCount >= totalExercisesInLevel) {
+              // User completed current level, show level completion or next level
+              const levelHeader = Array.from(document.querySelectorAll('div')).find(div => {
+                return div.textContent?.includes(`等级 ${user.level} •`) && 
+                       div.textContent?.includes('进度');
+              });
+              
+              if (levelHeader) {
+                const rect = levelHeader.getBoundingClientRect();
+                return rect.top + window.scrollY - 150; // Show level completion
+              }
+            } else {
+              // Find the next exercise to complete
+              const nextExerciseIndex = completedCount;
+              if (nextExerciseIndex < currentLevelElements.length) {
+                const nextExerciseElement = currentLevelElements[nextExerciseIndex];
+                const rect = nextExerciseElement.getBoundingClientRect();
+                return rect.top + window.scrollY - 250;
+              }
             }
           }
           
