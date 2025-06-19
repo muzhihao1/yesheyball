@@ -61,14 +61,7 @@ export default function Tasks() {
 
   const recordsArray = Array.isArray(trainingRecords) ? trainingRecords : [];
 
-  // Loading state
-  if (programsLoading || daysLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-      </div>
-    );
-  }
+
 
   // Direct training completion mutation (simplified approach)
   const completeTrainingMutation = useMutation({
