@@ -635,7 +635,12 @@ export default function Tasks() {
                       )}
                     </div>
                     <div className="text-xs text-gray-500 ml-4">
-                      {new Date(record.completedAt || record.createdAt).toLocaleDateString('zh-CN')}
+                      {record.completedAt ? 
+                        new Date(record.completedAt).toLocaleDateString('zh-CN') : 
+                        record.createdAt ? 
+                        new Date(record.createdAt).toLocaleDateString('zh-CN') :
+                        '今天'
+                      }
                     </div>
                   </div>
                 </div>

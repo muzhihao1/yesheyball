@@ -659,7 +659,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('AI feedback generated:', aiFeedback);
       }
       
-      const sessionWithAI = { ...validatedData, aiFeedback };
+      const sessionWithAI = { 
+        ...validatedData, 
+        aiFeedback,
+        completedAt: validatedData.completed ? new Date() : null
+      };
       const session = await storage.createTrainingSession(sessionWithAI);
       
       // If session is completed, update user stats and check achievements
