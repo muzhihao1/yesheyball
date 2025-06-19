@@ -277,29 +277,30 @@ export default function Levels() {
         return hasCircleSize && isInCurrentLevel;
       });
       
-      // Find the button at the current exercise position (next exercise to complete)
-      if (exerciseButtons.length > currentLevelCompleted) {
-        const targetExercise = exerciseButtons[currentLevelCompleted];
-        const rect = targetExercise.getBoundingClientRect();
-        return rect.top + window.scrollY - 200;
-      }
-      
-      // Fallback: Find level header and add offset for current progress
-      const levelHeaderElement = Array.from(document.querySelectorAll('*')).find(element => {
-        const text = element.textContent?.trim() || '';
-        return text.includes(`等级 ${userLevel} •`) && text.includes('进度');
+      // Find level header and calculate position to next exercise
+      const levelHeaderElement = Array.from(document.querySelectorAll('div')).find(element => {
+        return element.textContent?.includes(`等级 ${userLevel} •`) && 
+               element.textContent?.includes('进度') &&
+               element.className?.includes('bg-gradient-to-r');
       });
       
       if (levelHeaderElement) {
         const rect = levelHeaderElement.getBoundingClientRect();
-        const exerciseOffset = Math.floor(currentLevelCompleted / 5) * 120; // Approximate offset per group
-        return rect.top + window.scrollY + 300 + exerciseOffset;
+        
+        // Calculate position to show next exercise to complete
+        const nextExerciseNumber = currentLevelCompleted + 1;
+        const groupOfNextExercise = Math.ceil(nextExerciseNumber / 5);
+        const exerciseOffset = (groupOfNextExercise - 1) * 180 + 100;
+        
+        return rect.top + window.scrollY + 350 + exerciseOffset;
       }
       
       // Mathematical fallback
       const estimatedHeight = 1000;
       const headerHeight = 200;
-      const exerciseOffset = Math.floor(currentLevelCompleted / 5) * 120;
+      const nextExerciseNumber = currentLevelCompleted + 1;
+      const groupOfNextExercise = Math.ceil(nextExerciseNumber / 5);
+      const exerciseOffset = (groupOfNextExercise - 1) * 180 + 100;
       return headerHeight + (userLevel - 1) * estimatedHeight + exerciseOffset;
     };
     
@@ -383,13 +384,16 @@ export default function Levels() {
           const levelSection = levelSections[0];
           const rect = levelSection.getBoundingClientRect();
           
-          // Calculate offset based on completed exercises
-          // Each group has ~5 exercises, each group adds ~150px height
-          const groupsCompleted = Math.floor(currentExercise / 5);
-          const exerciseOffset = groupsCompleted * 150;
+          // Calculate offset to show the NEXT exercise (current exercise to complete)
+          // User has completed 19 exercises, so we want to show exercise 20 (next to complete)
+          const nextExerciseNumber = currentExercise + 1;
+          const groupOfNextExercise = Math.ceil(nextExerciseNumber / 5);
           
-          // Position to show the current exercise area
-          const targetPosition = rect.top + window.scrollY + 400 + exerciseOffset;
+          // Each group adds approximately 180px, plus some padding
+          const exerciseOffset = (groupOfNextExercise - 1) * 180 + 100;
+          
+          // Position to show the next exercise to complete
+          const targetPosition = rect.top + window.scrollY + 350 + exerciseOffset;
           
           setTimeout(() => {
             window.scrollTo({ 
