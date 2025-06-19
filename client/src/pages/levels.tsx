@@ -101,6 +101,9 @@ export default function Levels() {
   } | null>(null);
   
   const [exerciseDataLoading, setExerciseDataLoading] = useState(false);
+  
+  // Navigation breadcrumb state
+  const [currentBreadcrumb, setCurrentBreadcrumb] = useState({ level: 3, group: 4 });
 
   const { toast } = useToast();
 
@@ -265,26 +268,38 @@ export default function Levels() {
     };
     
     const findUserLevelPosition = (userLevel: number): number | null => {
-      // Use same logic as auto-scroll for consistency
-      const levelContainers = Array.from(document.querySelectorAll('div[class*="bg-gradient"], div[class*="rounded"]')).filter(div => {
+      // Navigate to user's current group based on their progress
+      const userCompletedExercises = (user?.completedExercises as Record<string, number>) || {};
+      const currentLevelCompleted = userCompletedExercises[userLevel.toString()] || 0;
+      const currentGroup = Math.ceil((currentLevelCompleted + 1) / 5);
+      
+      // Find the group header for user's current position
+      const targetGroupText = `第${currentGroup}组`;
+      const groupHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
+        const text = el.textContent || '';
+        return text.includes(targetGroupText) && text.trim().length < 10;
+      });
+      
+      // Find the group header in user's current level
+      for (const header of groupHeaders) {
+        const levelContainer = header.closest('div[class*="mb-"]');
+        if (levelContainer && levelContainer.textContent?.includes(`等级 ${userLevel}`)) {
+          const rect = header.getBoundingClientRect();
+          return rect.top + window.scrollY - 150;
+        }
+      }
+      
+      // Fallback to level progress card
+      const levelContainers = Array.from(document.querySelectorAll('div[class*="bg-gradient"]')).filter(div => {
         const text = div.textContent || '';
-        const classes = div.className || '';
-        
-        const containsLevel = text.includes(`等级 ${userLevel} •`);
-        const hasGradientBg = classes.includes('bg-gradient');
-        const hasProgress = text.includes('进度');
-        const isSpecificLevel = !text.includes(`等级 ${userLevel + 1}`) && !text.includes(`等级 ${userLevel - 1}`);
-        
-        return containsLevel && hasProgress && isSpecificLevel;
+        return text.includes(`等级 ${userLevel} •`) && text.includes('进度');
       });
       
       if (levelContainers.length > 0) {
-        const targetElement = levelContainers[0];
-        const rect = targetElement.getBoundingClientRect();
+        const rect = levelContainers[0].getBoundingClientRect();
         return rect.top + window.scrollY - 120;
       }
       
-      // Mathematical fallback
       return 200 + (userLevel - 1) * 800;
     };
     
@@ -344,44 +359,91 @@ export default function Levels() {
     }
   }, [exerciseData, exerciseDataLoading]);
 
+  // Scroll detection for breadcrumb updates
+  useEffect(() => {
+    const updateBreadcrumbOnScroll = () => {
+      // Find all group headers in the viewport
+      const groupHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
+        const text = el.textContent || '';
+        return /第\d+组/.test(text) && text.trim().length < 10;
+      });
+      
+      // Find which group is currently in view
+      let currentGroup = 1;
+      let currentLevel = 3;
+      
+      for (const header of groupHeaders) {
+        const rect = header.getBoundingClientRect();
+        const text = header.textContent || '';
+        
+        // Check if this group header is in the upper part of the viewport
+        if (rect.top <= 200 && rect.bottom >= 100) {
+          const groupMatch = text.match(/第(\d+)组/);
+          if (groupMatch) {
+            currentGroup = parseInt(groupMatch[1]);
+            
+            // Find the level this group belongs to
+            const levelContainer = header.closest('div[class*="mb-"]');
+            if (levelContainer) {
+              const levelText = levelContainer.textContent || '';
+              const levelMatch = levelText.match(/等级 (\d+)/);
+              if (levelMatch) {
+                currentLevel = parseInt(levelMatch[1]);
+              }
+            }
+            break;
+          }
+        }
+      }
+      
+      // Update breadcrumb if changed
+      setCurrentBreadcrumb(prev => {
+        if (prev.level !== currentLevel || prev.group !== currentGroup) {
+          return { level: currentLevel, group: currentGroup };
+        }
+        return prev;
+      });
+    };
+    
+    // Attach scroll listener
+    window.addEventListener('scroll', updateBreadcrumbOnScroll);
+    updateBreadcrumbOnScroll(); // Initial call
+    
+    return () => window.removeEventListener('scroll', updateBreadcrumbOnScroll);
+  }, []);
+
   // Auto-scroll to user's current progress on page load
   useEffect(() => {
     if (user && !userLoading && exerciseData) {
       const scrollToUserProgress = () => {
-        // Find level containers with gradient backgrounds
-        const levelContainers = Array.from(document.querySelectorAll('div[class*="bg-gradient"], div[class*="rounded"]')).filter(div => {
-          const text = div.textContent || '';
-          const classes = div.className || '';
-          
-          // Look for elements that contain only one level's information
-          const containsLevel = text.includes(`等级 ${user.level} •`);
-          const hasGradientBg = classes.includes('bg-gradient');
-          const hasProgress = text.includes('进度');
-          const isSpecificLevel = !text.includes(`等级 ${user.level + 1}`) && !text.includes(`等级 ${user.level - 1}`);
-          
-          return containsLevel && hasProgress && isSpecificLevel;
+        // Calculate user's current group based on completed exercises
+        const userCompletedExercises = (user.completedExercises as Record<string, number>) || {};
+        const currentLevelCompleted = userCompletedExercises[user.level.toString()] || 0;
+        const currentGroup = Math.ceil((currentLevelCompleted + 1) / 5);
+        
+        // Update breadcrumb to user's actual position
+        setCurrentBreadcrumb({ level: user.level, group: currentGroup });
+        
+        // Find the group header for user's current position
+        const targetGroupText = `第${currentGroup}组`;
+        const groupHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
+          const text = el.textContent || '';
+          return text.includes(targetGroupText) && text.trim().length < 10;
         });
         
+        // Find the group header in user's current level
         let targetElement = null;
-        if (levelContainers.length > 0) {
-          targetElement = levelContainers[0];
-        }
-        
-        // Fallback search for level section
-        if (!targetElement) {
-          const allDivs = Array.from(document.querySelectorAll('div'));
-          for (const div of allDivs) {
-            const text = div.textContent || '';
-            if (text.includes(`等级 ${user.level}`) && text.includes('•')) {
-              targetElement = div;
-              break;
-            }
+        for (const header of groupHeaders) {
+          const levelContainer = header.closest('div[class*="mb-"]');
+          if (levelContainer && levelContainer.textContent?.includes(`等级 ${user.level}`)) {
+            targetElement = header;
+            break;
           }
         }
         
         if (targetElement) {
           const rect = targetElement.getBoundingClientRect();
-          const targetPosition = rect.top + window.scrollY - 120;
+          const targetPosition = rect.top + window.scrollY - 150;
           
           setTimeout(() => {
             window.scrollTo({ 
@@ -390,18 +452,26 @@ export default function Levels() {
             });
           }, 600);
         } else {
-          // Mathematical fallback based on level position
-          const estimatedPosition = 200 + (user.level - 1) * 800;
-          setTimeout(() => {
-            window.scrollTo({ 
-              top: estimatedPosition, 
-              behavior: 'smooth' 
-            });
-          }, 600);
+          // Fallback to level progress card
+          const levelContainers = Array.from(document.querySelectorAll('div[class*="bg-gradient"]')).filter(div => {
+            const text = div.textContent || '';
+            return text.includes(`等级 ${user.level} •`) && text.includes('进度');
+          });
+          
+          if (levelContainers.length > 0) {
+            const rect = levelContainers[0].getBoundingClientRect();
+            const targetPosition = rect.top + window.scrollY - 120;
+            
+            setTimeout(() => {
+              window.scrollTo({ 
+                top: Math.max(0, targetPosition), 
+                behavior: 'smooth' 
+              });
+            }, 600);
+          }
         }
       };
       
-      // Wait for content to load
       setTimeout(scrollToUserProgress, 1200);
     }
   }, [user, userLoading, exerciseData]);
@@ -980,10 +1050,46 @@ export default function Levels() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-50">
-
+      {/* Duolingo-style Navigation Breadcrumb */}
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-full shadow-lg border border-blue-400">
+          <div className="flex items-center justify-between min-w-[280px]">
+            <span className="text-sm font-medium">
+              第 {currentBreadcrumb.level} 阶段，第 {currentBreadcrumb.group} 部分
+            </span>
+            <button 
+              onClick={() => {
+                // Navigate to current group
+                const targetGroupText = `第${currentBreadcrumb.group}组`;
+                const groupHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
+                  const text = el.textContent || '';
+                  return text.includes(targetGroupText) && text.trim().length < 10;
+                });
+                
+                for (const header of groupHeaders) {
+                  const levelContainer = header.closest('div[class*="mb-"]');
+                  if (levelContainer && levelContainer.textContent?.includes(`等级 ${currentBreadcrumb.level}`)) {
+                    const rect = header.getBoundingClientRect();
+                    window.scrollTo({ 
+                      top: rect.top + window.scrollY - 150, 
+                      behavior: 'smooth' 
+                    });
+                    break;
+                  }
+                }
+              }}
+              className="ml-4 p-1 hover:bg-blue-400 rounded transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12h18m-9-9l9 9-9 9"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Duolingo-style Level Map */}
-      <div className="max-w-lg mx-auto px-4 pb-12 pt-6">
+      <div className="max-w-lg mx-auto px-4 pb-12 pt-20">
         <div className="relative">
           {levelStages.map((stage, stageIndex) => {
             const levelColors = getLevelColors(stage.level);
