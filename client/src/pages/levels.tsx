@@ -265,43 +265,35 @@ export default function Levels() {
     };
     
     const findUserLevelPosition = (userLevel: number): number | null => {
-      // Get user's current exercise completion data
-      const userCompletedExercises = (user?.completedExercises as Record<string, number>) || {};
-      const currentLevelCompleted = userCompletedExercises[userLevel.toString()] || 0;
-      
-      // Look for exercise buttons or circles in the current level
-      const exerciseButtons = Array.from(document.querySelectorAll('button, div')).filter(el => {
-        const rect = el.getBoundingClientRect();
-        const hasCircleSize = rect.width >= 60 && rect.width <= 80 && rect.height >= 60 && rect.height <= 80;
-        const isInCurrentLevel = el.closest('div[class*="mb-20"]')?.textContent?.includes(`等级 ${userLevel}`);
-        return hasCircleSize && isInCurrentLevel;
+      // Direct DOM-based approach to find the exact next exercise
+      const allExerciseElements = Array.from(document.querySelectorAll('button')).filter(btn => {
+        const rect = btn.getBoundingClientRect();
+        return rect.width >= 60 && rect.width <= 90 && rect.height >= 60 && rect.height <= 90;
       });
       
-      // Find level header and calculate position to next exercise
-      const levelHeaderElement = Array.from(document.querySelectorAll('div')).find(element => {
-        return element.textContent?.includes(`等级 ${userLevel} •`) && 
-               element.textContent?.includes('进度') &&
-               element.className?.includes('bg-gradient-to-r');
+      // Find exercise elements specifically in user's current level
+      const currentLevelElements = allExerciseElements.filter(btn => {
+        const levelContainer = btn.closest('div[class*="mb-"]');
+        return levelContainer?.textContent?.includes(`等级 ${userLevel}`);
       });
       
-      if (levelHeaderElement) {
-        const rect = levelHeaderElement.getBoundingClientRect();
+      if (currentLevelElements.length > 0) {
+        // Get user's completed exercises for current level
+        const userCompletedExercises = (user?.completedExercises as Record<string, number>) || {};
+        const completedCount = userCompletedExercises[userLevel.toString()] || 0;
         
-        // Calculate position to show next exercise to complete
-        const nextExerciseNumber = currentLevelCompleted + 1;
-        const groupOfNextExercise = Math.ceil(nextExerciseNumber / 5);
-        const exerciseOffset = (groupOfNextExercise - 1) * 180 + 100;
+        // The next exercise to complete is at index = completedCount
+        const nextExerciseIndex = completedCount;
         
-        return rect.top + window.scrollY + 350 + exerciseOffset;
+        if (nextExerciseIndex < currentLevelElements.length) {
+          const nextExerciseElement = currentLevelElements[nextExerciseIndex];
+          const rect = nextExerciseElement.getBoundingClientRect();
+          return rect.top + window.scrollY - 250;
+        }
       }
       
-      // Mathematical fallback
-      const estimatedHeight = 1000;
-      const headerHeight = 200;
-      const nextExerciseNumber = currentLevelCompleted + 1;
-      const groupOfNextExercise = Math.ceil(nextExerciseNumber / 5);
-      const exerciseOffset = (groupOfNextExercise - 1) * 180 + 100;
-      return headerHeight + (userLevel - 1) * estimatedHeight + exerciseOffset;
+      // Fallback: Simple mathematical calculation based on level
+      return document.body.scrollHeight * (userLevel / 10) * 0.8;
     };
     
     const scrollToUserLevel = () => {
@@ -364,48 +356,62 @@ export default function Levels() {
   useEffect(() => {
     if (user && !userLoading && exerciseData) {
       const scrollToCurrentExercise = () => {
-        // Get user's current progress
-        const userCompletedExercises = (user.completedExercises as Record<string, number>) || {};
-        const currentLevelCompleted = userCompletedExercises[user.level.toString()] || 0;
+        // Direct DOM-based approach to find the exact next exercise
+        const findNextExercisePosition = () => {
+          // Look for all exercise circles/buttons in the current level
+          const allExerciseElements = Array.from(document.querySelectorAll('button')).filter(btn => {
+            const rect = btn.getBoundingClientRect();
+            // Exercise buttons are typically circular with specific size
+            return rect.width >= 60 && rect.width <= 90 && rect.height >= 60 && rect.height <= 90;
+          });
+          
+          // Find exercise elements specifically in user's current level
+          const currentLevelElements = allExerciseElements.filter(btn => {
+            const levelContainer = btn.closest('div[class*="mb-"]');
+            return levelContainer?.textContent?.includes(`等级 ${user.level}`);
+          });
+          
+          if (currentLevelElements.length > 0) {
+            // Get user's completed exercises for current level
+            const userCompletedExercises = (user.completedExercises as Record<string, number>) || {};
+            const completedCount = userCompletedExercises[user.level.toString()] || 0;
+            
+            // The next exercise to complete is at index = completedCount
+            const nextExerciseIndex = completedCount;
+            
+            if (nextExerciseIndex < currentLevelElements.length) {
+              const nextExerciseElement = currentLevelElements[nextExerciseIndex];
+              const rect = nextExerciseElement.getBoundingClientRect();
+              return rect.top + window.scrollY - 250; // Center on screen
+            }
+          }
+          
+          return null;
+        };
         
-        // Calculate target position based on user's actual progress
-        // Level 3 with 19 completed exercises means we're at exercise 20 (4th group)
-        const currentLevel = user.level;
-        const currentExercise = currentLevelCompleted;
+        const targetPosition = findNextExercisePosition();
         
-        // Find the user's current level section
-        const levelSections = Array.from(document.querySelectorAll('div')).filter(div => {
-          return div.textContent?.includes(`等级 ${currentLevel} •`) && 
-                 div.textContent?.includes('进度') &&
-                 div.className?.includes('bg-gradient-to-r');
-        });
-        
-        if (levelSections.length > 0) {
-          const levelSection = levelSections[0];
-          const rect = levelSection.getBoundingClientRect();
-          
-          // Calculate offset to show the NEXT exercise (current exercise to complete)
-          // User has completed 19 exercises, so we want to show exercise 20 (next to complete)
-          const nextExerciseNumber = currentExercise + 1;
-          const groupOfNextExercise = Math.ceil(nextExerciseNumber / 5);
-          
-          // Each group adds approximately 180px, plus some padding
-          const exerciseOffset = (groupOfNextExercise - 1) * 180 + 100;
-          
-          // Position to show the next exercise to complete
-          const targetPosition = rect.top + window.scrollY + 350 + exerciseOffset;
-          
+        if (targetPosition !== null) {
           setTimeout(() => {
             window.scrollTo({ 
               top: Math.max(0, targetPosition), 
               behavior: 'smooth' 
             });
           }, 500);
+        } else {
+          // Fallback: Simple mathematical calculation
+          const levelHeaderPosition = document.body.scrollHeight * 0.3; // Rough estimate for level 3
+          setTimeout(() => {
+            window.scrollTo({ 
+              top: levelHeaderPosition, 
+              behavior: 'smooth' 
+            });
+          }, 500);
         }
       };
       
-      // Delay scroll to ensure all content is rendered
-      setTimeout(scrollToCurrentExercise, 1000);
+      // Wait for DOM to be fully rendered
+      setTimeout(scrollToCurrentExercise, 1200);
     }
   }, [user, userLoading, exerciseData]);
 
