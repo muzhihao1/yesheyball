@@ -265,52 +265,44 @@ export default function Levels() {
     };
     
     const findUserLevelPosition = (userLevel: number): number | null => {
-      // Search for level headers containing "等级"
-      const levelHeaders = Array.from(document.querySelectorAll('*'))
-        .filter(el => {
-          const text = (el.textContent || '').trim();
-          const rect = el.getBoundingClientRect();
-          return text.includes('等级') && rect.height > 0 && rect.height < 100;
-        })
-        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+      // Look for the specific level header with exact text match
+      const levelHeaderSelector = `div:contains("等级 ${userLevel}")`;
+      let targetLevelElement = null;
       
-      // Method 1: Look for exact level text
-      const exactLevelElement = levelHeaders.find(el => {
-        const text = (el.textContent || '').trim();
-        return text.includes(`等级 ${userLevel}`) || text.includes(`等级${userLevel}`);
-      });
-      
-      if (exactLevelElement) {
-        const rect = exactLevelElement.getBoundingClientRect();
-        return rect.top + window.scrollY - 100;
+      // Find all elements and check their text content manually
+      const allElements = Array.from(document.querySelectorAll('*'));
+      for (const element of allElements) {
+        const text = element.textContent?.trim() || '';
+        if (text.includes(`等级 ${userLevel} •`) || text.includes(`等级 ${userLevel}•`) || 
+            (text.includes(`等级 ${userLevel}`) && text.includes('•'))) {
+          targetLevelElement = element;
+          break;
+        }
       }
       
-      // Method 2: Use nth level header if available
-      if (levelHeaders.length >= userLevel) {
-        const levelHeader = levelHeaders[userLevel - 1];
-        const rect = levelHeader.getBoundingClientRect();
-        return rect.top + window.scrollY - 100;
+      if (targetLevelElement) {
+        const rect = targetLevelElement.getBoundingClientRect();
+        // Position the level header at the top with some padding
+        return rect.top + window.scrollY - 120;
       }
       
-      // Method 3: Exercise-based estimation
-      const exerciseElements = Array.from(document.querySelectorAll('button, div'))
+      // Fallback: Look for level section containers
+      const levelSections = Array.from(document.querySelectorAll('div[class*="mb-20"]'))
         .filter(el => {
-          const rect = el.getBoundingClientRect();
-          return rect.width > 40 && rect.width < 100 && rect.height > 40 && rect.height < 100;
+          const text = el.textContent?.trim() || '';
+          return text.includes(`等级 ${userLevel}`);
         });
       
-      const exercisesPerLevel = 10;
-      const estimatedExerciseIndex = (userLevel - 1) * exercisesPerLevel;
-      
-      if (exerciseElements.length > estimatedExerciseIndex) {
-        const targetExercise = exerciseElements[estimatedExerciseIndex];
-        const rect = targetExercise.getBoundingClientRect();
-        return rect.top + window.scrollY - 200;
+      if (levelSections.length > 0) {
+        const rect = levelSections[0].getBoundingClientRect();
+        return rect.top + window.scrollY - 120;
       }
       
-      // Fallback: Mathematical estimation
-      const pageHeight = document.body.scrollHeight;
-      return Math.floor(pageHeight * (userLevel / 10) * 0.8);
+      // Mathematical fallback based on level structure
+      // Each level section is approximately 800-1200px tall including exercises
+      const estimatedHeight = 1000; // Average height per level section
+      const headerHeight = 200; // Account for page header
+      return headerHeight + (userLevel - 1) * estimatedHeight;
     };
     
     const scrollToUserLevel = () => {
@@ -368,6 +360,46 @@ export default function Levels() {
         .finally(() => setExerciseDataLoading(false));
     }
   }, [exerciseData, exerciseDataLoading]);
+
+  // Auto-scroll to user's current level on page load
+  useEffect(() => {
+    if (user && !userLoading && exerciseData) {
+      const scrollToCurrentLevel = () => {
+        // Look for the user's current level section
+        const currentLevelElement = Array.from(document.querySelectorAll('*')).find(element => {
+          const text = element.textContent?.trim() || '';
+          return text.includes(`等级 ${user.level} •`) && text.includes('进度');
+        });
+        
+        if (currentLevelElement) {
+          const rect = currentLevelElement.getBoundingClientRect();
+          const targetPosition = rect.top + window.scrollY - 150;
+          
+          setTimeout(() => {
+            window.scrollTo({ 
+              top: Math.max(0, targetPosition), 
+              behavior: 'smooth' 
+            });
+          }, 300);
+        } else {
+          // Fallback calculation for current level
+          const estimatedHeight = 1000;
+          const headerHeight = 200;
+          const targetPosition = headerHeight + (user.level - 1) * estimatedHeight;
+          
+          setTimeout(() => {
+            window.scrollTo({ 
+              top: Math.max(0, targetPosition), 
+              behavior: 'smooth' 
+            });
+          }, 300);
+        }
+      };
+      
+      // Delay scroll to ensure DOM is fully rendered
+      setTimeout(scrollToCurrentLevel, 500);
+    }
+  }, [user, userLoading, exerciseData]);
 
   // Load exercise data only when needed (lazy loading)
   const loadExerciseDataWhenNeeded = useCallback(async () => {
