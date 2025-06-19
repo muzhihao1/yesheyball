@@ -98,22 +98,30 @@ export async function setupAuth(app: Express) {
     passport.use(strategy);
   }
 
-  // Also register strategy for localhost development
-  const localhostStrategy = new Strategy(
-    {
-      name: `replitauth:localhost`,
-      config,
-      scope: "openid email profile offline_access",
-      callbackURL: `http://localhost:5000/api/callback`,
-    },
-    verify,
-  );
-  passport.use(localhostStrategy);
+  // Also register strategy for localhost development using the same domain
+  if (process.env.NODE_ENV === 'development') {
+    const devStrategy = new Strategy(
+      {
+        name: `replitauth:localhost`,
+        config,
+        scope: "openid email profile offline_access",
+        callbackURL: `https://${process.env.REPLIT_DOMAINS!.split(",")[0]}/api/callback`,
+      },
+      verify,
+    );
+    passport.use(devStrategy);
+  }
 
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    // For localhost development, redirect to the actual Replit domain
+    if (req.hostname === 'localhost' && process.env.NODE_ENV === 'development') {
+      const replitDomain = process.env.REPLIT_DOMAINS!.split(",")[0];
+      return res.redirect(`https://${replitDomain}/api/login`);
+    }
+    
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
