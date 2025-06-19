@@ -265,44 +265,42 @@ export default function Levels() {
     };
     
     const findUserLevelPosition = (userLevel: number): number | null => {
-      // Look for the specific level header with exact text match
-      const levelHeaderSelector = `div:contains("等级 ${userLevel}")`;
-      let targetLevelElement = null;
+      // Get user's current exercise completion data
+      const userCompletedExercises = (user?.completedExercises as Record<string, number>) || {};
+      const currentLevelCompleted = userCompletedExercises[userLevel.toString()] || 0;
       
-      // Find all elements and check their text content manually
-      const allElements = Array.from(document.querySelectorAll('*'));
-      for (const element of allElements) {
+      // Look for exercise buttons or circles in the current level
+      const exerciseButtons = Array.from(document.querySelectorAll('button, div')).filter(el => {
+        const rect = el.getBoundingClientRect();
+        const hasCircleSize = rect.width >= 60 && rect.width <= 80 && rect.height >= 60 && rect.height <= 80;
+        const isInCurrentLevel = el.closest('div[class*="mb-20"]')?.textContent?.includes(`等级 ${userLevel}`);
+        return hasCircleSize && isInCurrentLevel;
+      });
+      
+      // Find the button at the current exercise position (next exercise to complete)
+      if (exerciseButtons.length > currentLevelCompleted) {
+        const targetExercise = exerciseButtons[currentLevelCompleted];
+        const rect = targetExercise.getBoundingClientRect();
+        return rect.top + window.scrollY - 200;
+      }
+      
+      // Fallback: Find level header and add offset for current progress
+      const levelHeaderElement = Array.from(document.querySelectorAll('*')).find(element => {
         const text = element.textContent?.trim() || '';
-        if (text.includes(`等级 ${userLevel} •`) || text.includes(`等级 ${userLevel}•`) || 
-            (text.includes(`等级 ${userLevel}`) && text.includes('•'))) {
-          targetLevelElement = element;
-          break;
-        }
+        return text.includes(`等级 ${userLevel} •`) && text.includes('进度');
+      });
+      
+      if (levelHeaderElement) {
+        const rect = levelHeaderElement.getBoundingClientRect();
+        const exerciseOffset = Math.floor(currentLevelCompleted / 5) * 120; // Approximate offset per group
+        return rect.top + window.scrollY + 300 + exerciseOffset;
       }
       
-      if (targetLevelElement) {
-        const rect = targetLevelElement.getBoundingClientRect();
-        // Position the level header at the top with some padding
-        return rect.top + window.scrollY - 120;
-      }
-      
-      // Fallback: Look for level section containers
-      const levelSections = Array.from(document.querySelectorAll('div[class*="mb-20"]'))
-        .filter(el => {
-          const text = el.textContent?.trim() || '';
-          return text.includes(`等级 ${userLevel}`);
-        });
-      
-      if (levelSections.length > 0) {
-        const rect = levelSections[0].getBoundingClientRect();
-        return rect.top + window.scrollY - 120;
-      }
-      
-      // Mathematical fallback based on level structure
-      // Each level section is approximately 800-1200px tall including exercises
-      const estimatedHeight = 1000; // Average height per level section
-      const headerHeight = 200; // Account for page header
-      return headerHeight + (userLevel - 1) * estimatedHeight;
+      // Mathematical fallback
+      const estimatedHeight = 1000;
+      const headerHeight = 200;
+      const exerciseOffset = Math.floor(currentLevelCompleted / 5) * 120;
+      return headerHeight + (userLevel - 1) * estimatedHeight + exerciseOffset;
     };
     
     const scrollToUserLevel = () => {
@@ -361,43 +359,49 @@ export default function Levels() {
     }
   }, [exerciseData, exerciseDataLoading]);
 
-  // Auto-scroll to user's current level on page load
+  // Auto-scroll to user's current exercise position on page load
   useEffect(() => {
     if (user && !userLoading && exerciseData) {
-      const scrollToCurrentLevel = () => {
-        // Look for the user's current level section
-        const currentLevelElement = Array.from(document.querySelectorAll('*')).find(element => {
-          const text = element.textContent?.trim() || '';
-          return text.includes(`等级 ${user.level} •`) && text.includes('进度');
+      const scrollToCurrentExercise = () => {
+        // Get user's current progress
+        const userCompletedExercises = (user.completedExercises as Record<string, number>) || {};
+        const currentLevelCompleted = userCompletedExercises[user.level.toString()] || 0;
+        
+        // Calculate target position based on user's actual progress
+        // Level 3 with 19 completed exercises means we're at exercise 20 (4th group)
+        const currentLevel = user.level;
+        const currentExercise = currentLevelCompleted;
+        
+        // Find the user's current level section
+        const levelSections = Array.from(document.querySelectorAll('div')).filter(div => {
+          return div.textContent?.includes(`等级 ${currentLevel} •`) && 
+                 div.textContent?.includes('进度') &&
+                 div.className?.includes('bg-gradient-to-r');
         });
         
-        if (currentLevelElement) {
-          const rect = currentLevelElement.getBoundingClientRect();
-          const targetPosition = rect.top + window.scrollY - 150;
+        if (levelSections.length > 0) {
+          const levelSection = levelSections[0];
+          const rect = levelSection.getBoundingClientRect();
+          
+          // Calculate offset based on completed exercises
+          // Each group has ~5 exercises, each group adds ~150px height
+          const groupsCompleted = Math.floor(currentExercise / 5);
+          const exerciseOffset = groupsCompleted * 150;
+          
+          // Position to show the current exercise area
+          const targetPosition = rect.top + window.scrollY + 400 + exerciseOffset;
           
           setTimeout(() => {
             window.scrollTo({ 
               top: Math.max(0, targetPosition), 
               behavior: 'smooth' 
             });
-          }, 300);
-        } else {
-          // Fallback calculation for current level
-          const estimatedHeight = 1000;
-          const headerHeight = 200;
-          const targetPosition = headerHeight + (user.level - 1) * estimatedHeight;
-          
-          setTimeout(() => {
-            window.scrollTo({ 
-              top: Math.max(0, targetPosition), 
-              behavior: 'smooth' 
-            });
-          }, 300);
+          }, 500);
         }
       };
       
-      // Delay scroll to ensure DOM is fully rendered
-      setTimeout(scrollToCurrentLevel, 500);
+      // Delay scroll to ensure all content is rendered
+      setTimeout(scrollToCurrentExercise, 1000);
     }
   }, [user, userLoading, exerciseData]);
 
