@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star } from "lucide-
 
 export default function Tasks() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   
   // Training states
   const [isGuidedTraining, setIsGuidedTraining] = useState(false);
@@ -172,14 +174,12 @@ export default function Tasks() {
       return;
     }
     
-    setCurrentSessionType("系统训练");
-    setIsGuidedTraining(true);
-    setGuidedElapsedTime(0);
-    setIsGuidedPaused(false);
+    // Navigate to levels page to show current lesson
+    setLocation("/levels");
     
     toast({ 
-      title: "系统训练开始", 
-      description: `第${currentDay}集：${currentDayTraining?.title || "训练"}已开始` 
+      title: "进入系统训练", 
+      description: `正在前往第${currentDay}集训练内容` 
     });
   };
 
