@@ -52,7 +52,6 @@ function AppContent() {
         
         <main className="pb-4">
           <Router />
-          <RouteDebugger />
         </main>
         
         {isAuthenticated && !isLoading && <Navigation />}
