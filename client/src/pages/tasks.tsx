@@ -791,11 +791,11 @@ export default function Tasks() {
                   <SelectValue placeholder="选择训练完成度" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">1分 - 很不满意</SelectItem>
-                  <SelectItem value="2">2分 - 不满意</SelectItem>
-                  <SelectItem value="3">3分 - 一般</SelectItem>
-                  <SelectItem value="4">4分 - 满意</SelectItem>
                   <SelectItem value="5">5分 - 很满意</SelectItem>
+                  <SelectItem value="4">4分 - 满意</SelectItem>
+                  <SelectItem value="3">3分 - 一般</SelectItem>
+                  <SelectItem value="2">2分 - 不满意</SelectItem>
+                  <SelectItem value="1">1分 - 很不满意</SelectItem>
                 </SelectContent>
               </Select>
             </div>
