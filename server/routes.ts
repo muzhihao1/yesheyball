@@ -156,6 +156,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
+      
+      // Add session debugging info
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Auth check for user ${userId}: session valid, token expires at ${new Date(req.user.expires_at * 1000)}`);
+      }
+      
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
