@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Clock, Play, Pause, Square, BookOpen, Target, Zap } from "lucide-react";
+import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star } from "lucide-react";
 
 export default function Tasks() {
   const { toast } = useToast();
@@ -51,6 +51,24 @@ export default function Tasks() {
   });
 
   const trainingDaysArray = Array.isArray(trainingDays) ? trainingDays : [];
+
+  // Get training records for display
+  const { data: trainingRecords = [], isLoading: recordsLoading } = useQuery({
+    queryKey: ["/api/training-records"],
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const recordsArray = Array.isArray(trainingRecords) ? trainingRecords : [];
+
+  // Loading state
+  if (programsLoading || daysLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
 
   // Direct training completion mutation (simplified approach)
   const completeTrainingMutation = useMutation({
@@ -575,6 +593,65 @@ export default function Tasks() {
                   />
                 </div>
               </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Training Records Section */}
+      <Card className="border-2 border-gray-200 bg-gray-50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <BookOpen className="h-6 w-6 text-gray-600" />
+              <div>
+                <CardTitle className="text-lg text-gray-800">练球日志</CardTitle>
+                <p className="text-sm text-gray-600 mt-1">查看最近的训练记录</p>
+              </div>
+            </div>
+            <Badge className="bg-gray-100 text-gray-800 text-xs">
+              {recordsArray.length} 条记录
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {recordsLoading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400 mx-auto"></div>
+            </div>
+          ) : recordsArray.length > 0 ? (
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {recordsArray.slice(0, 10).map((record: any) => (
+                <div key={record.id} className="border-l-4 border-blue-500 pl-4 py-3 bg-white rounded-r-lg shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-800">{record.title}</h4>
+                      <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                        <span className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {Math.floor(record.duration / 60)}分{record.duration % 60}秒
+                        </span>
+                        <span className="flex items-center">
+                          <Star className="h-3 w-3 mr-1 text-yellow-500" />
+                          {record.rating}/5
+                        </span>
+                      </div>
+                      {record.notes && (
+                        <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">{record.notes}</p>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500 ml-4">
+                      {new Date(record.completedAt || record.createdAt).toLocaleDateString('zh-CN')}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <BookOpen className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">还没有训练记录</p>
+              <p className="text-xs text-gray-400 mt-1">完成训练后记录会显示在这里</p>
             </div>
           )}
         </CardContent>
