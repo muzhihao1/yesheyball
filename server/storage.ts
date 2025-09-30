@@ -62,14 +62,21 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private ensureDb() {
+    if (!db) {
+      throw new Error("Database not initialized. Running in demo mode.");
+    }
+    return db;
+  }
+
   // Required for Replit Auth
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await this.ensureDb().select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
+    const [user] = await this.ensureDb()
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
@@ -84,17 +91,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const [user] = await this.ensureDb().select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await this.ensureDb().select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
+    const [user] = await this.ensureDb()
       .insert(users)
       .values(insertUser)
       .returning();
@@ -102,7 +109,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
-    const [user] = await db
+    const [user] = await this.ensureDb()
       .update(users)
       .set({ ...updates, lastActiveAt: new Date() })
       .where(eq(users.id, id))
@@ -145,7 +152,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTask(task: InsertTask): Promise<Task> {
-    const [newTask] = await db
+    const [newTask] = await this.ensureDb()
       .insert(tasks)
       .values(task)
       .returning();
@@ -154,7 +161,7 @@ export class DatabaseStorage implements IStorage {
 
   // User task operations
   async getUserTasks(userId: string): Promise<(UserTask & { task: Task })[]> {
-    const result = await db
+    const result = await this.ensureDb()
       .select()
       .from(userTasks)
       .leftJoin(tasks, eq(userTasks.taskId, tasks.id))
@@ -173,7 +180,7 @@ export class DatabaseStorage implements IStorage {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    const result = await db
+    const result = await this.ensureDb()
       .select()
       .from(userTasks)
       .leftJoin(tasks, eq(userTasks.taskId, tasks.id))
@@ -193,7 +200,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUserTask(userTask: InsertUserTask): Promise<UserTask> {
-    const [newUserTask] = await db
+    const [newUserTask] = await this.ensureDb()
       .insert(userTasks)
       .values(userTask)
       .returning();
@@ -201,7 +208,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async completeUserTask(id: number, rating: number): Promise<UserTask> {
-    const [userTask] = await db
+    const [userTask] = await this.ensureDb()
       .update(userTasks)
       .set({ 
         completed: true, 
@@ -233,7 +240,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDiaryEntry(entry: InsertDiaryEntry): Promise<DiaryEntry> {
-    const [newEntry] = await db
+    const [newEntry] = await this.ensureDb()
       .insert(diaryEntries)
       .values(entry)
       .returning();
@@ -242,7 +249,7 @@ export class DatabaseStorage implements IStorage {
 
   // Feedback operations
   async createFeedback(feedback: InsertFeedback): Promise<Feedback> {
-    const [newFeedback] = await db
+    const [newFeedback] = await this.ensureDb()
       .insert(feedbacks)
       .values(feedback)
       .returning();
@@ -263,12 +270,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTrainingProgram(id: number): Promise<TrainingProgram | undefined> {
-    const [program] = await db.select().from(trainingPrograms).where(eq(trainingPrograms.id, id));
+    const [program] = await this.ensureDb().select().from(trainingPrograms).where(eq(trainingPrograms.id, id));
     return program || undefined;
   }
 
   async updateTrainingProgram(id: number, updates: Partial<TrainingProgram>): Promise<TrainingProgram> {
-    const [program] = await db
+    const [program] = await this.ensureDb()
       .update(trainingPrograms)
       .set(updates)
       .where(eq(trainingPrograms.id, id))
@@ -285,7 +292,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTrainingDay(programId: number, day: number): Promise<TrainingDay | undefined> {
-    const [trainingDay] = await db
+    const [trainingDay] = await this.ensureDb()
       .select()
       .from(trainingDays)
       .where(
@@ -299,7 +306,7 @@ export class DatabaseStorage implements IStorage {
 
   // Training session operations
   async getUserTrainingSessions(userId: string): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay })[]> {
-    const result = await db
+    const result = await this.ensureDb()
       .select()
       .from(trainingSessions)
       .leftJoin(trainingPrograms, eq(trainingSessions.programId, trainingPrograms.id))
@@ -315,7 +322,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCurrentTrainingSession(userId: string): Promise<(TrainingSession & { program?: TrainingProgram; day?: TrainingDay }) | undefined> {
-    const result = await db
+    const result = await this.ensureDb()
       .select()
       .from(trainingSessions)
       .leftJoin(trainingPrograms, eq(trainingSessions.programId, trainingPrograms.id))
@@ -340,12 +347,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTrainingSession(id: number): Promise<TrainingSession | undefined> {
-    const [session] = await db.select().from(trainingSessions).where(eq(trainingSessions.id, id));
+    const [session] = await this.ensureDb().select().from(trainingSessions).where(eq(trainingSessions.id, id));
     return session || undefined;
   }
 
   async createTrainingSession(session: InsertTrainingSession): Promise<TrainingSession> {
-    const [newSession] = await db
+    const [newSession] = await this.ensureDb()
       .insert(trainingSessions)
       .values(session)
       .returning();
@@ -353,7 +360,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTrainingSession(id: number, updates: Partial<TrainingSession>): Promise<TrainingSession> {
-    const [session] = await db
+    const [session] = await this.ensureDb()
       .update(trainingSessions)
       .set(updates)
       .where(eq(trainingSessions.id, id))
@@ -362,7 +369,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async completeTrainingSession(id: number, duration: number, rating: number, notes?: string): Promise<TrainingSession> {
-    const [session] = await db
+    const [session] = await this.ensureDb()
       .update(trainingSessions)
       .set({
         completed: true,
@@ -390,7 +397,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTrainingSession(id: number): Promise<void> {
-    await db.delete(trainingSessions).where(eq(trainingSessions.id, id));
+    await this.ensureDb().delete(trainingSessions).where(eq(trainingSessions.id, id));
   }
 
   // Training note operations
@@ -403,7 +410,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllTrainingNotes(userId: string): Promise<TrainingNote[]> {
-    const result = await db
+    const result = await this.ensureDb()
       .select()
       .from(trainingNotes)
       .leftJoin(trainingSessions, eq(trainingNotes.sessionId, trainingSessions.id))
@@ -414,7 +421,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTrainingNote(note: InsertTrainingNote): Promise<TrainingNote> {
-    const [newNote] = await db
+    const [newNote] = await this.ensureDb()
       .insert(trainingNotes)
       .values(note)
       .returning();
@@ -427,7 +434,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserAchievements(userId: string): Promise<(UserAchievement & { achievement: Achievement })[]> {
-    const result = await db
+    const result = await this.ensureDb()
       .select()
       .from(userAchievements)
       .leftJoin(achievements, eq(userAchievements.achievementId, achievements.id))
@@ -496,7 +503,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async unlockAchievement(userId: string, achievementId: number): Promise<UserAchievement> {
-    const [userAchievement] = await db
+    const [userAchievement] = await this.ensureDb()
       .insert(userAchievements)
       .values({
         userId,
@@ -509,7 +516,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAchievementProgress(userId: string, achievementId: number, progress: number): Promise<void> {
-    await db
+    await this.ensureDb()
       .update(userAchievements)
       .set({ progress })
       .where(
