@@ -62,7 +62,7 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  private ensureDb() {
+  private ensureDb(): NonNullable<typeof db> {
     if (!db) {
       throw new Error("Database not initialized. Running in demo mode.");
     }
@@ -144,11 +144,11 @@ export class DatabaseStorage implements IStorage {
 
   // Task operations
   async getAllTasks(): Promise<Task[]> {
-    return db.select().from(tasks);
+    return this.ensureDb().select().from(tasks);
   }
 
   async getTasksByLevel(level: number): Promise<Task[]> {
-    return db.select().from(tasks).where(eq(tasks.level, level));
+    return this.ensureDb().select().from(tasks).where(eq(tasks.level, level));
   }
 
   async createTask(task: InsertTask): Promise<Task> {
@@ -168,7 +168,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userTasks.userId, userId))
       .orderBy(desc(userTasks.createdAt));
       
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.user_tasks,
       task: row.tasks!
     }));
@@ -193,7 +193,7 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(userTasks.createdAt));
       
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.user_tasks,
       task: row.tasks!
     }));
@@ -232,7 +232,7 @@ export class DatabaseStorage implements IStorage {
 
   // Diary operations
   async getDiaryEntries(userId: string): Promise<DiaryEntry[]> {
-    return db
+    return this.ensureDb()
       .select()
       .from(diaryEntries)
       .where(eq(diaryEntries.userId, userId))
@@ -257,7 +257,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserFeedbacks(userId: string): Promise<Feedback[]> {
-    return db
+    return this.ensureDb()
       .select()
       .from(feedbacks)
       .where(eq(feedbacks.userId, userId))
@@ -266,7 +266,7 @@ export class DatabaseStorage implements IStorage {
 
   // Training program operations
   async getAllTrainingPrograms(): Promise<TrainingProgram[]> {
-    return db.select().from(trainingPrograms);
+    return this.ensureDb().select().from(trainingPrograms);
   }
 
   async getTrainingProgram(id: number): Promise<TrainingProgram | undefined> {
@@ -284,7 +284,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTrainingDays(programId: number): Promise<TrainingDay[]> {
-    return db
+    return this.ensureDb()
       .select()
       .from(trainingDays)
       .where(eq(trainingDays.programId, programId))
@@ -314,7 +314,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trainingSessions.userId, userId))
       .orderBy(desc(trainingSessions.createdAt));
       
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.training_sessions,
       program: row.training_programs || undefined,
       day: row.training_days || undefined
@@ -402,7 +402,7 @@ export class DatabaseStorage implements IStorage {
 
   // Training note operations
   async getTrainingNotes(sessionId: number): Promise<TrainingNote[]> {
-    return db
+    return this.ensureDb()
       .select()
       .from(trainingNotes)
       .where(eq(trainingNotes.sessionId, sessionId))
@@ -430,7 +430,7 @@ export class DatabaseStorage implements IStorage {
 
   // Achievement operations
   async getAllAchievements(): Promise<Achievement[]> {
-    return db.select().from(achievements);
+    return this.ensureDb().select().from(achievements);
   }
 
   async getUserAchievements(userId: string): Promise<(UserAchievement & { achievement: Achievement })[]> {
@@ -441,7 +441,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userAchievements.userId, userId))
       .orderBy(desc(userAchievements.unlockedAt));
       
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.user_achievements,
       achievement: row.achievements!
     }));

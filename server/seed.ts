@@ -4,6 +4,11 @@ import { users, tasks, trainingPrograms, trainingDays, achievements } from "../s
 async function seedDatabase() {
   console.log("Starting database seeding...");
 
+  if (!db) {
+    console.error("Cannot seed database: DATABASE_URL not set");
+    process.exit(1);
+  }
+
   // Create default user
   const [defaultUser] = await db
     .insert(users)
