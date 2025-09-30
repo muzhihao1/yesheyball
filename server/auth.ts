@@ -67,7 +67,7 @@ declare global {
 let cachedSessionMiddleware: RequestHandler | null = null;
 
 function createSessionMiddleware(): RequestHandler {
-  if (!process.env.SESSION_SECRET) {
+  if (!process.env.SESSION_SECRET && !(authDisabled && !hasDatabase)) {
     throw new Error("SESSION_SECRET is required. Set it in your environment variables.");
   }
 
@@ -90,7 +90,7 @@ function createSessionMiddleware(): RequestHandler {
   }
 
   cachedSessionMiddleware = session({
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET ?? "demo-session-secret",
     store,
     resave: false,
     saveUninitialized: false,
@@ -108,6 +108,16 @@ function createSessionMiddleware(): RequestHandler {
 
 function getSessionMiddleware() {
   return cachedSessionMiddleware ?? createSessionMiddleware();
+}
+
+function getDemoSessionUser(): SessionUser {
+  return buildSessionUser({
+    id: demoUserProfile.id,
+    email: demoUserProfile.email,
+    firstName: demoUserProfile.firstName,
+    lastName: demoUserProfile.lastName,
+    profileImageUrl: demoUserProfile.profileImageUrl,
+  });
 }
 
 function normalizeEmail(email: string): string {
@@ -134,32 +144,56 @@ function buildSessionUser(user: { id: string; email: string | null; firstName?: 
 }
 
 export function getSessionUser(req: Request): SessionUser | undefined {
-  return req.session?.user;
+  if (req.session?.user) {
+    return req.session.user;
+  }
+
+  if (authDisabled && !hasDatabase) {
+    const demoSession = getDemoSessionUser();
+    (req as any).session = (req as any).session ?? {};
+    (req as any).session.user = demoSession;
+    return demoSession;
+  }
+
+  return undefined;
+}
+
+function attachDemoSession(app: Express) {
+  app.use((req, _res, next) => {
+    const sessionUser = getDemoSessionUser();
+    (req as any).session = (req as any).session ?? {};
+    if (!(req as any).session.user) {
+      (req as any).session.user = sessionUser;
+    }
+    req.user = (req as any).session.user as Express.User;
+    next();
+  });
 }
 
 export function setupAuth(app: Express) {
   app.set("trust proxy", 1);
-  app.use(getSessionMiddleware());
 
-  // Bridge session user to Express.User for backwards compatibility
-  app.use((req, _res, next) => {
-    if (req.session?.user) {
-      req.user = req.session.user as Express.User;
-    }
-    next();
-  });
+  if (authDisabled && !hasDatabase) {
+    attachDemoSession(app);
+  } else {
+    app.use(getSessionMiddleware());
 
-  if (authDisabled) {
-    app.use(async (req, _res, next) => {
-      try {
-        if (!req.session) return next();
+    // Bridge session user to Express.User for backwards compatibility
+    app.use((req, _res, next) => {
+      if (req.session?.user) {
+        req.user = req.session.user as Express.User;
+      }
+      next();
+    });
 
-        if (!req.session.user) {
-          let sessionUser: SessionUser;
+    if (authDisabled) {
+      app.use(async (req, _res, next) => {
+        try {
+          if (!req.session) return next();
 
-          if (!hasDatabase) {
-            sessionUser = buildSessionUser(demoUserProfile);
-          } else {
+          if (!req.session.user) {
+            let sessionUser: SessionUser;
+
             let user = await storage.getUser(disabledUserId);
             if (!user) {
               user = await storage.upsertUser({
@@ -171,23 +205,26 @@ export function setupAuth(app: Express) {
             }
 
             sessionUser = buildSessionUser(user);
+
+            req.session.user = sessionUser;
+            req.user = sessionUser as Express.User;
           }
 
-          req.session.user = sessionUser;
-          req.user = sessionUser as Express.User;
+          next();
+        } catch (error) {
+          next(error);
         }
-
-        next();
-      } catch (error) {
-        next(error);
-      }
-    });
+      });
+    }
   }
 
   app.post("/api/auth/login", async (req, res) => {
-    if (authDisabled) {
+  if (authDisabled) {
+      if (!hasDatabase) {
+        return res.status(200).json({ message: "Authentication disabled", user: demoUserResponse });
+      }
       if (!req.session?.user) {
-        const sessionUser = buildSessionUser(demoUserProfile);
+        const sessionUser = getDemoSessionUser();
         req.session!.user = sessionUser;
       }
       return res.status(200).json({ message: "Authentication disabled" });
@@ -255,6 +292,9 @@ export function setupAuth(app: Express) {
 
   app.post("/api/auth/logout", (req, res) => {
     if (authDisabled) {
+      if (!hasDatabase) {
+        return res.status(204).end();
+      }
       return res.status(204).end();
     }
     if (!req.session) {
