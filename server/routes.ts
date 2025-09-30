@@ -1,6 +1,6 @@
 import express, { type Express, type Request } from "express";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, getSessionUser, authDisabled } from "./auth";
+import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse } from "./auth";
 import { generateCoachingFeedback, generateDiaryInsights } from "./openai";
 import { upload, persistUploadedImage } from "./upload";
 import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema } from "@shared/schema";
@@ -169,8 +169,12 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get('/api/auth/user', isAuthenticated, async (req, res) => {
     try {
       const userId = requireSessionUserId(req);
+      if (!hasDatabase) {
+        return res.json({ ...demoUserResponse });
+      }
+
       const user = await storage.getUser(userId);
-      
+
       // Add session debugging info
       if (process.env.NODE_ENV === 'development') {
         const sessionUser = getSessionUser(req);
@@ -195,6 +199,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.set('Expires', '0');
       
       const userId = requireSessionUserId(req);
+      if (!hasDatabase) {
+        return res.json({ ...demoUserResponse });
+      }
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });

@@ -6,9 +6,38 @@ import { randomUUID } from "crypto";
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const authDisabled = process.env.AUTH_DISABLED !== "false";
+const hasDatabase = !!process.env.DATABASE_URL;
 const disabledUserId = process.env.AUTH_DISABLED_USER_ID ?? "demo-user";
 const disabledUserEmail = process.env.AUTH_DISABLED_EMAIL ?? "demo@local.test";
 const disabledUserName = process.env.AUTH_DISABLED_USER_NAME ?? "Demo User";
+const demoUserProfile = {
+  id: disabledUserId,
+  email: disabledUserEmail,
+  firstName: disabledUserName,
+  lastName: null as string | null,
+  profileImageUrl: null as string | null,
+};
+
+const demoUserResponse = {
+  id: demoUserProfile.id,
+  email: demoUserProfile.email,
+  firstName: demoUserProfile.firstName,
+  lastName: demoUserProfile.lastName,
+  profileImageUrl: demoUserProfile.profileImageUrl,
+  username: sanitizeUsername(demoUserProfile.email ?? "demo"),
+  level: 1,
+  exp: 0,
+  streak: 0,
+  totalDays: 0,
+  completedTasks: 0,
+  totalTime: 0,
+  achievements: [] as any[],
+  currentLevel: 1,
+  currentExercise: 1,
+  completedExercises: {} as Record<string, number>,
+  createdAt: new Date().toISOString(),
+  lastActiveAt: new Date().toISOString(),
+};
 
 interface SessionClaims {
   sub: string;
@@ -42,17 +71,23 @@ function createSessionMiddleware(): RequestHandler {
     throw new Error("SESSION_SECRET is required. Set it in your environment variables.");
   }
 
-  const pgStore = connectPg(session);
-  const store = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    tableName: "sessions",
-    ttl: SESSION_TTL_MS / 1000,
-  });
+  let store: session.Store;
 
-  store.on("error", (error: unknown) => {
-    console.error("Session store error:", error);
-  });
+  if (hasDatabase) {
+    const pgStore = connectPg(session);
+    store = new pgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: false,
+      tableName: "sessions",
+      ttl: SESSION_TTL_MS / 1000,
+    });
+
+    store.on("error", (error: unknown) => {
+      console.error("Session store error:", error);
+    });
+  } else {
+    store = new session.MemoryStore();
+  }
 
   cachedSessionMiddleware = session({
     secret: process.env.SESSION_SECRET,
@@ -120,17 +155,24 @@ export function setupAuth(app: Express) {
         if (!req.session) return next();
 
         if (!req.session.user) {
-          let user = await storage.getUser(disabledUserId);
-          if (!user) {
-            user = await storage.upsertUser({
-              id: disabledUserId,
-              email: disabledUserEmail,
-              firstName: disabledUserName,
-              username: sanitizeUsername(disabledUserEmail),
-            });
+          let sessionUser: SessionUser;
+
+          if (!hasDatabase) {
+            sessionUser = buildSessionUser(demoUserProfile);
+          } else {
+            let user = await storage.getUser(disabledUserId);
+            if (!user) {
+              user = await storage.upsertUser({
+                id: disabledUserId,
+                email: disabledUserEmail,
+                firstName: disabledUserName,
+                username: sanitizeUsername(disabledUserEmail),
+              });
+            }
+
+            sessionUser = buildSessionUser(user);
           }
 
-          const sessionUser = buildSessionUser(user);
           req.session.user = sessionUser;
           req.user = sessionUser as Express.User;
         }
@@ -144,6 +186,10 @@ export function setupAuth(app: Express) {
 
   app.post("/api/auth/login", async (req, res) => {
     if (authDisabled) {
+      if (!req.session?.user) {
+        const sessionUser = buildSessionUser(demoUserProfile);
+        req.session!.user = sessionUser;
+      }
       return res.status(200).json({ message: "Authentication disabled" });
     }
     try {
@@ -248,3 +294,6 @@ export const isAuthenticated: RequestHandler = (req, res, next) => {
 };
 
 export { authDisabled };
+export { hasDatabase };
+export { demoUserProfile };
+export { demoUserResponse };
