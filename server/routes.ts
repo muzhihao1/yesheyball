@@ -224,12 +224,23 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/user/streak", isAuthenticated, async (req, res) => {
     try {
       const userId = requireSessionUserId(req);
+
+      // Demo mode: return empty streak data
+      if (!hasDatabase) {
+        return res.json({
+          currentStreak: 0,
+          longestStreak: 0,
+          totalDays: 0,
+          recentDays: []
+        });
+      }
+
       const sessions = await storage.getUserTrainingSessions(userId);
       const completedSessions = sessions.filter(s => s.completed);
-      
+
       // Calculate streak data
       const streakData = calculateTrainingStreak(completedSessions);
-      
+
       res.json(streakData);
     } catch (error) {
       console.error("Streak calculation error:", error);
@@ -407,6 +418,12 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/diary", isAuthenticated, async (req, res) => {
     try {
       const userId = requireSessionUserId(req);
+
+      // Demo mode: return empty array
+      if (!hasDatabase) {
+        return res.json([]);
+      }
+
       const entries = await storage.getDiaryEntries(userId);
       res.json(entries);
     } catch (error) {
@@ -419,7 +436,21 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       const { content, duration, rating, exerciseCompleted } = req.body;
       const userId = requireSessionUserId(req);
-      
+
+      // Demo mode: return success without saving
+      if (!hasDatabase) {
+        return res.json({
+          id: Date.now(),
+          userId,
+          content,
+          duration: duration ? parseInt(duration) : null,
+          rating: rating ? parseInt(rating) : null,
+          imageUrl: null,
+          date: new Date(),
+          createdAt: new Date()
+        });
+      }
+
       const storedImage = await persistUploadedImage(req.file);
 
       const entryData = {
@@ -620,6 +651,11 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Training program routes
   app.get("/api/training-programs", async (req, res) => {
     try {
+      // Demo mode: return empty array
+      if (!hasDatabase) {
+        return res.json([]);
+      }
+
       const programs = await storage.getAllTrainingPrograms();
       res.json(programs);
     } catch (error) {
@@ -997,8 +1033,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
-      
+
       const userId = requireSessionUserId(req);
+
+      // Demo mode: return empty array
+      if (!hasDatabase) {
+        return res.json([]);
+      }
+
       const sessions = await storage.getUserTrainingSessions(userId);
       const completedSessions = sessions.filter(s => s.completed).map(s => ({
         id: s.id,
