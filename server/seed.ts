@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { users, tasks, trainingPrograms, trainingDays, achievements } from "@shared/schema";
+import { users, tasks, trainingPrograms, trainingDays, achievements } from "../shared/schema";
 
 async function seedDatabase() {
   console.log("Starting database seeding...");
