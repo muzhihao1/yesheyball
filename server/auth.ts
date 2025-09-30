@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { randomUUID } from "crypto";
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const authDisabled = process.env.AUTH_DISABLED === "true";
+const authDisabled = process.env.AUTH_DISABLED !== "false";
 const disabledUserId = process.env.AUTH_DISABLED_USER_ID ?? "demo-user";
 const disabledUserEmail = process.env.AUTH_DISABLED_EMAIL ?? "demo@local.test";
 const disabledUserName = process.env.AUTH_DISABLED_USER_NAME ?? "Demo User";

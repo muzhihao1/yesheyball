@@ -171,7 +171,7 @@ SESSION_SECRET=replace-with-strong-random-value
 # 可选：限制或禁用鉴权
 # AUTH_ALLOWED_EMAILS=coach@example.com,player@example.com
 # AUTH_ACCESS_CODE=club-secret
-# AUTH_DISABLED=true              # 设为 true 时自动登录演示账号
+# AUTH_DISABLED=false              # 默认为 true，设置为 false 启用登录
 # AUTH_DISABLED_EMAIL=demo@local.test
 # AUTH_DISABLED_USER_ID=demo-user
 

@@ -37,7 +37,7 @@
 | `AUTH_ALLOWED_EMAILS` | 允许登录的邮箱列表，逗号分隔（可选） |
 | `AUTH_ACCESS_CODE` | 登录时需要输入的访问口令（可选） |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob RW Token（如需图片上传） |
-| `AUTH_DISABLED` | 设为 `true` 可临时关闭鉴权，自动登录演示账号（仅限测试环境） |
+| `AUTH_DISABLED` | 缺省即关闭鉴权；若需启用登录，请显式设置为 `false` |
 | `AUTH_DISABLED_EMAIL` / `AUTH_DISABLED_USER_ID` | 自定义演示账号的邮箱与 ID（可选） |
 
 > Preview / Development 环境可以使用不同的数据库和密钥，Vercel 支持环境级继承。
