@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import type { Express } from "express";
-import { createApp } from "../server";
+import { createApp } from "../server/index.js";
 
 let cachedAppPromise: Promise<Express> | null = null;
 
