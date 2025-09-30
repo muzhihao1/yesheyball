@@ -1,6 +1,6 @@
 import express, { type Express, type Request } from "express";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse } from "./auth";
+import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse, demoUserProfile } from "./auth";
 import { generateCoachingFeedback, generateDiaryInsights } from "./openai";
 import { upload, persistUploadedImage } from "./upload";
 import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema } from "@shared/schema";
@@ -23,14 +23,22 @@ import fs from "fs";
 
 function getSessionUserId(req: Request): string | undefined {
   const sessionUser = getSessionUser(req);
-  return sessionUser?.claims.sub;
+  if (sessionUser?.claims?.sub) {
+    return sessionUser.claims.sub;
+  }
+
+  if (authDisabled && !hasDatabase) {
+    return demoUserProfile.id;
+  }
+
+  return undefined;
 }
 
 function requireSessionUserId(req: Request): string {
   const userId = getSessionUserId(req);
   if (!userId) {
-    if (authDisabled) {
-      throw new Error("Authentication disabled but session user missing");
+    if (authDisabled && !hasDatabase) {
+      return demoUserProfile.id;
     }
     throw new Error("Missing authenticated user id");
   }
