@@ -1,10 +1,8 @@
-import type { Express } from "express";
-import express from "express";
-import { createServer, type Server } from "http";
+import express, { type Express, type Request } from "express";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, getSessionUser, authDisabled } from "./auth";
 import { generateCoachingFeedback, generateDiaryInsights } from "./openai";
-import { upload } from "./upload";
+import { upload, persistUploadedImage } from "./upload";
 import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema } from "@shared/schema";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer";
@@ -22,6 +20,22 @@ import { z } from "zod";
 import OpenAI from "openai";
 import path from "path";
 import fs from "fs";
+
+function getSessionUserId(req: Request): string | undefined {
+  const sessionUser = getSessionUser(req);
+  return sessionUser?.claims.sub;
+}
+
+function requireSessionUserId(req: Request): string {
+  const userId = getSessionUserId(req);
+  if (!userId) {
+    if (authDisabled) {
+      throw new Error("Authentication disabled but session user missing");
+    }
+    throw new Error("Missing authenticated user id");
+  }
+  return userId;
+}
 
 // Initialize OpenAI client
 const openai = new OpenAI({ 
@@ -142,9 +156,9 @@ async function generateAICoachingFeedback(sessionData: {
   }
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<void> {
   
-  // Setup Replit Auth middleware
+  // Setup session-based auth middleware
   await setupAuth(app);
   
   // Serve assessment images as static files
@@ -152,14 +166,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/assessments', express.static(assessmentsPath));
   
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = requireSessionUserId(req);
       const user = await storage.getUser(userId);
       
       // Add session debugging info
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Auth check for user ${userId}: session valid, token expires at ${new Date(req.user.expires_at * 1000)}`);
+        const sessionUser = getSessionUser(req);
+        if (sessionUser) {
+          console.log(`Auth check for user ${userId}: session valid, token expires at ${new Date(sessionUser.expires_at * 1000)}`);
+        }
       }
       
       res.json(user);
@@ -170,14 +187,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get current user
-  app.get("/api/user", isAuthenticated, async (req: any, res) => {
+  app.get("/api/user", isAuthenticated, async (req, res) => {
     try {
       // Prevent caching to ensure fresh data after training completions
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const userId = req.user.claims.sub;
+      const userId = requireSessionUserId(req);
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -189,9 +206,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user training streak data
-  app.get("/api/user/streak", isAuthenticated, async (req: any, res) => {
+  app.get("/api/user/streak", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = requireSessionUserId(req);
       const sessions = await storage.getUserTrainingSessions(userId);
       const completedSessions = sessions.filter(s => s.completed);
       
@@ -206,9 +223,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user streak
-  app.post("/api/user/streak", isAuthenticated, async (req: any, res) => {
+  app.post("/api/user/streak", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = requireSessionUserId(req);
       const user = await storage.updateUserStreak(userId);
       res.json(user);
     } catch (error) {
@@ -217,9 +234,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Recalculate user experience points
-  app.post("/api/recalculate-experience", isAuthenticated, async (req: any, res) => {
+  app.post("/api/recalculate-experience", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = requireSessionUserId(req);
       const result = await recalculateUserExperience(userId);
       res.json(result);
     } catch (error) {
@@ -229,11 +246,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get users ranking (only real users)
-  app.get("/api/users/ranking", isAuthenticated, async (req: any, res) => {
+  app.get("/api/users/ranking", isAuthenticated, async (req, res) => {
     try {
       // Only return the current authenticated user for now
       // Since we only have one real user in the database
-      const userId = req.user.claims.sub;
+      const userId = requireSessionUserId(req);
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -307,9 +324,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get today's tasks for user
-  app.get("/api/user/tasks/today", isAuthenticated, async (req: any, res) => {
+  app.get("/api/user/tasks/today", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = requireSessionUserId(req);
       const userTasks = await storage.getTodayUserTasks(userId);
       res.json(userTasks);
     } catch (error) {
@@ -318,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete a task
-  app.post("/api/user/tasks/:id/complete", async (req, res) => {
+  app.post("/api/user/tasks/:id/complete", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { rating } = req.body;
@@ -327,15 +344,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Rating must be between 1 and 5" });
       }
 
+      const userId = requireSessionUserId(req);
       const userTask = await storage.completeUserTask(parseInt(id), rating);
-      const user = await storage.getUser("1");
+      const user = await storage.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
       // Get task details for AI feedback
-      const allUserTasks = await storage.getUserTasks("1");
+      const allUserTasks = await storage.getUserTasks(userId);
       const taskData = allUserTasks.find(ut => ut.id === parseInt(id));
       
       if (!taskData) {
@@ -353,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Save feedback to storage
       await storage.createFeedback({
-        userId: (req.user as any)?.claims?.sub || req.user.id,
+        userId,
         taskId: taskData.taskId,
         content: aiFeedback,
         rating: rating,
@@ -371,9 +389,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get diary entries
-  app.get("/api/diary", async (req, res) => {
+  app.get("/api/diary", isAuthenticated, async (req, res) => {
     try {
-      const entries = await storage.getDiaryEntries("1");
+      const userId = requireSessionUserId(req);
+      const entries = await storage.getDiaryEntries(userId);
       res.json(entries);
     } catch (error) {
       res.status(500).json({ message: "Failed to get diary entries" });
@@ -381,16 +400,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create diary entry
-  app.post("/api/diary", upload.single('image'), async (req, res) => {
+  app.post("/api/diary", isAuthenticated, upload.single('image'), async (req, res) => {
     try {
       const { content, duration, rating, exerciseCompleted } = req.body;
+      const userId = requireSessionUserId(req);
       
+      const storedImage = await persistUploadedImage(req.file);
+
       const entryData = {
-        userId: (req.user as any)?.claims?.sub || req.user?.id,
+        userId,
         content,
         duration: duration ? parseInt(duration) : null,
         rating: rating ? parseInt(rating) : null,
-        imageUrl: req.file ? `/uploads/${req.file.filename}` : null,
+        imageUrl: storedImage?.url || null,
         date: new Date(),
       };
 
@@ -399,7 +421,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Award experience and update user progress if this is an exercise completion
       if (exerciseCompleted && rating) {
-        const userId = (req.user as any)?.claims?.sub || req.user?.id;
         const user = await storage.getUser(userId);
         if (user) {
           // Extract exercise info from diary content - support multiple formats
@@ -491,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (content && content.length > 10) {
         setImmediate(async () => {
           try {
-            const user = await storage.getUser("1");
+            const user = await storage.getUser(userId);
             if (user) {
               const insights = await generateDiaryInsights(content, user.level, user.completedTasks);
               // You could save insights as feedback or return them directly
@@ -512,9 +533,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user feedbacks
-  app.get("/api/feedbacks", async (req, res) => {
+  app.get("/api/feedbacks", isAuthenticated, async (req, res) => {
     try {
-      const feedbacks = await storage.getUserFeedbacks("1");
+      const userId = requireSessionUserId(req);
+      const feedbacks = await storage.getUserFeedbacks(userId);
       res.json(feedbacks);
     } catch (error) {
       res.status(500).json({ message: "Failed to get feedbacks" });
@@ -555,23 +577,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/user-achievements", async (req, res) => {
+  app.get("/api/user-achievements", isAuthenticated, async (req, res) => {
     try {
       // Prevent caching to ensure fresh achievement data
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const userAchievements = await storage.getUserAchievements("1");
+      const userId = requireSessionUserId(req);
+      const userAchievements = await storage.getUserAchievements(userId);
       res.json(userAchievements);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user achievements" });
     }
   });
 
-  app.post("/api/check-achievements", async (req, res) => {
+  app.post("/api/check-achievements", isAuthenticated, async (req, res) => {
     try {
-      const newAchievements = await storage.checkAndUnlockAchievements("1");
+      const userId = requireSessionUserId(req);
+      const newAchievements = await storage.checkAndUnlockAchievements(userId);
       res.json(newAchievements);
     } catch (error) {
       res.status(500).json({ message: "Failed to check achievements" });
@@ -622,18 +646,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Training session routes
-  app.get("/api/training-sessions", async (req, res) => {
+  app.get("/api/training-sessions", isAuthenticated, async (req, res) => {
     try {
-      const sessions = await storage.getUserTrainingSessions("1");
+      const userId = requireSessionUserId(req);
+      const sessions = await storage.getUserTrainingSessions(userId);
       res.json(sessions);
     } catch (error) {
       res.status(500).json({ message: "Failed to get training sessions" });
     }
   });
 
-  app.get("/api/training-sessions/current", async (req, res) => {
+  app.get("/api/training-sessions/current", isAuthenticated, async (req, res) => {
     try {
-      const session = await storage.getCurrentTrainingSession("1");
+      const userId = requireSessionUserId(req);
+      const session = await storage.getCurrentTrainingSession(userId);
       res.json(session);
     } catch (error) {
       res.status(500).json({ message: "Failed to get current training session" });
@@ -642,10 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/training-sessions", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
+      const userId = requireSessionUserId(req);
       console.log('Training session request body:', JSON.stringify(req.body, null, 2));
       const requestData = { ...req.body, userId };
       const validatedData = insertTrainingSessionSchema.parse(requestData);
@@ -944,11 +967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all training logs/notes for a user
   app.get("/api/training-logs", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      
+      const userId = requireSessionUserId(req);
       const logs = await storage.getAllTrainingNotes(userId);
       res.json(logs);
     } catch (error) {
@@ -964,11 +983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const userId = (req.user as any)?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      
+      const userId = requireSessionUserId(req);
       const sessions = await storage.getUserTrainingSessions(userId);
       const completedSessions = sessions.filter(s => s.completed).map(s => ({
         id: s.id,
@@ -989,13 +1004,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update training record notes
-  app.patch("/api/training-records/:id", async (req, res) => {
+  app.patch("/api/training-records/:id", isAuthenticated, async (req, res) => {
     try {
       const sessionId = parseInt(req.params.id);
       const { notes } = req.body;
       
       if (!notes && notes !== "") {
         return res.status(400).json({ message: "Notes field is required" });
+      }
+
+      const userId = requireSessionUserId(req);
+      const session = await storage.getTrainingSession(sessionId);
+      if (!session || session.userId !== userId) {
+        return res.status(404).json({ message: "Training record not found" });
       }
       
       const updatedSession = await storage.updateTrainingSession(sessionId, { notes });
@@ -1015,18 +1036,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete training record
-  app.delete("/api/training-records/:id", async (req, res) => {
+  app.delete("/api/training-records/:id", isAuthenticated, async (req, res) => {
     try {
       const sessionId = parseInt(req.params.id);
       
       // Get session details before deletion to check if we need to update program progress
       const sessionDetails = await storage.getTrainingSession(sessionId);
+
+      const userId = requireSessionUserId(req);
+      if (!sessionDetails || sessionDetails.userId !== userId) {
+        return res.status(404).json({ message: "Training record not found" });
+      }
       
       await storage.deleteTrainingSession(sessionId);
       
       // Update training program progress if this was a guided session
-      if (sessionDetails && sessionDetails.programId && sessionDetails.sessionType === "guided") {
-        const userId = sessionDetails.userId;
+      if (sessionDetails.programId && sessionDetails.sessionType === "guided") {
         const programId = sessionDetails.programId;
         
         // Get all remaining completed guided sessions for this program
@@ -1060,10 +1085,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reset training program progress
-  app.post("/api/training-programs/:id/reset-progress", async (req, res) => {
+  app.post("/api/training-programs/:id/reset-progress", isAuthenticated, async (req, res) => {
     try {
       const programId = parseInt(req.params.id);
-      const userId = (req.user as any)?.claims?.sub || req.user?.id; // Current user
+      const userId = requireSessionUserId(req);
       
       // Get all remaining completed guided sessions for this program
       const allSessions = await storage.getUserTrainingSessions(userId);
@@ -1099,7 +1124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Progress to next episode
-  app.post("/api/training-programs/next-episode", async (req, res) => {
+  app.post("/api/training-programs/next-episode", isAuthenticated, async (req, res) => {
     try {
       const programs = await storage.getAllTrainingPrograms();
       const beginnerProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
@@ -1111,7 +1136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create new session for next episode
         const newSession = await storage.createTrainingSession({
-          userId: (req.user as any)?.claims?.sub || req.user?.id,
+          userId: requireSessionUserId(req),
           programId: beginnerProgram.id,
           dayId: nextDay,
           title: `第${nextDay}集：${nextDay <= 17 ? '基础技能训练' : nextDay <= 34 ? '中级技术提升' : '高级技巧掌握'}`,
@@ -1128,7 +1153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/training-sessions/:sessionId/notes", async (req, res) => {
+  app.post("/api/training-sessions/:sessionId/notes", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertTrainingNoteSchema.parse({
         ...req.body,
@@ -1144,10 +1169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Skip level challenge endpoint
   app.post("/api/user/skip-level", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+      const userId = requireSessionUserId(req);
 
       const { targetLevel, challengeScore } = req.body;
       
@@ -1249,15 +1271,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user statistics
-  app.get("/api/user/stats", async (req, res) => {
+  app.get("/api/user/stats", isAuthenticated, async (req, res) => {
     try {
-      const user = await storage.getUser("1");
+      const userId = requireSessionUserId(req);
+      const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const diaryEntries = await storage.getDiaryEntries("1");
-      const userTasks = await storage.getUserTasks("1");
+      const diaryEntries = await storage.getDiaryEntries(userId);
+      const userTasks = await storage.getUserTasks(userId);
       const completedTasks = userTasks.filter(ut => ut.completed);
 
       const stats = {
@@ -1441,6 +1464,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  return;
 }

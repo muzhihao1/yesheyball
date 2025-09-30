@@ -16,7 +16,7 @@ A comprehensive billiards training platform with AI-powered coaching, progress t
 ├── server/                 # Express.js backend application
 │   ├── routes.ts           # API route definitions
 │   ├── storage.ts          # Database operations interface
-│   ├── replitAuth.ts       # Authentication middleware
+│   ├── auth.ts             # Session authentication middleware
 │   ├── db.ts               # Database connection setup
 │   ├── experienceSystem.ts # User progression logic
 │   ├── levelSystem.ts      # Level requirements and unlocks
@@ -32,14 +32,13 @@ A comprehensive billiards training platform with AI-powered coaching, progress t
 ## Key Features
 
 ### Frontend (React + TypeScript)
-- **Authentication**: Replit OAuth integration
+- **Authentication**: Session-based email login with optional access code
 - **Responsive Design**: Mobile-first billiards training interface
 - **Real-time Progress**: Live experience tracking and level progression
 - **Interactive Components**: Exercise validation and feedback modals
 - **Routing**: Multi-page application with protected routes
 
-### Backend (Express.js + PostgreSQL)
-- **RESTful API**: Comprehensive training data management
+- **RESTful API**: Comprehensive training data management served via serverless Express on Vercel
 - **AI Integration**: OpenAI-powered coaching feedback
 - **Image Analysis**: Exercise validation through computer vision
 - **Experience System**: Gamified progression tracking
@@ -77,7 +76,7 @@ A comprehensive billiards training platform with AI-powered coaching, progress t
 2. **Backend Development**: Express routes with database integration  
 3. **Database Migrations**: Drizzle ORM schema updates
 4. **Testing**: Manual testing with real user scenarios
-5. **Deployment**: Replit hosting with automatic deployments
+5. **Deployment**: GitHub → Vercel with automatic preview and production deployments
 
 ## Key Technologies
 - **Frontend**: React, TypeScript, Tailwind CSS, Vite

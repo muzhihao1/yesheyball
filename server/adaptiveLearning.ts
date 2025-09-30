@@ -8,7 +8,7 @@ interface ExerciseComplexity {
 }
 
 interface LearningPath {
-  userId: number;
+  userId: string;
   currentLevel: number;
   recommendedExercises: number[];
   strengthAreas: string[];
@@ -69,7 +69,7 @@ export class AdaptiveLearningEngine {
   
   // Generate personalized learning path
   generateLearningPath(
-    userId: number, 
+    userId: string, 
     currentLevel: number, 
     userPerformance: { exerciseId: string; stars: number; attempts: number }[]
   ): LearningPath {

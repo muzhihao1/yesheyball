@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/public",
+  "framework": null,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
+    {
+      "source": "/((?!assets|favicon\\.ico|robots\\.txt|manifest\\.json).*)",
+      "destination": "/dist/public/index.html"
+    }
+  ]
+}

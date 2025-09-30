@@ -1,74 +1,85 @@
-import express, { type Request, Response, NextFunction } from "express";
+import fs from "fs";
+import path from "path";
+import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { log } from "./vite";
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+export interface CreateAppOptions {
+  /** Serve local uploads folder (useful for development fallback) */
+  serveLocalUploads?: boolean;
+}
 
-// Serve static assessment images
-app.use('/assessments', express.static('assessments'));
-app.use('/uploads', express.static('uploads'));
+function attachRequestLogger(app: Express) {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    const pathName = req.path;
+    let capturedJsonResponse: Record<string, unknown> | undefined;
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+    const originalResJson = res.json;
+    res.json = function (...args: Parameters<typeof originalResJson>) {
+      capturedJsonResponse = args[0];
+      return originalResJson.apply(res, args);
+    } as typeof res.json;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+    res.on("finish", () => {
+      const duration = Date.now() - start;
+      if (!pathName.startsWith("/api")) {
+        return;
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      let logLine = `${req.method} ${pathName} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        try {
+          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        } catch (_error) {
+          // Ignore serialization errors for logging
+        }
+      }
+
+      if (logLine.length > 160) {
+        logLine = `${logLine.slice(0, 157)}…`;
       }
 
       log(logLine);
+    });
+
+    next();
+  });
+}
+
+export async function createApp(options: CreateAppOptions = {}) {
+  const app = express();
+
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: false }));
+
+  const assessmentsPath = path.resolve(process.cwd(), "assessments");
+  if (fs.existsSync(assessmentsPath)) {
+    app.use("/assessments", express.static(assessmentsPath));
+  }
+
+  if (options.serveLocalUploads) {
+    const uploadsPath = path.resolve(process.cwd(), "uploads");
+    if (fs.existsSync(uploadsPath)) {
+      app.use("/uploads", express.static(uploadsPath));
+    }
+  }
+
+  attachRequestLogger(app);
+
+  await registerRoutes(app);
+
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err?.status || err?.statusCode || 500;
+    const message = err?.message || "Internal Server Error";
+
+    res.status(status).json({ message });
+
+    if (process.env.NODE_ENV !== "test") {
+      log(`Unhandled error at ${_req?.path ?? "unknown"}: ${message}`);
+      console.error(err);
     }
   });
 
-  next();
-});
-
-(async () => {
-  const server = await registerRoutes(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
-
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
-})();
+  return app;
+}

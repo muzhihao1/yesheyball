@@ -162,8 +162,35 @@ npm run dev  # 开发模式
 
 ### 环境变量
 ```
+# 数据库连接（Vercel Postgres / Neon / Supabase 等）
+DATABASE_URL=postgres://user:password@host:5432/database
+
+# 会话加密密钥（必须为随机字符串）
+SESSION_SECRET=replace-with-strong-random-value
+
+# 可选：限制或禁用鉴权
+# AUTH_ALLOWED_EMAILS=coach@example.com,player@example.com
+# AUTH_ACCESS_CODE=club-secret
+# AUTH_DISABLED=true              # 设为 true 时自动登录演示账号
+# AUTH_DISABLED_EMAIL=demo@local.test
+# AUTH_DISABLED_USER_ID=demo-user
+
+# OpenAI 模型访问秘钥
 OPENAI_API_KEY=your_openai_api_key
+
+# 可选：启用 Vercel Blob 上传需要的令牌
+# BLOB_READ_WRITE_TOKEN=vercel_blob_rw_token
 ```
+
+### 部署到 Vercel
+1. **推送代码至 GitHub**：确保 `.gitignore` 中排除了 `uploads/` 与本地 `.env` 文件。
+2. **在 Vercel 创建项目**：选择 GitHub 仓库，构建命令保持 `npm run build`，输出目录使用 `dist/public`。
+3. **配置 Serverless API**：`api/index.ts` 会托管 Express 路由，无需额外操作。
+4. **设置环境变量**：在 Vercel 中填入上表变量，生产环境需至少包含 `DATABASE_URL`、`SESSION_SECRET`、`OPENAI_API_KEY`。
+5. **静态资源路由**：`vercel.json` 已配置 `/api/*` 转发到服务端函数，其余路由回退到 SPA `index.html`。
+6. **首次部署后验证**：运行 `npm install` + `npm run build` 本地验证，再在 Vercel Dashboard 查看 Preview → Promote。
+
+> **登录提示**：部署后访问首页可使用邮箱 +（可选）访问口令登录；系统会自动创建对应用户并保存在数据库中。
 
 ## 📈 项目状态
 

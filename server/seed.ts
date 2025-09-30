@@ -8,6 +8,7 @@ async function seedDatabase() {
   const [defaultUser] = await db
     .insert(users)
     .values({
+      id: "seed-user",
       username: "liangqi",
       level: 1,
       exp: 0,
