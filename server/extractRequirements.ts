@@ -1,4 +1,4 @@
-import { batchAnalyzeExercises } from "./imageAnalyzer";
+import { batchAnalyzeExercises } from "./imageAnalyzer.js";
 import fs from "fs";
 import path from "path";
 

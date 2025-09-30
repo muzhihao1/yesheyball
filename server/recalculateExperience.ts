@@ -1,5 +1,5 @@
-import { storage } from "./storage";
-import { calculateTrainingExperience, calculateUserLevel } from "./experienceSystem";
+import { storage } from "./storage.js";
+import { calculateTrainingExperience, calculateUserLevel } from "./experienceSystem.js";
 
 // Recalculate and award missing experience points for existing training sessions
 export async function recalculateUserExperience(userId: string) {

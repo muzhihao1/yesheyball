@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import { users, tasks, trainingPrograms, trainingDays, achievements } from "@shared/schema";
 
 async function seedDatabase() {

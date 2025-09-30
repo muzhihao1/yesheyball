@@ -1,7 +1,7 @@
 import type { Express, Request, RequestHandler } from "express";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { randomUUID } from "crypto";
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days

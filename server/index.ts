@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
 import express, { type Express, type NextFunction, type Request, type Response } from "express";
-import { registerRoutes } from "./routes";
-import { log } from "./vite";
+import { registerRoutes } from "./routes.js";
+import { log } from "./vite.js";
 
 export interface CreateAppOptions {
   /** Serve local uploads folder (useful for development fallback) */

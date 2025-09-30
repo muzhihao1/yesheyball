@@ -1,6 +1,6 @@
 import http from "http";
-import { createApp } from "./index";
-import { setupVite, serveStatic, log } from "./vite";
+import { createApp } from "./index.js";
+import { setupVite, serveStatic, log } from "./vite.js";
 
 async function start() {
   const app = await createApp({ serveLocalUploads: true });

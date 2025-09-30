@@ -1,21 +1,21 @@
 import express, { type Express, type Request } from "express";
-import { storage } from "./storage";
-import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse, demoUserProfile } from "./auth";
-import { generateCoachingFeedback, generateDiaryInsights } from "./openai";
-import { upload, persistUploadedImage } from "./upload";
+import { storage } from "./storage.js";
+import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse, demoUserProfile } from "./auth.js";
+import { generateCoachingFeedback, generateDiaryInsights } from "./openai.js";
+import { upload, persistUploadedImage } from "./upload.js";
 import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema } from "@shared/schema";
-import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses";
-import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer";
-import { adaptiveLearning } from "./adaptiveLearning";
-import { requirementCorrector } from "./manualCorrection";
-import { analyzeTableBounds } from "./imageAnalysis";
+import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses.js";
+import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer.js";
+import { adaptiveLearning } from "./adaptiveLearning.js";
+import { requirementCorrector } from "./manualCorrection.js";
+import { analyzeTableBounds } from "./imageAnalysis.js";
 import { 
   calculateTrainingExperience, 
   calculateLevelExperience, 
   calculateUserLevel,
   getExperienceBreakdown 
-} from "./experienceSystem";
-import { recalculateUserExperience } from "./recalculateExperience";
+} from "./experienceSystem.js";
+import { recalculateUserExperience } from "./recalculateExperience.js";
 import { z } from "zod";
 import OpenAI from "openai";
 import path from "path";
