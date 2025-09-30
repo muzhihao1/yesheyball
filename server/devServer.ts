@@ -1,22 +1,22 @@
 import http from "http";
 import { createApp } from "./index.js";
-import { setupVite, serveStatic, log } from "./vite.js";
 
 async function start() {
   const app = await createApp({ serveLocalUploads: true });
   const server = http.createServer(app);
+  const vite = (app as any).__vite ?? {};
 
   if (process.env.NODE_ENV === "development") {
-    await setupVite(app, server);
+    await vite.setupVite?.(app, server);
   } else {
-    serveStatic(app);
+    vite.serveStatic?.(app);
   }
 
   const port = Number(process.env.PORT ?? 5000);
   const host = process.env.HOST ?? "0.0.0.0";
 
   server.listen({ port, host }, () => {
-    log(`serving on port ${port}`);
+    (vite.log ?? console.log)(`serving on port ${port}`);
   });
 }
 

@@ -2,14 +2,27 @@ import fs from "fs";
 import path from "path";
 import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import { registerRoutes } from "./routes.js";
-import { log } from "./vite.js";
+
+function defaultLog(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+
+type ViteModule = typeof import("./vite.js");
+type RuntimeModule = typeof import("./runtime.js");
 
 export interface CreateAppOptions {
   /** Serve local uploads folder (useful for development fallback) */
   serveLocalUploads?: boolean;
 }
 
-function attachRequestLogger(app: Express) {
+function attachRequestLogger(app: Express, log: (message: string) => void) {
   app.use((req, res, next) => {
     const start = Date.now();
     const pathName = req.path;
@@ -49,6 +62,9 @@ function attachRequestLogger(app: Express) {
 
 export async function createApp(options: CreateAppOptions = {}) {
   const app = express();
+  let log: (message: string, source?: string) => void = defaultLog;
+  let serveStatic: RuntimeModule["serveStatic"] | undefined;
+  let setupVite: ViteModule["setupVite"] | undefined;
 
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: false }));
@@ -65,7 +81,7 @@ export async function createApp(options: CreateAppOptions = {}) {
     }
   }
 
-  attachRequestLogger(app);
+  attachRequestLogger(app, (message) => log(message));
 
   await registerRoutes(app);
 
@@ -81,5 +97,22 @@ export async function createApp(options: CreateAppOptions = {}) {
     }
   });
 
-  return app;
+  if (app.get("env") === "development") {
+    const viteModule: ViteModule = await import("./vite.js");
+    setupVite = viteModule.setupVite;
+    log = viteModule.log;
+  } else {
+    const runtimeModule: RuntimeModule = await import("./runtime.js");
+    serveStatic = runtimeModule.serveStatic;
+    log = runtimeModule.log ?? defaultLog;
+    serveStatic?.(app);
+  }
+
+  return Object.assign(app, {
+    __vite: {
+      serveStatic,
+      setupVite,
+      log,
+    },
+  });
 }
