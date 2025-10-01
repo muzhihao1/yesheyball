@@ -1,5 +1,6 @@
-/// User registration page for email/password authentication
+/// User registration page for Supabase Auth
 /// Allows new users to create an account with email and password
+/// New users are automatically added to both auth.users and public.users via database trigger
 
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 interface RegisterForm {
   email: string;
@@ -31,26 +33,46 @@ export default function Register() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: Omit<RegisterForm, "confirmPassword">) => {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+      // Register user directly with Supabase Auth
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            firstName: data.firstName,
+            lastName: data.lastName || null,
+          },
+        },
       });
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        throw new Error(json.message || "Registration failed");
+      if (error) {
+        throw new Error(error.message || "Registration failed");
       }
 
-      return json;
+      if (!authData.user) {
+        throw new Error("Failed to create user account");
+      }
+
+      return authData;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Check if email confirmation is required
+      const needsEmailConfirmation = !data.session && data.user?.identities?.length === 0;
+
       toast({
         title: "注册成功！",
-        description: "请使用您的账号登录",
+        description: needsEmailConfirmation
+          ? "请检查您的邮箱以确认账号"
+          : "您的账号已创建，请登录",
       });
-      setLocation("/login");
+
+      // If session exists, user is automatically logged in, redirect to levels
+      // Otherwise, redirect to login page
+      if (data.session) {
+        setLocation("/levels");
+      } else {
+        setLocation("/login");
+      }
     },
     onError: (error: Error) => {
       toast({

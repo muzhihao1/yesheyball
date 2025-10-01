@@ -14,11 +14,16 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// Updated users table with email/password authentication
+// Updated users table with email/password authentication and Supabase Auth migration support
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(), // Changed to varchar for Replit user IDs
   email: varchar("email").unique(),
-  passwordHash: text("password_hash"), // Bcrypt hashed password for email authentication
+  passwordHash: text("password_hash"), // Bcrypt hashed password for email authentication (cleared after migration)
+
+  // Supabase Auth migration fields
+  supabaseUserId: varchar("supabase_user_id"), // UUID linking to auth.users.id
+  migratedToSupabase: boolean("migrated_to_supabase").notNull().default(false), // Migration tracking flag
+
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),

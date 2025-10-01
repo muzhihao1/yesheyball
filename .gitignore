@@ -10,3 +10,4 @@ vite.config.ts.*
 .vercel
 uploads/
 *.log
+.env.local

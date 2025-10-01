@@ -364,6 +364,21 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Lazy migration endpoint for Supabase Auth transition
+  app.post("/api/auth/migrate-login", async (req, res) => {
+    if (authDisabled && !hasDatabase) {
+      return res.status(200).json({ message: "Authentication disabled", user: demoUserResponse });
+    }
+
+    try {
+      const { handleMigrateLogin } = await import("./migrateAuth.js");
+      await handleMigrateLogin(req, res);
+    } catch (error) {
+      console.error("Migration login error:", error);
+      res.status(500).json({ message: "Failed to process migration login" });
+    }
+  });
+
   app.post("/api/auth/logout", (req, res) => {
     if (authDisabled) {
       if (!hasDatabase) {

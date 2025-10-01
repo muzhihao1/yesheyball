@@ -26,7 +26,8 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
-      const res = await fetch("/api/auth/login", {
+      // Use migrate-login endpoint for seamless Supabase Auth migration
+      const res = await fetch("/api/auth/migrate-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // Important for session cookies
@@ -36,19 +37,27 @@ export default function Login() {
       const json = await res.json();
 
       if (!res.ok) {
-        throw new Error(json.message || "Login failed");
+        throw new Error(json.error || json.message || "Login failed");
       }
 
       return json;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate auth queries to refetch user data
       queryClient.invalidateQueries({ queryKey: ["/api/auth/session"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
 
+      // Show special message if user was migrated to Supabase Auth
+      const title = data.migrated && data.message
+        ? "账号已升级！"
+        : "登录成功！";
+      const description = data.migrated && data.message
+        ? data.message
+        : "欢迎回来";
+
       toast({
-        title: "登录成功！",
-        description: "欢迎回来",
+        title,
+        description,
       });
 
       // Redirect to levels page
