@@ -60,7 +60,7 @@ function attachRequestLogger(app: Express, log: (message: string) => void) {
   });
 }
 
-export async function createApp(options: CreateAppOptions = {}) {
+export async function createApp(options: CreateAppOptions = {}): Promise<Express> {
   const app = express();
   let log: (message: string, source?: string) => void = defaultLog;
   let serveStatic: RuntimeModule["serveStatic"] | undefined;
