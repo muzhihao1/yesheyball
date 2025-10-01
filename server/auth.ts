@@ -218,8 +218,82 @@ export function setupAuth(app: Express) {
     }
   }
 
+  // Registration endpoint for email/password authentication
+  app.post("/api/auth/register", async (req, res) => {
+    if (authDisabled && !hasDatabase) {
+      return res.status(200).json({ message: "Authentication disabled", user: demoUserResponse });
+    }
+
+    try {
+      const { email, password, firstName, lastName } = req.body ?? {};
+
+      // Validate required fields
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      if (!password || typeof password !== "string") {
+        return res.status(400).json({ message: "Password is required" });
+      }
+
+      if (!firstName || typeof firstName !== "string") {
+        return res.status(400).json({ message: "First name is required" });
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      // Validate password strength
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters long" });
+      }
+
+      const normalizedEmail = normalizeEmail(email);
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(normalizedEmail);
+      if (existingUser) {
+        return res.status(409).json({ message: "User with this email already exists" });
+      }
+
+      // Hash password
+      const { hashPassword } = await import("./passwordService.js");
+      const passwordHash = await hashPassword(password);
+
+      // Create new user
+      const generatedId = randomUUID();
+      const user = await storage.upsertUser({
+        id: generatedId,
+        email: normalizedEmail,
+        passwordHash,
+        firstName: firstName.trim(),
+        lastName: lastName?.trim() || null,
+        username: sanitizeUsername(normalizedEmail),
+      });
+
+      console.log(`New user registered: ${user.email} (ID: ${user.id})`);
+
+      res.status(201).json({
+        message: "Registration successful",
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+
+  // Login endpoint for email/password authentication
   app.post("/api/auth/login", async (req, res) => {
-  if (authDisabled) {
+    if (authDisabled) {
       if (!hasDatabase) {
         return res.status(200).json({ message: "Authentication disabled", user: demoUserResponse });
       }
@@ -229,60 +303,60 @@ export function setupAuth(app: Express) {
       }
       return res.status(200).json({ message: "Authentication disabled" });
     }
+
     try {
-      const { email, accessCode, name } = req.body ?? {};
+      const { email, password } = req.body ?? {};
 
       if (!email || typeof email !== "string") {
         return res.status(400).json({ message: "Email is required" });
       }
 
+      if (!password || typeof password !== "string") {
+        return res.status(400).json({ message: "Password is required" });
+      }
+
       const normalizedEmail = normalizeEmail(email);
 
-      const allowedEmailsRaw = process.env.AUTH_ALLOWED_EMAILS;
-      if (allowedEmailsRaw) {
-        const allowed = allowedEmailsRaw
-          .split(",")
-          .map((value) => value.trim().toLowerCase())
-          .filter(Boolean);
-        if (!allowed.includes(normalizedEmail)) {
-          return res.status(401).json({ message: "Email is not authorized" });
-        }
-      }
-
-      const requiredAccessCode = process.env.AUTH_ACCESS_CODE;
-      if (requiredAccessCode) {
-        if (!accessCode || accessCode !== requiredAccessCode) {
-          return res.status(401).json({ message: "Invalid access code" });
-        }
-      }
-
-      let user = await storage.getUserByEmail(normalizedEmail);
-
+      // Find user by email
+      const user = await storage.getUserByEmail(normalizedEmail);
       if (!user) {
-        const displayName = typeof name === "string" && name.trim().length > 0
-          ? name.trim()
-          : normalizedEmail.split("@")[0];
-
-        const generatedId = randomUUID();
-
-        user = await storage.upsertUser({
-          id: generatedId,
-          email: normalizedEmail,
-          firstName: displayName,
-          username: sanitizeUsername(normalizedEmail),
-        });
-      } else {
-        // Refresh last active timestamp on login
-        user = await storage.updateUser(user.id, {});
+        return res.status(401).json({ message: "Invalid email or password" });
       }
 
+      // Check if user has a password set
+      if (!user.passwordHash) {
+        return res.status(401).json({ message: "Please contact support to set up your password" });
+      }
+
+      // Verify password
+      const { comparePassword } = await import("./passwordService.js");
+      const isPasswordValid = await comparePassword(password, user.passwordHash);
+
+      if (!isPasswordValid) {
+        console.log(`Failed login attempt for: ${user.email}`);
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Refresh last active timestamp on login
+      await storage.updateUser(user.id, {});
+
+      // Create session
       const sessionUser = buildSessionUser(user);
       req.session.user = sessionUser;
       req.user = sessionUser as Express.User;
 
+      console.log(`User logged in: ${user.email} (ID: ${user.id})`);
+
       res.json({
         message: "Login successful",
-        user,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          level: user.level,
+          exp: user.exp,
+        },
       });
     } catch (error) {
       console.error("Login error:", error);

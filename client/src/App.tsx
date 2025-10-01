@@ -8,6 +8,8 @@ import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 import { RouteDebugger } from "@/components/RouteDebugger";
 import Landing from "@/pages/Landing";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 
 import Levels from "@/pages/levels";
 import Tasks from "@/pages/tasks";
@@ -30,14 +32,19 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={isAuthenticated ? Levels : Landing} />
-      <Route path="/training" component={isAuthenticated ? Levels : Landing} />
-      <Route path="/levels" component={isAuthenticated ? Levels : Landing} />
-      <Route path="/tasks" component={isAuthenticated ? Tasks : Landing} />
-      <Route path="/growth" component={isAuthenticated ? Ranking : Landing} />
-      <Route path="/diary" component={isAuthenticated ? Diary : Landing} />
-      <Route path="/profile" component={isAuthenticated ? Profile : Landing} />
-      <Route component={isAuthenticated ? NotFound : Landing} />
+      {/* Public routes - accessible without authentication */}
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+
+      {/* Protected routes - require authentication */}
+      <Route path="/" component={isAuthenticated ? Levels : Login} />
+      <Route path="/training" component={isAuthenticated ? Levels : Login} />
+      <Route path="/levels" component={isAuthenticated ? Levels : Login} />
+      <Route path="/tasks" component={isAuthenticated ? Tasks : Login} />
+      <Route path="/growth" component={isAuthenticated ? Ranking : Login} />
+      <Route path="/diary" component={isAuthenticated ? Diary : Login} />
+      <Route path="/profile" component={isAuthenticated ? Profile : Login} />
+      <Route component={isAuthenticated ? NotFound : Login} />
     </Switch>
   );
 }
