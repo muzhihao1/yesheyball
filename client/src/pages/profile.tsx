@@ -72,10 +72,19 @@ export default function Profile() {
               </p>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
-            onClick={() => window.location.href = '/api/logout'}
+            onClick={async () => {
+              try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+              } catch (error) {
+                console.error('Logout failed:', error);
+                // Redirect to login anyway
+                window.location.href = '/login';
+              }
+            }}
             className="text-gray-600"
           >
             <LogOut className="h-4 w-4" />
