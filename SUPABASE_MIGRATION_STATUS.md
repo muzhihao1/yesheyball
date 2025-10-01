@@ -30,7 +30,7 @@
 ### Step 1: Run Database Migration in Supabase
 **CRITICAL: This must be done before testing!**
 
-1. Go to your Supabase project: https://supabase.com/dashboard/project/ksgksoeubyvkuwfpdhet
+1. Go to your Supabase project: https://supabase.com/dashboard/project/hsfthqchyupkbmazcuis
 2. Navigate to: **SQL Editor** → **New Query**
 3. Copy the entire contents of `migrations/supabase_auth_setup.sql`
 4. Paste into the SQL editor
@@ -219,7 +219,7 @@ Once all users are migrated:
 
 ### Local Development (.env.local)
 ```bash
-VITE_SUPABASE_URL=https://ksgksoeubyvkuwfpdhet.supabase.co
+VITE_SUPABASE_URL=https://hsfthqchyupkbmazcuis.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGci...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGci... # Server-side only
 ```

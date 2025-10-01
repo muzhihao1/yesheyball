@@ -231,7 +231,7 @@ export async function checkMigrationStatus(email: string): Promise<{
     return {
       exists: true,
       migrated: user.migratedToSupabase || false,
-      supabaseUserId: user.supabaseUserId,
+      supabaseUserId: user.supabaseUserId ?? undefined,
     };
   } catch (error) {
     console.error('Error checking migration status:', error);
