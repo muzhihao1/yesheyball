@@ -1,233 +1,143 @@
-# 耶氏台球学院系统教学平台
+# 中八大师之路 (WayToHeyball)
 
-一个基于React和Express的智能台球训练应用，提供系统化的中式八球训练体验。
+中式八球智能训练系统 - 结合AI教练与游戏化学习的专业台球训练平台
 
-## 🏗️ 项目架构
+## 🎱 项目简介
 
-### 前端架构 (React + TypeScript)
-```
-client/src/
-├── components/          # 可复用组件
-│   ├── ui/             # Shadcn UI组件库
-│   ├── feedback-modal.tsx  # AI反馈弹窗
-│   ├── header.tsx      # 页面头部
-│   └── navigation.tsx  # 底部导航
-├── pages/              # 页面组件
-│   ├── home.tsx        # 首页
-│   ├── tasks.tsx       # 训练任务页
-│   ├── levels-new.tsx  # 关卡评估页
-│   ├── profile.tsx     # 个人档案页
-│   ├── growth.tsx      # 成长路径页
-│   ├── diary.tsx       # 训练日记页
-│   └── training.tsx    # 训练页面
-├── hooks/              # 自定义Hook
-├── lib/                # 工具库
-├── data/               # 静态数据
-└── App.tsx             # 应用主组件
-```
+这是一个全栈Web应用，为中式八球爱好者提供系统化、个性化的训练方案。通过游戏化的关卡地图、AI智能反馈和数据分析，帮助用户科学提升球技。
 
-### 后端架构 (Express + TypeScript)
-```
-server/
-├── index.ts            # 服务器入口
-├── routes.ts           # API路由定义
-├── storage.ts          # 数据存储接口
-├── experienceSystem.ts # 经验值系统
-├── levelSystem.ts      # 等级系统
-├── adaptiveLearning.ts # 自适应学习
-├── openai.ts           # AI集成
-└── vite.ts             # Vite开发服务器
-```
+### 核心功能
 
-### 数据库架构
-```
-shared/schema.ts        # 数据模型定义
-drizzle.config.ts       # Drizzle ORM配置
-```
+- **🎯 关卡地图系统**: 8个技能等级，400+精心设计的训练习题
+- **🤖 AI教练反馈**: GPT-4o驱动的个性化训练建议和图像识别
+- **📊 进度追踪**: 经验值、等级、连胜天数等多维度数据统计
+- **📅 训练计划**: 30天系统课程，循序渐进提升技术
+- **📔 训练日记**: 记录训练心得，AI生成深度洞察
+- **🏆 排行榜**: 与其他学员良性竞争，激励持续练习
 
-## 🚀 核心功能
-
-### 1. 系统化训练体系
-- **耶氏台球学院系统教学**: 30集渐进式训练课程
-- **引导式训练**: 结构化学习路径
-- **自定义训练**: 个性化练习模式
-- **特训模式**: 专项技能强化
-
-### 2. 智能评估系统
-- **8级关卡评估**: 从初窥门径到出神入化
-- **实时技能评测**: 基于训练表现的动态评估
-- **AI驱动反馈**: 个性化训练建议
-
-### 3. 成长追踪系统
-- **经验值系统**: 多维度经验计算
-- **等级进阶**: 自动等级提升机制
-- **训练连击**: 连续训练天数统计
-- **成就系统**: 里程碑式成就解锁
-
-### 4. AI教练集成
-- **OpenAI驱动**: GPT-4o模型提供专业建议
-- **实时反馈**: 训练完成后即时AI分析
-- **个性化指导**: 基于个人水平的定制建议
-
-## 📱 用户界面
-
-### 移动优先设计
-- 响应式布局适配所有设备
-- 底部导航便于单手操作
-- 卡片式设计清晰直观
-
-### 关键页面
-1. **首页**: 训练概览和快速开始
-2. **训练任务**: 系统教学和自定义训练
-3. **关卡评估**: 技能等级测试
-4. **个人档案**: 用户信息和训练统计
-5. **成长路径**: 学习进度和成就展示
-6. **训练日记**: 训练记录和反思
-
-## 🔧 技术栈
-
-### 前端技术
-- **React 18**: 用户界面框架
-- **TypeScript**: 类型安全
-- **Tailwind CSS**: 样式框架
-- **Shadcn/ui**: 组件库
-- **TanStack Query**: 数据获取和缓存
-- **Wouter**: 轻量级路由
-- **Framer Motion**: 动画效果
-
-### 后端技术
-- **Express.js**: Web应用框架
-- **TypeScript**: 服务端类型安全
-- **Drizzle ORM**: 数据库操作
-- **Zod**: 数据验证
-- **OpenAI API**: AI功能集成
-
-### 开发工具
-- **Vite**: 构建工具
-- **ESBuild**: 快速编译
-- **PostCSS**: CSS处理
-
-## 📊 数据模型
-
-### 核心实体
-- **User**: 用户信息和统计数据
-- **TrainingSession**: 训练会话记录
-- **Achievement**: 成就系统
-- **TrainingProgram**: 训练课程
-- **Feedback**: AI反馈记录
-
-### 关键特性
-- 类型安全的数据模型
-- 自动生成的插入/选择类型
-- Zod验证集成
-
-## 🎯 智能特性
-
-### 经验值计算
-```typescript
-- 引导式训练: 基础分 + 时长奖励 + 评分奖励
-- 自定义训练: 时长×2 + 评分奖励
-- 特训模式: 时长×1.5 + 评分奖励
-- 完成奖励: +20分
-```
-
-### 训练连击系统
-- 基于实际训练完成数据计算
-- 显示7天活动模式
-- 当前连击和历史最长连击
-- 智能鼓励文案
-
-### AI反馈生成
-- 基于训练类型、时长、评分的个性化建议
-- 中文专业台球术语
-- 建设性指导和鼓励
-
-## 🔒 安全特性
-
-- API数据验证
-- 类型安全的数据传输
-- 环境变量保护敏感信息
-- 错误处理和日志记录
-
-## 🚀 部署说明
+## 🚀 快速开始
 
 ### 环境要求
+
 - Node.js 18+
-- OpenAI API密钥
+- PostgreSQL 数据库 (推荐使用 Supabase)
+- OpenAI API Key
 
-### 启动命令
+### 安装依赖
+
 ```bash
-npm run dev  # 开发模式
+npm install
 ```
 
-### 环境变量
-```
-# 数据库连接（Vercel Postgres / Neon / Supabase 等）
-DATABASE_URL=postgres://user:password@host:5432/database
+### 配置环境变量
 
-# 会话加密密钥（必须为随机字符串）
-SESSION_SECRET=replace-with-strong-random-value
+复制 `.env.example` 到 `.env`，填入必要的配置：
 
-# 可选：限制或禁用鉴权
-# AUTH_ALLOWED_EMAILS=coach@example.com,player@example.com
-# AUTH_ACCESS_CODE=club-secret
-# AUTH_DISABLED=false              # 默认为 true，设置为 false 启用登录
-# AUTH_DISABLED_EMAIL=demo@local.test
-# AUTH_DISABLED_USER_ID=demo-user
-
-# OpenAI 模型访问秘钥
-OPENAI_API_KEY=your_openai_api_key
-
-# 可选：启用 Vercel Blob 上传需要的令牌
-# BLOB_READ_WRITE_TOKEN=vercel_blob_rw_token
+```bash
+DATABASE_URL=postgresql://...
+SESSION_SECRET=your-secret-key
+OPENAI_API_KEY=sk-...
 ```
 
-### 部署到 Vercel
-1. **推送代码至 GitHub**：确保 `.gitignore` 中排除了 `uploads/` 与本地 `.env` 文件。
-2. **在 Vercel 创建项目**：选择 GitHub 仓库，构建命令保持 `npm run build`，输出目录使用 `dist/public`。
-3. **配置 Serverless API**：`api/index.ts` 会托管 Express 路由，无需额外操作。
-4. **设置环境变量**：在 Vercel 中填入上表变量，生产环境需至少包含 `DATABASE_URL`、`SESSION_SECRET`、`OPENAI_API_KEY`。
-5. **静态资源路由**：`vercel.json` 已配置 `/api/*` 转发到服务端函数，其余路由回退到 SPA `index.html`。
-6. **首次部署后验证**：运行 `npm install` + `npm run build` 本地验证，再在 Vercel Dashboard 查看 Preview → Promote。
+### 开发模式
 
-> **登录提示**：部署后访问首页可使用邮箱 +（可选）访问口令登录；系统会自动创建对应用户并保存在数据库中。
+```bash
+npm run dev          # 启动开发服务器 (http://localhost:5000)
+```
 
-## 📈 项目状态
+### 生产构建
 
-### 已实现功能 ✅
-- 完整的用户界面设计
-- 30集系统教学课程
-- 8级关卡评估系统
-- AI驱动的训练反馈
-- 训练记录管理
-- 经验值和等级系统
-- 训练连击统计
-- 成就系统基础
-- 移动端优化
+```bash
+npm run build        # 构建前端和后端
+npm run start        # 启动生产服务器
+```
 
-### 开发中功能 🔄
-- 高级成就解锁逻辑
-- 社交功能扩展
-- 训练数据分析
+## 📁 项目结构
 
-## 🎨 设计原则
+```
+WayToHeyball/
+├── client/              # React 前端应用
+│   ├── public/         # 静态资源
+│   └── src/            # 源代码
+│       ├── pages/      # 页面组件
+│       ├── components/ # UI组件
+│       ├── hooks/      # 自定义Hooks
+│       └── lib/        # 工具函数
+├── server/              # Express 后端API
+│   ├── index.ts        # 应用入口
+│   ├── routes.ts       # 路由定义
+│   ├── auth.ts         # 认证逻辑
+│   └── db.ts           # 数据库连接
+├── shared/              # 前后端共享代码
+│   └── schema.ts       # 数据库Schema和类型
+├── docs/                # 📚 项目文档
+│   ├── CLAUDE.md       # 开发指南
+│   └── deployment-vercel.md  # 部署文档
+├── migrations/          # 数据库迁移
+├── api/                 # Vercel Serverless入口
+└── scripts/             # 构建脚本
+```
 
-- **用户体验优先**: 直观的界面和流畅的交互
-- **移动优先**: 针对手机用户优化
-- **数据驱动**: 基于真实训练数据的智能分析
-- **渐进增强**: 从基础功能到高级特性的平滑过渡
+## 🛠️ 技术栈
+
+### 前端
+- **React 18** + **TypeScript**
+- **Wouter** 路由
+- **TanStack Query** 数据获取
+- **Tailwind CSS** + **shadcn/ui** 样式
+- **Vite** 构建工具
+
+### 后端
+- **Node.js** + **Express**
+- **TypeScript** (ESM)
+- **Drizzle ORM** + **PostgreSQL**
+- **OpenAI API** (GPT-4o)
+- **Vercel Serverless Functions**
+
+## 📖 文档
+
+- **[开发指南](./docs/CLAUDE.md)** - 详细的开发文档和架构说明
+- **[部署指南](./docs/deployment-vercel.md)** - Vercel部署步骤
+- **[详细README](./docs/README-detailed.md)** - 完整的项目说明
+
+更多文档请查看 `/docs` 目录。
+
+## 🔧 常用命令
+
+```bash
+npm run dev          # 开发模式（前端+后端）
+npm run build        # 构建生产版本
+npm run start        # 启动生产服务器
+npm run check        # TypeScript类型检查
+npm run db:push      # 推送数据库Schema变更
+```
+
+## 🚢 部署
+
+项目已配置用于 Vercel 无服务器部署：
+
+1. 连接GitHub仓库到Vercel
+2. 配置环境变量
+3. 自动构建和部署
+
+详细步骤参见 [部署文档](./docs/deployment-vercel.md)。
 
 ## 📝 开发规范
 
-- TypeScript严格模式
-- 组件化开发
-- API优先设计
-- 响应式布局
-- 性能优化考量
+- 使用 TypeScript 严格模式
+- 服务端代码必须使用 `.js` 扩展名导入 (ESM)
+- API 路由使用 Zod 进行输入验证
+- 遵循 RESTful API 设计原则
+- 代码提交前运行 `npm run check`
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
+
+MIT License
 
 ---
 
-**版本**: 1.0.0  
-**最后更新**: 2025年6月  
-**作者**: AI开发团队  
-**许可**: MIT License
+**技术支持**: 如有问题，请查看 [docs/CLAUDE.md](./docs/CLAUDE.md) 或提交 Issue。

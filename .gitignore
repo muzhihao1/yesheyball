@@ -1,13 +1,54 @@
+# Dependencies
 node_modules
+
+# Build output
 dist
-.DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+*.tsbuildinfo
+
+# Environment variables
 .env
 .env.*
-.local/
-.vercel
-uploads/
-*.log
+!.env.example
 .env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# Vercel
+.vercel
+
+# Local data
+.local/
+uploads/
+server/public
+
+# Logs
+*.log
+logs_result.json
+
+# Testing
+.playwright-mcp/
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+vite.config.ts.*
+*.tar.gz
+
+# Database
+*.db
+*.sqlite
