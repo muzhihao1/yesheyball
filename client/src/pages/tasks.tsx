@@ -166,20 +166,22 @@ export default function Tasks() {
   // Training control handlers
   const handleStartTraining = () => {
     if (isGuidedTraining || isCustomTraining || isSpecialTraining) {
-      toast({ 
-        title: "无法开始训练", 
+      toast({
+        title: "无法开始训练",
         description: "请先完成或取消当前训练",
         variant: "destructive"
       });
       return;
     }
-    
-    // Navigate to levels page to show current lesson
-    setLocation("/levels");
-    
-    toast({ 
-      title: "进入系统训练", 
-      description: `正在前往第${currentDay}集训练内容` 
+
+    setCurrentSessionType("系统训练");
+    setIsGuidedTraining(true);
+    setGuidedElapsedTime(0);
+    setIsGuidedPaused(false);
+
+    toast({
+      title: "系统训练开始",
+      description: `第${currentDay}集训练已开始`
     });
   };
 
