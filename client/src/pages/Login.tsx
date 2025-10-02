@@ -42,10 +42,13 @@ export default function Login() {
 
       return json;
     },
-    onSuccess: (data) => {
-      // Invalidate auth queries to refetch user data
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/session"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
+    onSuccess: async (data) => {
+      // Invalidate and refetch auth query to update user data
+      // IMPORTANT: useAuth uses "/api/auth/user" query key
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+
+      // Wait for the query to refetch before redirecting
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
 
       // Show special message if user was migrated to Supabase Auth
       const title = data.migrated && data.message
@@ -60,7 +63,7 @@ export default function Login() {
         description,
       });
 
-      // Redirect to levels page
+      // Redirect to levels page after auth state is updated
       setLocation("/levels");
     },
     onError: (error: Error) => {
