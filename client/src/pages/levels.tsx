@@ -101,9 +101,9 @@ export default function Levels() {
   } | null>(null);
   
   const [exerciseDataLoading, setExerciseDataLoading] = useState(false);
-  
-  // Navigation breadcrumb state
-  const [currentBreadcrumb, setCurrentBreadcrumb] = useState({ level: 3, group: 4 });
+
+  // Navigation breadcrumb state - 初始化为用户当前位置
+  const [currentBreadcrumb, setCurrentBreadcrumb] = useState({ level: 1, group: 1 });
 
   const { toast } = useToast();
 
@@ -394,26 +394,30 @@ export default function Levels() {
   // Scroll detection for breadcrumb updates
   useEffect(() => {
     const updateBreadcrumbOnScroll = () => {
-      // Find all group headers in the viewport
+      // Find all group headers
       const groupHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
         const text = el.textContent || '';
         return /第\d+组/.test(text) && text.trim().length < 10;
       });
 
-      // Find which group is currently in view
-      // 不设置默认值，只有找到时才更新
-      let foundGroup: number | null = null;
-      let foundLevel: number | null = null;
+      // Find the closest group header above or in viewport
+      let closestGroup: number | null = null;
+      let closestLevel: number | null = null;
+      let closestDistance = Infinity;
 
       for (const header of groupHeaders) {
         const rect = header.getBoundingClientRect();
         const text = header.textContent || '';
 
-        // Check if this group header is in the upper part of the viewport
-        if (rect.top <= 200 && rect.bottom >= 100) {
+        // Calculate distance from top of viewport
+        // Prefer headers that are at or above viewport top
+        const distance = Math.abs(rect.top - 150);
+
+        // Only consider headers that are above or near the top of viewport
+        if (rect.top <= 250) {
           const groupMatch = text.match(/第(\d+)组/);
-          if (groupMatch) {
-            foundGroup = parseInt(groupMatch[1]);
+          if (groupMatch && distance < closestDistance) {
+            const groupNum = parseInt(groupMatch[1]);
 
             // Find the level this group belongs to
             const levelContainer = header.closest('div[class*="mb-"]');
@@ -421,19 +425,20 @@ export default function Levels() {
               const levelText = levelContainer.textContent || '';
               const levelMatch = levelText.match(/等级 (\d+)/);
               if (levelMatch) {
-                foundLevel = parseInt(levelMatch[1]);
+                closestDistance = distance;
+                closestGroup = groupNum;
+                closestLevel = parseInt(levelMatch[1]);
               }
             }
-            break;
           }
         }
       }
 
-      // Update breadcrumb only if we found a group
-      if (foundGroup !== null && foundLevel !== null) {
+      // Update breadcrumb if we found a group
+      if (closestGroup !== null && closestLevel !== null) {
         setCurrentBreadcrumb(prev => {
-          if (prev.level !== foundLevel || prev.group !== foundGroup) {
-            return { level: foundLevel, group: foundGroup };
+          if (prev.level !== closestLevel || prev.group !== closestGroup) {
+            return { level: closestLevel, group: closestGroup };
           }
           return prev;
         });

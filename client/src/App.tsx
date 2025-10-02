@@ -38,7 +38,7 @@ function Router() {
 
       {/* Protected routes - require authentication */}
       <Route path="/" component={isAuthenticated ? Levels : Login} />
-      <Route path="/training" component={isAuthenticated ? Levels : Login} />
+      <Route path="/training" component={isAuthenticated ? Tasks : Login} />
       <Route path="/levels" component={isAuthenticated ? Levels : Login} />
       <Route path="/tasks" component={isAuthenticated ? Tasks : Login} />
       <Route path="/growth" component={isAuthenticated ? Ranking : Login} />
