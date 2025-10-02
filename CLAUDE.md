@@ -178,21 +178,33 @@ import { users } from "@shared/schema";
 ## Environment Variables (Required)
 
 ```bash
-DATABASE_URL=postgres://...        # Neon/Vercel Postgres connection
+# Database - Use Supabase Session Pooler (IPv4 compatible)
+DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@aws-1-us-east-2.pooler.supabase.com:5432/postgres
+
+# Supabase Auth (rotated 2025-10-01)
+VITE_SUPABASE_URL=https://PROJECT_REF.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
+
+# Session & AI
 SESSION_SECRET=random-string       # Session encryption key
 OPENAI_API_KEY=sk-...             # GPT-4o access
 
-# Replit Auth (optional, for OAuth)
+# Auth Mode
+AUTH_DISABLED=false                # Set to true for local demo mode
+
+# Replit Auth (legacy, optional)
 REPLIT_DOMAINS=replit.com,repl.co
 REPL_ID=your-repl-id
 ISSUER_URL=https://replit.com
 
-# Development toggles
-AUTH_DISABLED=true                 # Enable demo mode (no login required)
-AUTH_DISABLED_EMAIL=demo@local.test
-AUTH_DISABLED_USER_ID=demo-user
 NODE_ENV=development|production
 ```
+
+**Critical Database Connection Notes**:
+- **Use Session Pooler, NOT Transaction Pooler**: Transaction pooler host may not exist and doesn't support PREPARE statements
+- **Session Pooler format**: `postgresql://postgres.PROJECT_REF:PASSWORD@aws-1-us-east-2.pooler.supabase.com:5432/postgres`
+- **Vercel environment updates**: After changing env vars in Vercel dashboard, you MUST trigger a manual redeploy or push new code - existing deployments won't pick up env changes automatically
 
 ## Development Patterns
 
