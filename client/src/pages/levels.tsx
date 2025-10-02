@@ -1221,8 +1221,19 @@ export default function Levels() {
                     
                     return (
                       <div key={exercise.id}>
+                        {/* 第1组标题 - 显示在第一个练习之前 */}
+                        {exerciseIndex === 0 && (
+                          <div className="flex items-center justify-center my-8">
+                            <div className="flex-1 h-0.5 bg-gray-300 mx-8"></div>
+                            <div className="px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-500 font-medium">
+                              第1组
+                            </div>
+                            <div className="flex-1 h-0.5 bg-gray-300 mx-8"></div>
+                          </div>
+                        )}
+
                         {/* Exercise Row */}
-                        <div 
+                        <div
                           className={`flex items-center relative mb-8 ${isMilestone ? 'justify-center mb-12' : 'justify-start'}`}
                           style={!isMilestone ? { paddingLeft: `${paddingLeft}px` } : {}}
                         >
