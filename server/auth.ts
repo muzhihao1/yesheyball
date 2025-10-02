@@ -130,7 +130,7 @@ function sanitizeUsername(email: string) {
   return `${candidate}-${randomUUID().slice(0, 8)}`.toLowerCase();
 }
 
-function buildSessionUser(user: { id: string; email: string | null; firstName?: string | null; lastName?: string | null; profileImageUrl?: string | null; }) : SessionUser {
+export function buildSessionUser(user: { id: string; email: string | null; firstName?: string | null; lastName?: string | null; profileImageUrl?: string | null; }) : SessionUser {
   return {
     claims: {
       sub: user.id,
