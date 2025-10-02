@@ -92,6 +92,19 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
     if (signInData?.user && signInData?.session) {
       // Success: User already migrated
       console.log(`✅ User ${normalizedEmail} already migrated, login successful`);
+
+      // Get user from database to create Express session
+      const dbUser = await storage.getUserByEmail(normalizedEmail);
+      if (dbUser) {
+        // Create Express session
+        const { buildSessionUser } = await import("./auth.js");
+        const sessionUser = buildSessionUser(dbUser);
+        req.session.user = sessionUser;
+        req.user = sessionUser as any;
+
+        console.log(`✅ Express session created for ${normalizedEmail}`);
+      }
+
       res.json({
         success: true,
         migrated: true,
@@ -191,6 +204,17 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
     }
 
     console.log(`✅ Successfully migrated ${normalizedEmail} to Supabase Auth`);
+
+    // Create Express session for immediate login
+    const updatedUser = await storage.getUserByEmail(normalizedEmail);
+    if (updatedUser) {
+      const { buildSessionUser } = await import("./auth.js");
+      const sessionUser = buildSessionUser(updatedUser);
+      req.session.user = sessionUser;
+      req.user = sessionUser as any;
+
+      console.log(`✅ Express session created after migration for ${normalizedEmail}`);
+    }
 
     res.json({
       success: true,
