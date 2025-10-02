@@ -693,7 +693,7 @@ export default function Levels() {
     
     for (let i = 0; i < stage.totalExercises; i++) {
       const exerciseNum = i + 1;
-      const imageFileNumber = (exerciseNum + 1).toString().padStart(2, '0'); // 图片文件从02开始
+      const imageFileNumber = exerciseNum.toString().padStart(2, '0'); // 习题编号直接对应图片编号
       const overrideKey = `${level}-${exerciseNum}`;
       
       // 练习完成状态：必须按顺序完成
