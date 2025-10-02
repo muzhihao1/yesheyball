@@ -225,17 +225,17 @@ export default function Levels() {
   // Floating navigation button to jump to current level
   useEffect(() => {
     if (!user) return;
-    
+
     const createFloatingNavButton = () => {
       // Remove any existing floating buttons
       const existing = document.querySelectorAll('.level-floating-btn');
       existing.forEach(btn => btn.remove());
-      
+
       const button = document.createElement('button');
       button.className = 'level-floating-btn';
-      button.innerHTML = '↑';
+      button.innerHTML = '↑'; // 初始默认向上
       button.setAttribute('aria-label', `跳转到等级${user.level}`);
-      
+
       // Apply core styles
       Object.assign(button.style, {
         position: 'fixed',
@@ -256,30 +256,30 @@ export default function Levels() {
         userSelect: 'none',
         touchAction: 'manipulation'
       });
-      
+
       // Apply theme colors with important priority
       button.style.setProperty('background-color', '#22c55e', 'important');
       button.style.setProperty('color', 'white', 'important');
       button.style.setProperty('border', '3px solid white', 'important');
       button.style.setProperty('border-radius', '50%', 'important');
       button.style.setProperty('box-shadow', '0 8px 25px rgba(34, 197, 94, 0.5)', 'important');
-      
+
       return button;
     };
-    
+
     const findUserLevelPosition = (userLevel: number): number | null => {
       // Navigate to user's current group based on their progress
       const userCompletedExercises = (user?.completedExercises as Record<string, number>) || {};
       const currentLevelCompleted = userCompletedExercises[userLevel.toString()] || 0;
       const currentGroup = Math.ceil((currentLevelCompleted + 1) / 5);
-      
+
       // Find the group header for user's current position
       const targetGroupText = `第${currentGroup}组`;
       const groupHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
         const text = el.textContent || '';
         return text.includes(targetGroupText) && text.trim().length < 10;
       });
-      
+
       // Find the group header in user's current level
       for (const header of groupHeaders) {
         const levelContainer = header.closest('div[class*="mb-"]');
@@ -288,63 +288,95 @@ export default function Levels() {
           return rect.top + window.scrollY - 150;
         }
       }
-      
+
       // Fallback to level progress card
       const levelContainers = Array.from(document.querySelectorAll('div[class*="bg-gradient"]')).filter(div => {
         const text = div.textContent || '';
         return text.includes(`等级 ${userLevel} •`) && text.includes('进度');
       });
-      
+
       if (levelContainers.length > 0) {
         const rect = levelContainers[0].getBoundingClientRect();
         return rect.top + window.scrollY - 120;
       }
-      
+
       return 200 + (userLevel - 1) * 800;
     };
-    
+
     const scrollToUserLevel = () => {
       const targetPosition = findUserLevelPosition(user.level);
-      
+
       if (targetPosition !== null) {
         const finalPosition = Math.max(0, targetPosition);
         window.scrollTo({ top: finalPosition, behavior: 'smooth' });
-        
+
         // Backup scroll to ensure positioning
         setTimeout(() => {
           window.scrollTo({ top: finalPosition, behavior: 'auto' });
         }, 400);
       }
     };
-    
+
     const handleButtonClick = (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       // Delay execution to override any conflicting scrolls
       setTimeout(scrollToUserLevel, 50);
     };
-    
+
+    // 更新箭头方向的函数
+    const updateArrowDirection = () => {
+      const targetPosition = findUserLevelPosition(user.level);
+      const currentScroll = window.scrollY;
+
+      if (targetPosition !== null) {
+        // 如果目标在当前位置下方，显示向下箭头
+        if (targetPosition > currentScroll + 100) {
+          button.innerHTML = '↓';
+        }
+        // 如果目标在当前位置上方，显示向上箭头
+        else if (targetPosition < currentScroll - 100) {
+          button.innerHTML = '↑';
+        }
+        // 如果非常接近目标位置，显示向上箭头
+        else {
+          button.innerHTML = '↑';
+        }
+      }
+    };
+
     const button = createFloatingNavButton();
-    
+
     // Event handlers
     button.addEventListener('click', handleButtonClick);
-    
+
     button.addEventListener('touchstart', () => {
       button.style.setProperty('background-color', '#1ea84b', 'important');
     });
-    
+
     button.addEventListener('touchend', (e) => {
       button.style.setProperty('background-color', '#22c55e', 'important');
       handleButtonClick(e);
     });
-    
+
+    // 监听滚动事件，更新箭头方向
+    const handleScroll = () => {
+      updateArrowDirection();
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
     // Add button to DOM
     document.body.appendChild(button);
-    
+
+    // 初始更新箭头方向
+    setTimeout(updateArrowDirection, 100);
+
     // Cleanup function
     return () => {
       button.remove();
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [user]);
 
@@ -367,42 +399,45 @@ export default function Levels() {
         const text = el.textContent || '';
         return /第\d+组/.test(text) && text.trim().length < 10;
       });
-      
+
       // Find which group is currently in view
-      let currentGroup = 1;
-      let currentLevel = 3;
-      
+      // 不设置默认值，只有找到时才更新
+      let foundGroup: number | null = null;
+      let foundLevel: number | null = null;
+
       for (const header of groupHeaders) {
         const rect = header.getBoundingClientRect();
         const text = header.textContent || '';
-        
+
         // Check if this group header is in the upper part of the viewport
         if (rect.top <= 200 && rect.bottom >= 100) {
           const groupMatch = text.match(/第(\d+)组/);
           if (groupMatch) {
-            currentGroup = parseInt(groupMatch[1]);
-            
+            foundGroup = parseInt(groupMatch[1]);
+
             // Find the level this group belongs to
             const levelContainer = header.closest('div[class*="mb-"]');
             if (levelContainer) {
               const levelText = levelContainer.textContent || '';
               const levelMatch = levelText.match(/等级 (\d+)/);
               if (levelMatch) {
-                currentLevel = parseInt(levelMatch[1]);
+                foundLevel = parseInt(levelMatch[1]);
               }
             }
             break;
           }
         }
       }
-      
-      // Update breadcrumb if changed
-      setCurrentBreadcrumb(prev => {
-        if (prev.level !== currentLevel || prev.group !== currentGroup) {
-          return { level: currentLevel, group: currentGroup };
-        }
-        return prev;
-      });
+
+      // Update breadcrumb only if we found a group
+      if (foundGroup !== null && foundLevel !== null) {
+        setCurrentBreadcrumb(prev => {
+          if (prev.level !== foundLevel || prev.group !== foundGroup) {
+            return { level: foundLevel, group: foundGroup };
+          }
+          return prev;
+        });
+      }
     };
     
     // Attach scroll listener
@@ -1210,17 +1245,17 @@ export default function Levels() {
                                     filter: 'drop-shadow(0 8px 25px rgba(0,0,0,0.15))'
                                   }}
                                 >
-                                  {/* Modern Achievement Badge */}
+                                  {/* Trophy Badge */}
                                   <div className="relative w-24 h-28 flex flex-col items-center">
                                     <svg viewBox="0 0 120 120" className="w-24 h-24">
-                                      {/* Badge Base/Pedestal */}
-                                      <ellipse cx="60" cy="95" rx="18" ry="8" 
+                                      {/* Trophy Base/Pedestal */}
+                                      <ellipse cx="60" cy="100" rx="24" ry="8"
                                         fill={
-                                          !isUnlocked 
-                                            ? '#9CA3AF' 
+                                          !isUnlocked
+                                            ? '#9CA3AF'
                                             : isThisExerciseCompleted
                                               ? levelColors.node.includes('emerald') ? '#059669'
-                                                : levelColors.node.includes('blue') ? '#2563EB' 
+                                                : levelColors.node.includes('blue') ? '#2563EB'
                                                 : levelColors.node.includes('purple') ? '#7C3AED'
                                                 : levelColors.node.includes('pink') ? '#DB2777'
                                                 : levelColors.node.includes('yellow') ? '#D97706'
@@ -1230,18 +1265,18 @@ export default function Levels() {
                                                 : '#f69acc'
                                               : '#E5E7EB'
                                         }
-                                        opacity="0.6"
+                                        opacity="0.7"
                                       />
-                                      
-                                      {/* Main Shield Body */}
-                                      <path 
-                                        d="M40 25 Q40 15 50 15 L70 15 Q80 15 80 25 L80 50 Q80 65 60 75 Q40 65 40 50 Z" 
+
+                                      {/* Trophy Cup Body - 梯形杯身 */}
+                                      <path
+                                        d="M35 30 L85 30 L75 65 L45 65 Z"
                                         fill={
-                                          !isUnlocked 
-                                            ? '#9CA3AF' 
+                                          !isUnlocked
+                                            ? '#9CA3AF'
                                             : isThisExerciseCompleted
                                               ? levelColors.node.includes('emerald') ? '#10B981'
-                                                : levelColors.node.includes('blue') ? '#3B82F6' 
+                                                : levelColors.node.includes('blue') ? '#3B82F6'
                                                 : levelColors.node.includes('purple') ? '#8B5CF6'
                                                 : levelColors.node.includes('pink') ? '#EC4899'
                                                 : levelColors.node.includes('yellow') ? '#F59E0B'
@@ -1252,63 +1287,15 @@ export default function Levels() {
                                               : '#E5E7EB'
                                         }
                                       />
-                                      
-                                      {/* Shield Highlight/Gloss */}
-                                      <path 
-                                        d="M45 20 Q45 18 47 18 L65 18 Q70 18 70 22 L70 40 Q70 45 60 50 Q50 45 45 35 Z" 
-                                        fill="rgba(255,255,255,0.3)"
-                                      />
-                                      
-                                      {/* Left Wing/Laurel */}
-                                      <path 
-                                        d="M25 35 Q20 30 15 35 Q10 40 15 45 Q20 50 25 45 Q30 42 30 40 Q30 38 25 35" 
+
+                                      {/* Trophy Cup Rim - 杯口 */}
+                                      <ellipse cx="60" cy="30" rx="25" ry="6"
                                         fill={
-                                          !isUnlocked 
-                                            ? '#9CA3AF' 
-                                            : isThisExerciseCompleted 
-                                              ? levelColors.node.includes('emerald') ? '#34D399'
-                                                : levelColors.node.includes('blue') ? '#60A5FA' 
-                                                : levelColors.node.includes('purple') ? '#A78BFA'
-                                                : levelColors.node.includes('pink') ? '#F472B6'
-                                                : levelColors.node.includes('yellow') ? '#FBBF24'
-                                                : levelColors.node.includes('red') ? '#F87171'
-                                                : levelColors.node.includes('indigo') ? '#818CF8'
-                                                : levelColors.node.includes('green') ? '#4ADE80'
-                                                : '#f8a2c4'
-                                              : '#E5E7EB'
-                                        }
-                                        opacity="0.8"
-                                      />
-                                      
-                                      {/* Right Wing/Laurel */}
-                                      <path 
-                                        d="M95 35 Q100 30 105 35 Q110 40 105 45 Q100 50 95 45 Q90 42 90 40 Q90 38 95 35" 
-                                        fill={
-                                          !isUnlocked 
-                                            ? '#9CA3AF' 
-                                            : isThisExerciseCompleted 
-                                              ? levelColors.node.includes('emerald') ? '#34D399'
-                                                : levelColors.node.includes('blue') ? '#60A5FA' 
-                                                : levelColors.node.includes('purple') ? '#A78BFA'
-                                                : levelColors.node.includes('pink') ? '#F472B6'
-                                                : levelColors.node.includes('yellow') ? '#FBBF24'
-                                                : levelColors.node.includes('red') ? '#F87171'
-                                                : levelColors.node.includes('indigo') ? '#818CF8'
-                                                : levelColors.node.includes('green') ? '#4ADE80'
-                                                : '#f8a2c4'
-                                              : '#E5E7EB'
-                                        }
-                                        opacity="0.8"
-                                      />
-                                      
-                                      {/* Small connecting stem */}
-                                      <rect x="57" y="75" width="6" height="12" 
-                                        fill={
-                                          !isUnlocked 
-                                            ? '#6B7280' 
+                                          !isUnlocked
+                                            ? '#6B7280'
                                             : isThisExerciseCompleted
                                               ? levelColors.node.includes('emerald') ? '#059669'
-                                                : levelColors.node.includes('blue') ? '#2563EB' 
+                                                : levelColors.node.includes('blue') ? '#2563EB'
                                                 : levelColors.node.includes('purple') ? '#7C3AED'
                                                 : levelColors.node.includes('pink') ? '#DB2777'
                                                 : levelColors.node.includes('yellow') ? '#D97706'
@@ -1319,14 +1306,100 @@ export default function Levels() {
                                               : '#9CA3AF'
                                         }
                                       />
-                                      
-                                      {/* Badge Content */}
+
+                                      {/* Cup Highlight/Gloss */}
+                                      <path
+                                        d="M40 35 L70 35 L65 55 L45 55 Z"
+                                        fill="rgba(255,255,255,0.3)"
+                                      />
+
+                                      {/* Left Handle - 左耳 */}
+                                      <path
+                                        d="M35 35 Q20 35 15 45 Q12 50 15 55 Q20 58 25 55 L30 50 Q32 45 30 40 Z"
+                                        fill={
+                                          !isUnlocked
+                                            ? '#9CA3AF'
+                                            : isThisExerciseCompleted
+                                              ? levelColors.node.includes('emerald') ? '#34D399'
+                                                : levelColors.node.includes('blue') ? '#60A5FA'
+                                                : levelColors.node.includes('purple') ? '#A78BFA'
+                                                : levelColors.node.includes('pink') ? '#F472B6'
+                                                : levelColors.node.includes('yellow') ? '#FBBF24'
+                                                : levelColors.node.includes('red') ? '#F87171'
+                                                : levelColors.node.includes('indigo') ? '#818CF8'
+                                                : levelColors.node.includes('green') ? '#4ADE80'
+                                                : '#f8a2c4'
+                                              : '#E5E7EB'
+                                        }
+                                        opacity="0.9"
+                                      />
+
+                                      {/* Right Handle - 右耳 */}
+                                      <path
+                                        d="M85 35 Q100 35 105 45 Q108 50 105 55 Q100 58 95 55 L90 50 Q88 45 90 40 Z"
+                                        fill={
+                                          !isUnlocked
+                                            ? '#9CA3AF'
+                                            : isThisExerciseCompleted
+                                              ? levelColors.node.includes('emerald') ? '#34D399'
+                                                : levelColors.node.includes('blue') ? '#60A5FA'
+                                                : levelColors.node.includes('purple') ? '#A78BFA'
+                                                : levelColors.node.includes('pink') ? '#F472B6'
+                                                : levelColors.node.includes('yellow') ? '#FBBF24'
+                                                : levelColors.node.includes('red') ? '#F87171'
+                                                : levelColors.node.includes('indigo') ? '#818CF8'
+                                                : levelColors.node.includes('green') ? '#4ADE80'
+                                                : '#f8a2c4'
+                                              : '#E5E7EB'
+                                        }
+                                        opacity="0.9"
+                                      />
+
+                                      {/* Trophy Stem - 奖杯杆 */}
+                                      <rect x="55" y="65" width="10" height="20"
+                                        fill={
+                                          !isUnlocked
+                                            ? '#6B7280'
+                                            : isThisExerciseCompleted
+                                              ? levelColors.node.includes('emerald') ? '#059669'
+                                                : levelColors.node.includes('blue') ? '#2563EB'
+                                                : levelColors.node.includes('purple') ? '#7C3AED'
+                                                : levelColors.node.includes('pink') ? '#DB2777'
+                                                : levelColors.node.includes('yellow') ? '#D97706'
+                                                : levelColors.node.includes('red') ? '#DC2626'
+                                                : levelColors.node.includes('indigo') ? '#4F46E5'
+                                                : levelColors.node.includes('green') ? '#16A34A'
+                                                : '#DB2777'
+                                              : '#9CA3AF'
+                                        }
+                                      />
+
+                                      {/* Trophy Base Stand - 底座 */}
+                                      <rect x="45" y="85" width="30" height="8" rx="2"
+                                        fill={
+                                          !isUnlocked
+                                            ? '#6B7280'
+                                            : isThisExerciseCompleted
+                                              ? levelColors.node.includes('emerald') ? '#059669'
+                                                : levelColors.node.includes('blue') ? '#2563EB'
+                                                : levelColors.node.includes('purple') ? '#7C3AED'
+                                                : levelColors.node.includes('pink') ? '#DB2777'
+                                                : levelColors.node.includes('yellow') ? '#D97706'
+                                                : levelColors.node.includes('red') ? '#DC2626'
+                                                : levelColors.node.includes('indigo') ? '#4F46E5'
+                                                : levelColors.node.includes('green') ? '#16A34A'
+                                                : '#DB2777'
+                                              : '#9CA3AF'
+                                        }
+                                      />
+
+                                      {/* Trophy Content */}
                                       {!isUnlocked ? (
-                                        <foreignObject x="50" y="35" width="20" height="20">
+                                        <foreignObject x="50" y="40" width="20" height="20">
                                           <Lock className="w-5 h-5 text-white" />
                                         </foreignObject>
                                       ) : (
-                                        <text x="60" y="52" textAnchor="middle" fontSize="22" fill="white" fontFamily="Arial, sans-serif" fontWeight="bold">
+                                        <text x="60" y="54" textAnchor="middle" fontSize="24" fill="white" fontFamily="Arial, sans-serif" fontWeight="bold">
                                           {groupNumber}
                                         </text>
                                       )}
