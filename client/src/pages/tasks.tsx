@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +15,7 @@ import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star } from "lucide-
 
 export default function Tasks() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   
   // Training states
@@ -299,8 +301,9 @@ export default function Tasks() {
     );
   }
 
-  // Safe data access
-  const currentDay = mainProgram?.currentDay || 1;
+  // Safe data access - use user's currentDay instead of program's currentDay
+  // This ensures each user has their own training progression
+  const currentDay = (user as any)?.currentDay || 1;
   const currentEpisode = `第${currentDay}集`;
   const difficultyBadge = getDifficultyBadge(currentDay);
   const currentDayTraining = trainingDaysArray.find((day: any) => day?.day === currentDay);

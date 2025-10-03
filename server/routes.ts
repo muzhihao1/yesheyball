@@ -271,30 +271,28 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Get users ranking (only real users)
+  // Get users ranking (all users sorted by experience)
   app.get("/api/users/ranking", isAuthenticated, async (req, res) => {
     try {
-      // Only return the current authenticated user for now
-      // Since we only have one real user in the database
-      const userId = requireSessionUserId(req);
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+      // Get all users and sort by experience
+      const allUsers = await storage.getAllUsers();
+
+      if (!allUsers || allUsers.length === 0) {
+        return res.json([]);
       }
 
-      // Return only the current user in ranking format
-      const rankings = [{
+      // Transform users to ranking format with rank numbers
+      const rankings = allUsers.map((user, index) => ({
         id: user.id,
         name: user.firstName || user.email?.split('@')[0] || 'User',
         level: user.level || 1,
         exp: user.exp || 0,
         streak: user.streak || 0,
         totalTime: user.totalTime || 0,
-        achievements: 0,
+        achievements: 0, // TODO: Calculate actual achievements count
         profileImageUrl: user.profileImageUrl,
-        rank: 1
-      }];
+        rank: index + 1
+      }));
 
       res.json(rankings);
     } catch (error) {
@@ -782,15 +780,23 @@ export async function registerRoutes(app: Express): Promise<void> {
             totalTime: currentUser.totalTime
           });
           
-          const updateData = {
+          const updateData: any = {
             exp: newTotalExp,
             level: levelInfo.level,
             completedTasks: currentUser.completedTasks + 1,
             totalTime: currentUser.totalTime + Math.floor((validatedData.duration || 0) / 60)
           };
-          
+
+          // If this is a guided training session (system training), advance to next day
+          if (validatedData.sessionType === "guided" && validatedData.dayId) {
+            const nextDay = validatedData.dayId + 1;
+            // Cap at 30 days for the main program
+            updateData.currentDay = Math.min(nextDay, 30);
+            console.log('Advancing user to day:', updateData.currentDay);
+          }
+
           console.log('Updating user with data:', updateData);
-          
+
           const updatedUser = await storage.updateUser(validatedData.userId, updateData);
           
           console.log('After update - User stats:', {

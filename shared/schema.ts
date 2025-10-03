@@ -39,6 +39,8 @@ export const users = pgTable("users", {
   currentLevel: integer("current_level").notNull().default(1), // Current exercise level
   currentExercise: integer("current_exercise").notNull().default(1), // Next exercise to complete
   completedExercises: jsonb("completed_exercises").default({}), // { "1": 3, "2": 0 } = level 1 has 3 completed, level 2 has 0
+  // System training progression tracking (耶氏台球学院系统教学)
+  currentDay: integer("current_day").notNull().default(1), // Current training day in the system program (1-30)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastActiveAt: timestamp("last_active_at").notNull().defaultNow(),
 });
