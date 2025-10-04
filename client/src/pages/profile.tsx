@@ -155,52 +155,82 @@ export default function Profile() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Current Level Progress */}
-              <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-green-600" />
-                    <span className="font-medium">初窥门径</span>
-                    <Badge variant="secondary">启明星</Badge>
-                  </div>
-                  <span className="text-sm text-gray-600">第 1 级</span>
-                </div>
-                <p className="text-sm text-gray-600 mb-3">掌握基础击球姿势与瞄准技巧</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>进度</span>
-                    <span>0/35 练习</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{width: '0%'}}></div>
-                  </div>
-                </div>
-              </div>
+              {/* All 8 Level Stages */}
+              {[
+                { level: 1, name: "初窥门径", category: "启明星", desc: "掌握基础击球姿势与瞄准技巧", total: 35 },
+                { level: 2, name: "小有所成", category: "启明星", desc: "练习各种角度的击球技巧", total: 40 },
+                { level: 3, name: "渐入佳境", category: "启明星", desc: "掌握基本走位与控球技巧", total: 45 },
+                { level: 4, name: "炉火纯青", category: "超新星", desc: "提升高难度球的控制能力", total: 60 },
+                { level: 5, name: "登堂入室", category: "超新星", desc: "精通复杂局面的处理技巧", total: 65 },
+                { level: 6, name: "超群绝伦", category: "超新星", desc: "掌握顶级竞技技巧", total: 70 },
+                { level: 7, name: "登峰造极", category: "智子星", desc: "达到职业级别的技术水平", total: 55 },
+                { level: 8, name: "出神入化", category: "智子星", desc: "成为台球大师", total: 55 }
+              ].map((stage, index) => {
+                const isCurrentLevel = stage.level === (user.level || 1);
+                const isCompleted = stage.level < (user.level || 1);
+                const isLocked = stage.level > (user.level || 1);
 
-              {/* Next Levels Preview */}
-              <div className="grid grid-cols-1 gap-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-60">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-gray-600">2</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-700">小有所成</p>
-                    <p className="text-xs text-gray-500">练习各种角度的击球技巧</p>
-                  </div>
-                  <Badge variant="outline" className="ml-auto">启明星</Badge>
-                </div>
+                // Get completed exercises for this level
+                const completedExercises = (user as any)?.completedExercises?.[stage.level] || 0;
+                const progress = stage.total > 0 ? Math.min((completedExercises / stage.total) * 100, isCompleted ? 100 : 95) : 0;
 
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-60">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-gray-600">3</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-700">渐入佳境</p>
-                    <p className="text-xs text-gray-500">掌握基本走位与控球技巧</p>
-                  </div>
-                  <Badge variant="outline" className="ml-auto">启明星</Badge>
-                </div>
-              </div>
+                if (isCurrentLevel) {
+                  // Current level - detailed card
+                  return (
+                    <div key={stage.level} className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Trophy className="h-5 w-5 text-green-600" />
+                          <span className="font-medium">{stage.name}</span>
+                          <Badge variant="secondary">{stage.category}</Badge>
+                        </div>
+                        <span className="text-sm text-gray-600">第 {stage.level} 级</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">{stage.desc}</p>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>进度</span>
+                          <span>{completedExercises}/{stage.total} 练习</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-green-600 h-2 rounded-full" style={{width: `${progress}%`}}></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  // Other levels - compact card
+                  return (
+                    <div
+                      key={stage.level}
+                      className={`flex items-center gap-3 p-3 rounded-lg ${
+                        isCompleted
+                          ? 'bg-green-50 border border-green-200'
+                          : 'bg-gray-50 opacity-60'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        isCompleted
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-300 text-gray-600'
+                      }`}>
+                        {isCompleted ? (
+                          <Trophy className="h-4 w-4" />
+                        ) : (
+                          <span className="text-sm font-medium">{stage.level}</span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className={`font-medium ${isCompleted ? 'text-gray-900' : 'text-gray-700'}`}>
+                          {stage.name}
+                        </p>
+                        <p className="text-xs text-gray-500">{stage.desc}</p>
+                      </div>
+                      <Badge variant="outline" className="ml-auto">{stage.category}</Badge>
+                    </div>
+                  );
+                }
+              })}
             </div>
           </CardContent>
         </Card>
