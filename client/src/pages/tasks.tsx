@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TrainingCompleteModal } from "@/components/TrainingCompleteModal";
+import { RatingModal } from "@/components/RatingModal";
+import { AiFeedbackModal } from "@/components/AiFeedbackModal";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star } from "lucide-react";
 
@@ -45,6 +47,12 @@ export default function Tasks() {
     stars: number;
     duration: number;
   } | null>(null);
+
+  // Rating and AI feedback states
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showAiFeedbackModal, setShowAiFeedbackModal] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<string>("");
+  const [currentRating, setCurrentRating] = useState<number>(0);
 
   // Get training programs with error handling
   const { data: programs = [], isLoading: programsLoading } = useQuery({
@@ -255,8 +263,99 @@ export default function Tasks() {
   };
 
   const handleStopTraining = () => {
-    // Open completion dialog instead of immediately stopping
-    setShowTrainingComplete(true);
+    // Open rating modal instead of old dialog
+    setShowRatingModal(true);
+  };
+
+  // New: Handle rating submission with AI feedback
+  const handleRatingSubmit = async (rating: number, userFeedback?: string) => {
+    try {
+      setShowRatingModal(false);
+
+      const duration = isGuidedTraining ? guidedElapsedTime :
+                      isCustomTraining ? customElapsedTime :
+                      specialElapsedTime;
+
+      const sessionData = {
+        title: currentSessionType === "系统训练" ?
+          `第${currentDay}集：${currentDayTraining?.title || "训练"}` :
+          currentSessionType,
+        description: currentSessionType === "系统训练" ?
+          currentDayTraining?.description || "" :
+          currentSessionType === "特训" ? "专注于力度和准度的针对性训练" : "根据个人需要进行针对性练习",
+        sessionType: currentSessionType === "系统训练" ? "guided" : "custom",
+        duration,
+        notes: trainingNotes + (userFeedback ? `\n补充：${userFeedback}` : ''),
+        rating,
+        programId: currentSessionType === "系统训练" ? mainProgram?.id : undefined,
+        dayId: currentSessionType === "系统训练" ? currentDayTraining?.day : undefined
+      };
+
+      // Create training session
+      const response = await apiRequest("/api/training-sessions", "POST", {
+        ...sessionData,
+        completed: true
+      });
+      const data = await response.json();
+
+      // Generate AI feedback
+      const feedbackResponse = await apiRequest("/api/coaching-feedback", "POST", {
+        sessionType: currentSessionType,
+        duration,
+        rating,
+        notes: sessionData.notes
+      });
+      const feedbackData = await feedbackResponse.json();
+
+      // Save the rating and feedback
+      setCurrentRating(rating);
+      setAiFeedback(feedbackData.feedback || "");
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+
+      // Calculate experience points
+      const baseExp = 50;
+      const durationBonus = Math.floor(duration / 10) * 5;
+      const ratingBonus = rating * 20;
+      const earnedExp = baseExp + durationBonus + ratingBonus;
+
+      // Set celebration modal data
+      setCelebrationData({
+        sessionTitle: sessionData.title,
+        earnedExp,
+        stars: rating,
+        duration: Math.floor(duration / 60)
+      });
+
+      // Reset training states
+      setShowTrainingComplete(false);
+      setTrainingNotes("");
+      setCompletionRating("");
+      resetTrainingStates();
+
+      // Show celebration modal first
+      setShowCelebration(true);
+
+      // Show AI feedback modal after celebration (with delay)
+      setTimeout(() => {
+        if (feedbackData.feedback) {
+          setShowAiFeedbackModal(true);
+        }
+      }, 3000); // Show AI feedback 3 seconds after celebration starts
+
+    } catch (error: any) {
+      console.error("Rating submission error:", error);
+      toast({
+        title: "保存失败",
+        description: error.message || "训练记录保存失败，请重试",
+        variant: "destructive"
+      });
+      // Reopen rating modal on error
+      setShowRatingModal(true);
+    }
   };
 
   const handleCompleteTraining = () => {
@@ -861,6 +960,30 @@ export default function Tasks() {
             setShowCelebration(false);
             setCelebrationData(null);
           }}
+        />
+      )}
+
+      {/* Rating Modal */}
+      {showRatingModal && (
+        <RatingModal
+          sessionType={currentSessionType}
+          duration={
+            isGuidedTraining ? guidedElapsedTime :
+            isCustomTraining ? customElapsedTime :
+            specialElapsedTime
+          }
+          notes={trainingNotes}
+          onSubmit={handleRatingSubmit}
+          onCancel={() => setShowRatingModal(false)}
+        />
+      )}
+
+      {/* AI Feedback Modal */}
+      {showAiFeedbackModal && aiFeedback && (
+        <AiFeedbackModal
+          feedback={aiFeedback}
+          rating={currentRating}
+          onClose={() => setShowAiFeedbackModal(false)}
         />
       )}
     </div>

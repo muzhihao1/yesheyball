@@ -590,17 +590,21 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Generate coaching feedback for training session
   app.post("/api/coaching-feedback", async (req, res) => {
     try {
-      const { duration, summary, rating, exerciseType, level } = req.body;
-      
-      if (!duration || !summary) {
-        return res.status(400).json({ message: "Duration and summary are required" });
+      // Support both old format (summary) and new format (sessionType + notes)
+      const { duration, summary, notes, sessionType, rating, exerciseType, level } = req.body;
+
+      // Use notes if provided (new format), otherwise fall back to summary (old format)
+      const trainingNotes = notes || summary;
+
+      if (!duration || !trainingNotes) {
+        return res.status(400).json({ message: "Duration and training notes are required" });
       }
 
       const feedback = await generateCoachingFeedback({
         duration: parseInt(duration),
-        summary: summary.trim(),
+        summary: trainingNotes.trim(),
         rating: rating ? parseInt(rating) : null,
-        exerciseType,
+        exerciseType: sessionType || exerciseType,
         level
       });
 

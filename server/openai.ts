@@ -15,23 +15,39 @@ export async function generateCoachingFeedback(trainingSession: TrainingSession)
   const durationMinutes = Math.floor(trainingSession.duration / 60);
   const durationSeconds = trainingSession.duration % 60;
   const timeString = `${durationMinutes}分${durationSeconds}秒`;
-  
+
+  // Determine feedback tone based on rating
+  let ratingContext = '';
+  if (trainingSession.rating) {
+    if (trainingSession.rating >= 4) {
+      ratingContext = '学员对这次训练非常满意，状态很好。';
+    } else if (trainingSession.rating === 3) {
+      ratingContext = '学员觉得训练效果一般，可能遇到了一些瓶颈。';
+    } else {
+      ratingContext = '学员这次训练不太顺利，需要更多鼓励和具体指导。';
+    }
+  }
+
   const prompt = `你是一位专业的中式八球台球教练，拥有20年的教学经验。请根据学员的训练总结给出专业的指导建议。
 
 训练信息：
 - 训练时长：${timeString}
-- 训练总结：${trainingSession.summary}
-- 自评分数：${trainingSession.rating ? `${trainingSession.rating}星` : '未评分'}
-- 练习类型：${trainingSession.exerciseType || '基础训练'}
+- 训练笔记：${trainingSession.summary}
+- 自评分数：${trainingSession.rating ? `${trainingSession.rating}星（满分5星）` : '未评分'}
+- 训练类型：${trainingSession.exerciseType || '系统训练'}
 - 当前等级：${trainingSession.level || 1}级
+${ratingContext ? `- 训练状态：${ratingContext}` : ''}
 
 请以一位经验丰富、耐心细致的台球教练身份回复，要求：
-1. 肯定学员的努力和进步
-2. 针对训练总结中提到的问题给出具体的技术指导
-3. 提供2-3个实用的练习建议
-4. 鼓励学员继续坚持训练
-5. 语言要专业但通俗易懂，富有激励性
-6. 回复控制在150-200字内
+1. 首先肯定学员的训练时长和努力（简短）
+2. 针对训练笔记中提到的具体内容给出技术指导
+3. 根据评分情况给予相应的鼓励或建议：
+   - 4-5星：继续保持，提出进阶挑战
+   - 3星：找出可能的问题点，给出改进方向
+   - 1-2星：重点鼓励，提供简单可行的改进方法
+4. 提供1-2个具体的下次训练建议
+5. 语言要专业但通俗易懂，温暖且富有激励性
+6. 回复控制在120-180字内，分段清晰
 
 请用温暖、专业的语调回复：`;
 
