@@ -5,6 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { AchievementGrid } from "@/components/AchievementGrid";
+import { TrainingTrendChart } from "@/components/TrainingTrendChart";
+import { SkillRadarChart } from "@/components/SkillRadarChart";
 import {
   Settings,
   Trophy,
@@ -38,6 +40,16 @@ export default function Profile() {
 
   const { data: trainingRecords } = useQuery({
     queryKey: ["/api/training-records"],
+    enabled: !!user,
+  });
+
+  const { data: trendData } = useQuery({
+    queryKey: ["/api/user/stats/trend"],
+    enabled: !!user,
+  });
+
+  const { data: skillsData } = useQuery({
+    queryKey: ["/api/user/stats/skills"],
     enabled: !!user,
   });
 
@@ -141,6 +153,12 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
+
+        {/* Data Visualization Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <TrainingTrendChart data={trendData as any || []} />
+          <SkillRadarChart skills={skillsData as any || []} />
+        </div>
 
         {/* Growth Path */}
         <Card className="mb-6">

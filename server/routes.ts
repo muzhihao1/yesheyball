@@ -1355,14 +1355,109 @@ export async function registerRoutes(app: Express): Promise<void> {
         totalTime: user.totalTime,
         achievements: user.achievements,
         diaryCount: diaryEntries.length,
-        averageRating: completedTasks.length > 0 
-          ? completedTasks.reduce((sum, task) => sum + (task.rating || 0), 0) / completedTasks.length 
+        averageRating: completedTasks.length > 0
+          ? completedTasks.reduce((sum, task) => sum + (task.rating || 0), 0) / completedTasks.length
           : 0,
       };
 
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user stats" });
+    }
+  });
+
+  // Get training trend data (last 30 days)
+  app.get("/api/user/stats/trend", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const days = parseInt(req.query.days as string) || 30;
+
+      // Get training sessions from the last N days
+      const trainingSessions = await storage.getUserTrainingSessions(userId);
+
+      // Group by date and calculate total duration per day
+      const trendMap = new Map<string, number>();
+      const now = new Date();
+      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+      trainingSessions.forEach((session: any) => {
+        const sessionDate = new Date(session.createdAt);
+        if (sessionDate >= cutoffDate && session.completed) {
+          const dateKey = sessionDate.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+          const currentDuration = trendMap.get(dateKey) || 0;
+          trendMap.set(dateKey, currentDuration + (session.duration || 0));
+        }
+      });
+
+      // Convert to array and sort by date
+      const trendData = Array.from(trendMap.entries())
+        .map(([date, duration]) => ({ date, duration }))
+        .sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+      res.json(trendData);
+    } catch (error) {
+      console.error("Trend data error:", error);
+      res.status(500).json({ message: "Failed to get trend data" });
+    }
+  });
+
+  // Get user skill levels for radar chart
+  app.get("/api/user/stats/skills", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const trainingSessions = await storage.getUserTrainingSessions(userId);
+      const completedSessions = trainingSessions.filter((s: any) => s.completed);
+
+      // Calculate skill levels based on training data
+      // These are simplified calculations - you can make them more sophisticated
+      const totalSessions = completedSessions.length;
+      const avgRating = completedSessions.reduce((sum: any, s: any) => sum + (s.rating || 0), 0) / Math.max(totalSessions, 1);
+
+      // Base skills calculation on level, experience, and training history
+      const baseSkill = Math.min(20 + (user.level * 8), 100);
+      const experienceBonus = Math.min((user.exp / 100), 30);
+
+      const skills = [
+        {
+          name: '准度',
+          value: Math.min(Math.round(baseSkill + experienceBonus + (avgRating * 5)), 100),
+          fullMark: 100
+        },
+        {
+          name: '力度',
+          value: Math.min(Math.round(baseSkill + experienceBonus - 5), 100),
+          fullMark: 100
+        },
+        {
+          name: '走位',
+          value: Math.min(Math.round(baseSkill + (experienceBonus * 0.8)), 100),
+          fullMark: 100
+        },
+        {
+          name: '策略',
+          value: Math.min(Math.round(baseSkill + (experienceBonus * 0.9) + (totalSessions * 2)), 100),
+          fullMark: 100
+        },
+        {
+          name: '心态',
+          value: Math.min(Math.round(baseSkill + experienceBonus + (user.streak * 3)), 100),
+          fullMark: 100
+        }
+      ];
+
+      res.json(skills);
+    } catch (error) {
+      console.error("Skills data error:", error);
+      res.status(500).json({ message: "Failed to get skills data" });
     }
   });
 
