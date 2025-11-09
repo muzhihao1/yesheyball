@@ -1131,6 +1131,51 @@ export default function Levels() {
         </div>
       </div>
 
+      {/* Overall Progress Indicator - P1-4 */}
+      <div className="max-w-lg mx-auto px-4 mb-8">
+        <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-2xl border-none">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold mb-1">学习进度</h2>
+                <p className="text-green-100 text-sm">共 {levelStages.length} 个等级</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold">
+                  {levelStages.filter(s => s.completed).length}/{levelStages.length}
+                </div>
+                <p className="text-green-100 text-sm">已完成等级</p>
+              </div>
+            </div>
+
+            {/* Overall progress bar */}
+            <div className="bg-white/20 rounded-full h-4 overflow-hidden mb-3">
+              <div
+                className="bg-white h-4 rounded-full transition-all duration-1000 ease-out"
+                style={{
+                  width: `${(levelStages.filter(s => s.completed).length / levelStages.length) * 100}%`
+                }}
+              />
+            </div>
+
+            {/* Exercise completion statistics */}
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4" />
+                <span>
+                  已完成 {levelStages.reduce((sum, stage) => sum + stage.completedExercises, 0)} /
+                  {levelStages.reduce((sum, stage) => sum + stage.totalExercises, 0)} 题练习
+                </span>
+              </div>
+              <div className="text-green-100">
+                {Math.round((levelStages.reduce((sum, stage) => sum + stage.completedExercises, 0) /
+                  levelStages.reduce((sum, stage) => sum + stage.totalExercises, 0)) * 100)}%
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Duolingo-style Level Map */}
       <div className="max-w-lg mx-auto px-4 pb-12">
         <div className="relative">
