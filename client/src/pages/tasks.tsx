@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TrainingCompleteModal } from "@/components/TrainingCompleteModal";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star } from "lucide-react";
 
@@ -35,6 +36,15 @@ export default function Tasks() {
   const [completionRating, setCompletionRating] = useState("");
   const [currentSessionType, setCurrentSessionType] = useState("");
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+
+  // Celebration modal states
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationData, setCelebrationData] = useState<{
+    sessionTitle: string;
+    earnedExp: number;
+    stars: number;
+    duration: number;
+  } | null>(null);
 
   // Get training programs with error handling
   const { data: programs = [], isLoading: programsLoading } = useQuery({
@@ -77,18 +87,33 @@ export default function Tasks() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+
+      // Calculate experience points (simplified - you can adjust this based on your logic)
+      const baseExp = 50;
+      const durationBonus = Math.floor(variables.duration / 10) * 5; // 5 exp per 10 minutes
+      const ratingBonus = (variables.rating || 0) * 20; // 20 exp per star
+      const earnedExp = baseExp + durationBonus + ratingBonus;
+
+      // Set celebration modal data
+      setCelebrationData({
+        sessionTitle: variables.title || "训练课程",
+        earnedExp: earnedExp,
+        stars: variables.rating || 3,
+        duration: Math.floor(variables.duration / 60) // Convert seconds to minutes
+      });
+
+      // Close training complete dialog and show celebration
       setShowTrainingComplete(false);
       setTrainingNotes("");
       setCompletionRating("");
       resetTrainingStates();
-      toast({
-        title: "训练完成",
-        description: "训练记录已保存，经验值已获得"
-      });
+
+      // Show celebration modal
+      setShowCelebration(true);
     },
     onError: (error: Error) => {
       console.error("Complete training error:", error);
@@ -824,6 +849,20 @@ export default function Tasks() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Celebration Modal */}
+      {showCelebration && celebrationData && (
+        <TrainingCompleteModal
+          sessionTitle={celebrationData.sessionTitle}
+          earnedExp={celebrationData.earnedExp}
+          stars={celebrationData.stars}
+          duration={celebrationData.duration}
+          onClose={() => {
+            setShowCelebration(false);
+            setCelebrationData(null);
+          }}
+        />
+      )}
     </div>
   );
 }
