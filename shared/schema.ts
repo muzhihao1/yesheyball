@@ -152,6 +152,29 @@ export const userAchievements = pgTable("user_achievements", {
   completed: boolean("completed").notNull().default(false),
 });
 
+// === Daily Goals System ===
+export const goalTemplates = pgTable("goal_templates", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // "SESSION_COUNT", "TOTAL_DURATION", "MIN_RATING"
+  description: text("description").notNull(), // "完成 {target} 次训练"
+  difficulty: text("difficulty").notNull().default("EASY"), // "EASY", "MEDIUM", "HARD"
+  rewardXp: integer("reward_xp").notNull().default(10),
+  active: boolean("active").notNull().default(true), // Whether this template is active
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const userDailyGoals = pgTable("user_daily_goals", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  goalTemplateId: integer("goal_template_id").notNull().references(() => goalTemplates.id),
+  date: timestamp("date").notNull(), // The date this goal is for (stored as start of day UTC)
+  targetValue: integer("target_value").notNull(), // e.g., 3 sessions, 15 minutes
+  currentValue: integer("current_value").notNull().default(0),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   lastActiveAt: true,
@@ -234,6 +257,22 @@ export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
 
+// Daily Goals Schemas
+export const insertGoalTemplateSchema = createInsertSchema(goalTemplates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserDailyGoalSchema = createInsertSchema(userDailyGoals).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type GoalTemplate = typeof goalTemplates.$inferSelect;
+export type InsertGoalTemplate = z.infer<typeof insertGoalTemplateSchema>;
+export type UserDailyGoal = typeof userDailyGoals.$inferSelect;
+export type InsertUserDailyGoal = z.infer<typeof insertUserDailyGoalSchema>;
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   userTasks: many(userTasks),
@@ -241,6 +280,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   feedbacks: many(feedbacks),
   trainingSessions: many(trainingSessions),
   userAchievements: many(userAchievements),
+  userDailyGoals: many(userDailyGoals),
 }));
 
 export const tasksRelations = relations(tasks, ({ many }) => ({
@@ -325,5 +365,20 @@ export const userAchievementsRelations = relations(userAchievements, ({ one }) =
   achievement: one(achievements, {
     fields: [userAchievements.achievementId],
     references: [achievements.id],
+  }),
+}));
+
+export const goalTemplatesRelations = relations(goalTemplates, ({ many }) => ({
+  userDailyGoals: many(userDailyGoals),
+}));
+
+export const userDailyGoalsRelations = relations(userDailyGoals, ({ one }) => ({
+  user: one(users, {
+    fields: [userDailyGoals.userId],
+    references: [users.id],
+  }),
+  template: one(goalTemplates, {
+    fields: [userDailyGoals.goalTemplateId],
+    references: [goalTemplates.id],
   }),
 }));

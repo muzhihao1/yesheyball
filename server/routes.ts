@@ -16,6 +16,7 @@ import {
   getExperienceBreakdown 
 } from "./experienceSystem.js";
 import { recalculateUserExperience } from "./recalculateExperience.js";
+import { initializeGoalTemplates, getUserGoalsWithDetails, updateGoalProgress } from "./goalService.js";
 import { z } from "zod";
 import OpenAI from "openai";
 import path from "path";
@@ -663,6 +664,36 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // === Daily Goals Routes ===
+
+  // Get user's daily goals
+  app.get("/api/goals/daily", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const goals = await getUserGoalsWithDetails(userId);
+      res.json(goals);
+    } catch (error: any) {
+      console.error("Failed to get daily goals:", error);
+      res.status(500).json({
+        message: "Failed to get daily goals",
+        error: error.message
+      });
+    }
+  });
+
+  // Initialize goal templates (admin/development only)
+  app.post("/api/admin/init-goal-templates", async (req, res) => {
+    try {
+      const result = await initializeGoalTemplates();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({
+        message: "Failed to initialize goal templates",
+        error: error.message
+      });
+    }
+  });
+
   // Training program routes
   app.get("/api/training-programs", async (req, res) => {
     try {
@@ -824,7 +855,20 @@ export async function registerRoutes(app: Express): Promise<void> {
           
           // Check and unlock achievements after updating user stats
           await storage.checkAndUnlockAchievements(validatedData.userId);
-          
+
+          // Update daily goals progress
+          try {
+            await updateGoalProgress(validatedData.userId, {
+              type: "TRAINING_COMPLETED",
+              duration: Math.floor((validatedData.duration || 0) / 60), // Convert seconds to minutes
+              rating: validatedData.rating || null,
+            });
+            console.log('Daily goals progress updated');
+          } catch (error) {
+            console.error('Failed to update daily goals:', error);
+            // Don't fail the whole request if goal update fails
+          }
+
           // Auto-progress to next episode if this was a guided session from training program
           if (validatedData.programId && validatedData.dayId && validatedData.sessionType === "guided") {
             try {
