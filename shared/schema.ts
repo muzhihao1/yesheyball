@@ -273,6 +273,76 @@ export type InsertGoalTemplate = z.infer<typeof insertGoalTemplateSchema>;
 export type UserDailyGoal = typeof userDailyGoals.$inferSelect;
 export type InsertUserDailyGoal = z.infer<typeof insertUserDailyGoalSchema>;
 
+// === Skill Tree System ===
+export const skills = pgTable("skills", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  // 用于前端渲染的位置信息 (例如: { x: 100, y: 200 })
+  position: jsonb("position").default('{}').notNull(),
+  // UI相关的元数据，如图标、颜色等
+  metadata: jsonb("metadata").default('{}').notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const skillDependencies = pgTable("skill_dependencies", {
+  sourceSkillId: integer("source_skill_id").notNull().references(() => skills.id, { onDelete: 'cascade' }),
+  targetSkillId: integer("target_skill_id").notNull().references(() => skills.id, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: { name: 'skill_dependencies_pk', columns: [table.sourceSkillId, table.targetSkillId] },
+}));
+
+export const skillUnlockConditions = pgTable("skill_unlock_conditions", {
+  id: serial("id").primaryKey(),
+  skillId: integer("skill_id").notNull().references(() => skills.id, { onDelete: 'cascade' }),
+  // 条件类型: 'LEVEL', 'COURSE', 'ACHIEVEMENT', 'DAILY_GOAL' 等
+  conditionType: varchar("condition_type", { length: 50 }).notNull(),
+  // 条件关联的ID，例如课程ID、成就ID (使用 text 以支持灵活的引用)
+  conditionValue: text("condition_value").notNull(),
+  // 可选：完成次数要求，默认为1
+  requiredCount: integer("required_count").notNull().default(1),
+  // 条件描述，用于前端展示
+  conditionDescription: text("condition_description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const userSkillProgress = pgTable("user_skill_progress", {
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  skillId: integer("skill_id").notNull().references(() => skills.id, { onDelete: 'cascade' }),
+  unlockedAt: timestamp("unlocked_at").notNull().defaultNow(),
+  // 记录解锁时的数据快照，用于审计或展示
+  unlockContext: jsonb("unlock_context").default('{}').notNull(),
+}, (table) => ({
+  pk: { name: 'user_skill_progress_pk', columns: [table.userId, table.skillId] },
+}));
+
+// Skill Tree Insert Schemas
+export const insertSkillSchema = createInsertSchema(skills).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSkillDependencySchema = createInsertSchema(skillDependencies);
+
+export const insertSkillUnlockConditionSchema = createInsertSchema(skillUnlockConditions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserSkillProgressSchema = createInsertSchema(userSkillProgress).omit({
+  unlockedAt: true,
+});
+
+// Skill Tree Types
+export type Skill = typeof skills.$inferSelect;
+export type InsertSkill = z.infer<typeof insertSkillSchema>;
+export type SkillDependency = typeof skillDependencies.$inferSelect;
+export type InsertSkillDependency = z.infer<typeof insertSkillDependencySchema>;
+export type SkillUnlockCondition = typeof skillUnlockConditions.$inferSelect;
+export type InsertSkillUnlockCondition = z.infer<typeof insertSkillUnlockConditionSchema>;
+export type UserSkillProgress = typeof userSkillProgress.$inferSelect;
+export type InsertUserSkillProgress = z.infer<typeof insertUserSkillProgressSchema>;
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   userTasks: many(userTasks),
@@ -281,6 +351,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   trainingSessions: many(trainingSessions),
   userAchievements: many(userAchievements),
   userDailyGoals: many(userDailyGoals),
+  userSkillProgress: many(userSkillProgress),
 }));
 
 export const tasksRelations = relations(tasks, ({ many }) => ({
@@ -380,5 +451,43 @@ export const userDailyGoalsRelations = relations(userDailyGoals, ({ one }) => ({
   template: one(goalTemplates, {
     fields: [userDailyGoals.goalTemplateId],
     references: [goalTemplates.id],
+  }),
+}));
+
+export const skillsRelations = relations(skills, ({ many }) => ({
+  dependencies: many(skillDependencies, { relationName: 'source' }),
+  dependents: many(skillDependencies, { relationName: 'target' }),
+  unlockConditions: many(skillUnlockConditions),
+  userProgress: many(userSkillProgress),
+}));
+
+export const skillDependenciesRelations = relations(skillDependencies, ({ one }) => ({
+  sourceSkill: one(skills, {
+    fields: [skillDependencies.sourceSkillId],
+    references: [skills.id],
+    relationName: 'source',
+  }),
+  targetSkill: one(skills, {
+    fields: [skillDependencies.targetSkillId],
+    references: [skills.id],
+    relationName: 'target',
+  }),
+}));
+
+export const skillUnlockConditionsRelations = relations(skillUnlockConditions, ({ one }) => ({
+  skill: one(skills, {
+    fields: [skillUnlockConditions.skillId],
+    references: [skills.id],
+  }),
+}));
+
+export const userSkillProgressRelations = relations(userSkillProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [userSkillProgress.userId],
+    references: [users.id],
+  }),
+  skill: one(skills, {
+    fields: [userSkillProgress.skillId],
+    references: [skills.id],
   }),
 }));
