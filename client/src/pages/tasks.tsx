@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { TrainingCompleteModal } from "@/components/TrainingCompleteModal";
 import { RatingModal } from "@/components/RatingModal";
 import { AiFeedbackModal } from "@/components/AiFeedbackModal";
+import { AchievementUnlockModal } from "@/components/AchievementUnlockModal";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star } from "lucide-react";
 
@@ -53,6 +54,10 @@ export default function Tasks() {
   const [showAiFeedbackModal, setShowAiFeedbackModal] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<string>("");
   const [currentRating, setCurrentRating] = useState<number>(0);
+
+  // Achievement unlock states
+  const [unlockedAchievements, setUnlockedAchievements] = useState<any[]>([]);
+  const [showAchievementModal, setShowAchievementModal] = useState(false);
 
   // Get training programs with error handling
   const { data: programs = [], isLoading: programsLoading } = useQuery({
@@ -297,6 +302,13 @@ export default function Tasks() {
         completed: true
       });
       const data = await response.json();
+
+      // Check for achievement unlocks
+      const achievementResponse = await apiRequest("/api/check-achievements", "POST", {});
+      const newAchievements = await achievementResponse.json();
+      if (newAchievements && newAchievements.length > 0) {
+        setUnlockedAchievements(newAchievements);
+      }
 
       // Generate AI feedback
       const feedbackResponse = await apiRequest("/api/coaching-feedback", "POST", {
@@ -983,7 +995,26 @@ export default function Tasks() {
         <AiFeedbackModal
           feedback={aiFeedback}
           rating={currentRating}
-          onClose={() => setShowAiFeedbackModal(false)}
+          onClose={() => {
+            setShowAiFeedbackModal(false);
+            // Show achievement modal after AI feedback if there are unlocked achievements
+            if (unlockedAchievements.length > 0) {
+              setTimeout(() => {
+                setShowAchievementModal(true);
+              }, 500); // Small delay for smooth transition
+            }
+          }}
+        />
+      )}
+
+      {/* Achievement Unlock Modal */}
+      {showAchievementModal && unlockedAchievements.length > 0 && (
+        <AchievementUnlockModal
+          achievements={unlockedAchievements}
+          onClose={() => {
+            setShowAchievementModal(false);
+            setUnlockedAchievements([]); // Clear unlocked achievements
+          }}
         />
       )}
     </div>

@@ -1,39 +1,136 @@
 /**
  * Achievement Unlock Modal Component
  *
- * Displays a celebration animation when a user unlocks a new achievement
+ * Celebration modal displayed when user unlocks new achievements
  *
  * Features:
- * - Full-screen overlay with backdrop blur
- * - Spring animations using Framer Motion
- * - Pulsing achievement icon
+ * - Fireworks and confetti animation
+ * - Achievement icon with scale animation
  * - Experience reward display
- * - Close button and auto-close on confirm
+ * - Support for multiple achievements in sequence
+ * - Auto-dismiss after viewing
  *
  * Usage:
  * ```tsx
- * {showUnlock && (
+ * {unlockedAchievements.length > 0 && (
  *   <AchievementUnlockModal
- *     achievement={unlockedAchievement}
- *     onClose={() => setShowUnlock(false)}
+ *     achievements={unlockedAchievements}
+ *     onClose={() => setUnlockedAchievements([])}
  *   />
  * )}
  * ```
  */
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import Confetti from 'react-confetti';
+import { useWindowSize } from '@/hooks/useWindowSize';
 import { Button } from '@/components/ui/button';
-import type { Achievement } from '@/lib/types';
+import { Trophy, Star, ChevronRight, ChevronLeft, X } from 'lucide-react';
+
+interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  expReward: number;
+  category: string;
+}
+
+interface UserAchievement {
+  achievement: Achievement;
+  unlockedAt?: string;
+}
 
 interface AchievementUnlockModalProps {
-  achievement: Achievement;
+  achievements: UserAchievement[];
   onClose: () => void;
 }
 
-export function AchievementUnlockModal({ achievement, onClose }: AchievementUnlockModalProps) {
+export function AchievementUnlockModal({
+  achievements,
+  onClose,
+}: AchievementUnlockModalProps) {
+  const { width, height } = useWindowSize();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(true);
+
+  const currentAchievement = achievements[currentIndex]?.achievement;
+  const hasMultiple = achievements.length > 1;
+  const isLast = currentIndex === achievements.length - 1;
+
+  useEffect(() => {
+    // Auto-hide confetti after 4 seconds
+    const timer = setTimeout(() => {
+      setShowConfetti(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [currentIndex]);
+
+  const handleNext = () => {
+    if (currentIndex < achievements.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setShowConfetti(true); // Reset confetti for next achievement
+    } else {
+      onClose();
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setShowConfetti(true);
+    }
+  };
+
+  const getCategoryColor = (category: string): string => {
+    switch (category) {
+      case 'master':
+        return 'from-purple-500 to-pink-600';
+      case 'advanced':
+        return 'from-orange-500 to-red-600';
+      case 'intermediate':
+        return 'from-blue-500 to-indigo-600';
+      case 'beginner':
+      default:
+        return 'from-green-500 to-emerald-600';
+    }
+  };
+
+  const getCategoryBadge = (category: string): string => {
+    switch (category) {
+      case 'master':
+        return '大师级';
+      case 'advanced':
+        return '高级';
+      case 'intermediate':
+        return '中级';
+      case 'beginner':
+      default:
+        return '初级';
+    }
+  };
+
+  if (!currentAchievement) {
+    return null;
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+    <>
+      {/* Confetti Effect */}
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          recycle={false}
+          numberOfPieces={400}
+          gravity={0.4}
+          colors={['#ffd700', '#ffed4e', '#ffb347', '#ff6347', '#ff1493', '#9370db']}
+        />
+      )}
+
+      {/* Modal Overlay */}
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
       <motion.div
         className="bg-white rounded-2xl max-w-md w-full p-8 relative shadow-2xl"
         initial={{ scale: 0, rotate: -10 }}
@@ -72,7 +169,7 @@ export function AchievementUnlockModal({ achievement, onClose }: AchievementUnlo
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
           >
-            <span className="text-6xl">{achievement.icon}</span>
+            <span className="text-6xl">{currentAchievement.icon}</span>
           </motion.div>
         </motion.div>
 
@@ -84,10 +181,10 @@ export function AchievementUnlockModal({ achievement, onClose }: AchievementUnlo
           transition={{ delay: 0.4 }}
         >
           <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            {achievement.name}
+            {currentAchievement.name}
           </h3>
           <p className="text-gray-600">
-            {achievement.description}
+            {currentAchievement.description}
           </p>
         </motion.div>
 
@@ -105,7 +202,7 @@ export function AchievementUnlockModal({ achievement, onClose }: AchievementUnlo
             animate={{ scale: [0, 1.3, 1] }}
             transition={{ delay: 0.6, duration: 0.6, ease: 'easeOut' }}
           >
-            +{achievement.expReward}
+            +{currentAchievement.expReward}
           </motion.div>
         </motion.div>
 
@@ -118,32 +215,62 @@ export function AchievementUnlockModal({ achievement, onClose }: AchievementUnlo
         >
           <span className={`
             px-3 py-1 rounded-full text-xs font-semibold
-            ${achievement.category === 'beginner' ? 'bg-blue-100 text-blue-800' : ''}
-            ${achievement.category === 'intermediate' ? 'bg-purple-100 text-purple-800' : ''}
-            ${achievement.category === 'advanced' ? 'bg-orange-100 text-orange-800' : ''}
-            ${achievement.category === 'master' ? 'bg-red-100 text-red-800' : ''}
+            ${currentAchievement.category === 'beginner' ? 'bg-blue-100 text-blue-800' : ''}
+            ${currentAchievement.category === 'intermediate' ? 'bg-purple-100 text-purple-800' : ''}
+            ${currentAchievement.category === 'advanced' ? 'bg-orange-100 text-orange-800' : ''}
+            ${currentAchievement.category === 'master' ? 'bg-red-100 text-red-800' : ''}
           `}>
-            {achievement.category === 'beginner' && '新手'}
-            {achievement.category === 'intermediate' && '进阶'}
-            {achievement.category === 'advanced' && '高级'}
-            {achievement.category === 'master' && '大师'}
+            {currentAchievement.category === 'beginner' && '新手'}
+            {currentAchievement.category === 'intermediate' && '进阶'}
+            {currentAchievement.category === 'advanced' && '高级'}
+            {currentAchievement.category === 'master' && '大师'}
           </span>
         </motion.div>
 
-        {/* Confirm button */}
+        {/* Navigation and confirm buttons */}
+        {hasMultiple && (
+          <motion.div
+            className="flex items-center justify-center gap-2 mb-4 text-sm text-gray-600"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            <Trophy className="w-4 h-4 text-yellow-500" />
+            <span>解锁了 {achievements.length} 个成就 · {currentIndex + 1}/{achievements.length}</span>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.8 }}
+          className="flex gap-2"
         >
+          {hasMultiple && currentIndex > 0 && (
+            <Button
+              onClick={handlePrevious}
+              variant="outline"
+              className="flex-1"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              上一个
+            </Button>
+          )}
+
           <Button
-            onClick={onClose}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3"
+            onClick={handleNext}
+            className={`${hasMultiple && currentIndex > 0 ? 'flex-1' : 'w-full'} bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3`}
           >
-            太棒了！继续努力
+            {isLast ? '太棒了！继续努力' : (
+              <>
+                下一个
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </>
+            )}
           </Button>
         </motion.div>
       </motion.div>
     </div>
+    </>
   );
 }
