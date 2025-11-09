@@ -14,6 +14,7 @@ import { TrainingCompleteModal } from "@/components/TrainingCompleteModal";
 import { RatingModal } from "@/components/RatingModal";
 import { AiFeedbackModal } from "@/components/AiFeedbackModal";
 import { AchievementUnlockModal } from "@/components/AchievementUnlockModal";
+import { DailyGoalsPanel } from "@/components/DailyGoalsPanel";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star } from "lucide-react";
 
@@ -448,6 +449,9 @@ export default function Tasks() {
 
   return (
     <div className="p-4 space-y-6 pb-24">
+      {/* Daily Goals Section */}
+      <DailyGoalsPanel />
+
       {/* System Training Section */}
       <Card className="border-2 border-green-200 bg-green-50">
         <CardHeader className="pb-3">
