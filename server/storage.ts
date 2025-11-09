@@ -60,6 +60,7 @@ export interface IStorage {
   checkAndUnlockAchievements(userId: string): Promise<UserAchievement[]>;
   unlockAchievement(userId: string, achievementId: number): Promise<UserAchievement>;
   updateAchievementProgress(userId: string, achievementId: number, progress: number): Promise<void>;
+  initializeAchievements(): Promise<{ inserted: number; skipped: number; message: string }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -531,6 +532,233 @@ export class DatabaseStorage implements IStorage {
           eq(userAchievements.achievementId, achievementId)
         )
       );
+  }
+
+  async initializeAchievements(): Promise<{ inserted: number; skipped: number; message: string }> {
+    const initialAchievements = [
+      // === 成长路径类 (Level-based) ===
+      {
+        name: "初学乍练",
+        description: "达到等级 1 - 踏上台球训练之旅",
+        icon: "🎱",
+        type: "level",
+        condition: { type: "level", target: 1 },
+        expReward: 10,
+        category: "beginner"
+      },
+      {
+        name: "渐入佳境",
+        description: "达到等级 3 - 掌握了基础技巧",
+        icon: "⭐",
+        type: "level",
+        condition: { type: "level", target: 3 },
+        expReward: 30,
+        category: "beginner"
+      },
+      {
+        name: "融会贯通",
+        description: "达到等级 5 - 成为社区中坚力量",
+        icon: "💎",
+        type: "level",
+        condition: { type: "level", target: 5 },
+        expReward: 50,
+        category: "intermediate"
+      },
+      {
+        name: "炉火纯青",
+        description: "达到等级 7 - 精通各项技术",
+        icon: "👑",
+        type: "level",
+        condition: { type: "level", target: 7 },
+        expReward: 75,
+        category: "advanced"
+      },
+      {
+        name: "登峰造极",
+        description: "达到等级 8 - 大师级别，请受我一拜！",
+        icon: "🏆",
+        type: "level",
+        condition: { type: "level", target: 8 },
+        expReward: 100,
+        category: "master"
+      },
+
+      // === 训练完成类 (Session-based) ===
+      {
+        name: "第一滴血",
+        description: "完成第一次训练 - 伟大的旅程始于足下",
+        icon: "🎯",
+        type: "training",
+        condition: { type: "complete_sessions", target: 1 },
+        expReward: 20,
+        category: "beginner"
+      },
+      {
+        name: "小试牛刀",
+        description: "完成 10 次训练",
+        icon: "💪",
+        type: "training",
+        condition: { type: "complete_sessions", target: 10 },
+        expReward: 30,
+        category: "beginner"
+      },
+      {
+        name: "勤学苦练",
+        description: "完成 30 次训练 - 习惯正在养成",
+        icon: "📚",
+        type: "training",
+        condition: { type: "complete_sessions", target: 30 },
+        expReward: 50,
+        category: "intermediate"
+      },
+      {
+        name: "百炼成钢",
+        description: "完成 100 次训练 - 量变引起质变",
+        icon: "⚡",
+        type: "training",
+        condition: { type: "complete_sessions", target: 100 },
+        expReward: 100,
+        category: "advanced"
+      },
+      {
+        name: "千锤百炼",
+        description: "完成 500 次训练 - 真正的台球大师",
+        icon: "🌟",
+        type: "training",
+        condition: { type: "complete_sessions", target: 500 },
+        expReward: 200,
+        category: "master"
+      },
+
+      // === 连续训练类 (Streak-based) ===
+      {
+        name: "初心不改",
+        description: "连续训练 3 天",
+        icon: "🔥",
+        type: "streak",
+        condition: { type: "streak", target: 3 },
+        expReward: 15,
+        category: "beginner"
+      },
+      {
+        name: "坚持不懈",
+        description: "连续训练 7 天 - 一周打卡成功",
+        icon: "📅",
+        type: "streak",
+        condition: { type: "streak", target: 7 },
+        expReward: 30,
+        category: "beginner"
+      },
+      {
+        name: "持之以恒",
+        description: "连续训练 30 天 - 养成了良好习惯",
+        icon: "🎖️",
+        type: "streak",
+        condition: { type: "streak", target: 30 },
+        expReward: 75,
+        category: "intermediate"
+      },
+      {
+        name: "百日筑基",
+        description: "连续训练 100 天 - 自律的化身",
+        icon: "🏅",
+        type: "streak",
+        condition: { type: "streak", target: 100 },
+        expReward: 150,
+        category: "advanced"
+      },
+
+      // === 训练时长类 (Time-based) ===
+      {
+        name: "入门时光",
+        description: "累计训练 10 小时",
+        icon: "⏰",
+        type: "time",
+        condition: { type: "total_time", target: 600 },
+        expReward: 25,
+        category: "beginner"
+      },
+      {
+        name: "百小时修炼",
+        description: "累计训练 100 小时 - 时间见证成长",
+        icon: "⌛",
+        type: "time",
+        condition: { type: "total_time", target: 6000 },
+        expReward: 75,
+        category: "intermediate"
+      },
+      {
+        name: "千小时定律",
+        description: "累计训练 1000 小时 - 专家级投入",
+        icon: "🕐",
+        type: "time",
+        condition: { type: "total_time", target: 60000 },
+        expReward: 200,
+        category: "master"
+      },
+
+      // === 训练质量类 (Rating-based) ===
+      {
+        name: "追求卓越",
+        description: "至少 5 次训练平均评分达到 4 星",
+        icon: "✨",
+        type: "rating",
+        condition: { type: "rating_average", target: 4, min_sessions: 5 },
+        expReward: 40,
+        category: "intermediate"
+      },
+      {
+        name: "完美主义者",
+        description: "至少 10 次训练平均评分达到 4.5 星",
+        icon: "💯",
+        type: "rating",
+        condition: { type: "rating_average", target: 4.5, min_sessions: 10 },
+        expReward: 60,
+        category: "advanced"
+      },
+      {
+        name: "五星传奇",
+        description: "至少 20 次训练平均评分达到 5 星 - 完美无瑕",
+        icon: "🌠",
+        type: "rating",
+        condition: { type: "rating_average", target: 5, min_sessions: 20 },
+        expReward: 100,
+        category: "master"
+      }
+    ];
+
+    // Check if achievements already exist
+    const existingAchievements = await this.getAllAchievements();
+
+    if (existingAchievements.length > 0) {
+      return {
+        inserted: 0,
+        skipped: existingAchievements.length,
+        message: `Achievements already initialized. Found ${existingAchievements.length} existing achievements.`
+      };
+    }
+
+    // Insert all achievements
+    let inserted = 0;
+    for (const achievement of initialAchievements) {
+      await this.ensureDb().insert(achievements).values({
+        name: achievement.name,
+        description: achievement.description,
+        icon: achievement.icon,
+        type: achievement.type,
+        condition: achievement.condition as any,
+        expReward: achievement.expReward,
+        category: achievement.category,
+        unlocked: true,
+      });
+      inserted++;
+    }
+
+    return {
+      inserted,
+      skipped: 0,
+      message: `Successfully initialized ${inserted} achievements.`
+    };
   }
 }
 

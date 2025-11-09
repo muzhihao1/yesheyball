@@ -646,6 +646,19 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Initialize achievements (admin/development only)
+  app.post("/api/admin/init-achievements", async (req, res) => {
+    try {
+      const result = await storage.initializeAchievements();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({
+        message: "Failed to initialize achievements",
+        error: error.message
+      });
+    }
+  });
+
   // Training program routes
   app.get("/api/training-programs", async (req, res) => {
     try {
