@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { AchievementGrid } from "@/components/AchievementGrid";
 import {
   Settings,
   Trophy,
@@ -26,7 +27,11 @@ export default function Profile() {
     enabled: !!user,
   });
 
-  const { data: achievements } = useQuery({
+  const { data: allAchievements } = useQuery({
+    queryKey: ["/api/achievements"],
+  });
+
+  const { data: userAchievements } = useQuery({
     queryKey: ["/api/user-achievements"],
     enabled: !!user,
   });
@@ -123,25 +128,17 @@ export default function Profile() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              {(achievements as any) && (achievements as any).length > 0 ? (
-                (achievements as any).map((achievement: any) => (
-                  <div key={achievement.id} className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-                    <Award className="h-8 w-8 text-yellow-600" />
-                    <div>
-                      <p className="font-medium text-sm text-gray-900">{achievement.name || '成就'}</p>
-                      <p className="text-xs text-gray-600">{achievement.description || '已获得'}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-2 text-center py-8 text-gray-500">
-                  <Award className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                  <p>成就</p>
-                  <p className="text-sm">已获得</p>
-                </div>
-              )}
-            </div>
+            {allAchievements && userAchievements ? (
+              <AchievementGrid
+                allAchievements={allAchievements as any}
+                userAchievements={userAchievements as any}
+              />
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Award className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p>加载成就中...</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
