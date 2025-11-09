@@ -96,7 +96,7 @@ export default function Login() {
       <Card className="w-full max-w-md p-8 space-y-6">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold text-green-800">登录</h1>
-          <p className="text-gray-600">登录您的叶式台球账号</p>
+          <p className="text-gray-600">登录您的耶氏台球账号</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

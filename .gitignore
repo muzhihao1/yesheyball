@@ -34,6 +34,9 @@ Thumbs.db
 uploads/
 server/public
 
+# Development reference materials (large binary files)
+练球软件开发/
+
 # Logs
 *.log
 logs_result.json
