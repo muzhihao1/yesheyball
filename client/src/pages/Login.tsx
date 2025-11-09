@@ -93,12 +93,80 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
-      <Card className="w-full max-w-md p-8 space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-green-800">登录</h1>
-          <p className="text-gray-600">登录您的耶氏台球账号</p>
+    <div className="min-h-screen flex">
+      {/* Left side: Product introduction (desktop only) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-600 to-emerald-700 p-12 flex-col justify-between relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+
+        <div className="relative z-10">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-12 h-12 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center border border-white/20">
+              <span className="text-2xl font-bold text-white">耶</span>
+            </div>
+            <span className="text-white text-2xl font-bold">耶氏台球</span>
+          </div>
+
+          {/* Main heading */}
+          <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
+            科学训练<br />成就台球大师
+          </h1>
+          <p className="text-green-50 text-lg mb-12 leading-relaxed">
+            为台球初学者提供系统化的训练课程，通过游戏化的学习方式，让你的球技稳步提升
+          </p>
+
+          {/* Feature highlights */}
+          <div className="space-y-6">
+            <FeatureItem
+              icon="🎯"
+              title="系统化训练课程"
+              description="从基础到进阶，循序渐进的学习路径"
+            />
+            <FeatureItem
+              icon="🤖"
+              title="AI 智能反馈"
+              description="专业的技术分析和个性化建议"
+            />
+            <FeatureItem
+              icon="🎮"
+              title="游戏化激励"
+              description="关卡、成就、排行榜，让训练更有趣"
+            />
+          </div>
         </div>
+
+        {/* Bottom stats */}
+        <div className="relative z-10 flex gap-12 text-white">
+          <div>
+            <div className="text-3xl font-bold mb-1">1000+</div>
+            <div className="text-green-100">活跃学员</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold mb-1">35+</div>
+            <div className="text-green-100">训练关卡</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right side: Login form */}
+      <div className="flex-1 flex items-center justify-center p-4 lg:p-8 bg-gray-50">
+        <Card className="w-full max-w-md p-8 space-y-6">
+          {/* Mobile logo */}
+          <div className="lg:hidden text-center mb-6">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                <span className="text-xl font-bold text-white">耶</span>
+              </div>
+              <span className="text-green-800 text-xl font-bold">耶氏台球</span>
+            </div>
+          </div>
+
+          <div className="space-y-2 text-center">
+            <h1 className="text-3xl font-bold text-green-800">登录</h1>
+            <p className="text-gray-600">登录您的耶氏台球账号</p>
+          </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -153,6 +221,31 @@ export default function Login() {
           </a>
         </div>
       </Card>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * FeatureItem component for displaying product highlights
+ * Used in the login page left panel
+ */
+function FeatureItem({
+  icon,
+  title,
+  description,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex gap-4 items-start">
+      <div className="text-3xl flex-shrink-0">{icon}</div>
+      <div>
+        <div className="text-white font-semibold text-lg mb-1">{title}</div>
+        <div className="text-green-100 text-sm leading-relaxed">{description}</div>
+      </div>
     </div>
   );
 }

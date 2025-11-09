@@ -137,12 +137,80 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
-      <Card className="w-full max-w-md p-8 space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-green-800">注册账号</h1>
-          <p className="text-gray-600">创建您的耶氏台球账号</p>
+    <div className="min-h-screen flex">
+      {/* Left side: Product introduction (desktop only) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-600 to-emerald-700 p-12 flex-col justify-between relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+
+        <div className="relative z-10">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-12 h-12 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center border border-white/20">
+              <span className="text-2xl font-bold text-white">耶</span>
+            </div>
+            <span className="text-white text-2xl font-bold">耶氏台球</span>
+          </div>
+
+          {/* Main heading */}
+          <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
+            开启你的<br />台球大师之路
+          </h1>
+          <p className="text-green-50 text-lg mb-12 leading-relaxed">
+            加入我们的学习社区，与上千名学员一起，在专业指导下快速提升台球技能
+          </p>
+
+          {/* Feature highlights */}
+          <div className="space-y-6">
+            <FeatureItem
+              icon="⚡"
+              title="快速入门"
+              description="注册即可免费开始前35关的训练课程"
+            />
+            <FeatureItem
+              icon="📈"
+              title="科学进阶"
+              description="基于你的训练数据，AI 为你定制学习计划"
+            />
+            <FeatureItem
+              icon="🏆"
+              title="竞技成长"
+              description="与其他学员切磋，在竞争中快速进步"
+            />
+          </div>
         </div>
+
+        {/* Bottom stats */}
+        <div className="relative z-10 flex gap-12 text-white">
+          <div>
+            <div className="text-3xl font-bold mb-1">免费</div>
+            <div className="text-green-100">前35关</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold mb-1">30天</div>
+            <div className="text-green-100">入门周期</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right side: Registration form */}
+      <div className="flex-1 flex items-center justify-center p-4 lg:p-8 bg-gray-50">
+        <Card className="w-full max-w-md p-8 space-y-6">
+          {/* Mobile logo */}
+          <div className="lg:hidden text-center mb-6">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                <span className="text-xl font-bold text-white">耶</span>
+              </div>
+              <span className="text-green-800 text-xl font-bold">耶氏台球</span>
+            </div>
+          </div>
+
+          <div className="space-y-2 text-center">
+            <h1 className="text-3xl font-bold text-green-800">注册账号</h1>
+            <p className="text-gray-600">创建您的耶氏台球账号</p>
+          </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -232,6 +300,31 @@ export default function Register() {
           </a>
         </div>
       </Card>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * FeatureItem component for displaying product highlights
+ * Used in the registration page left panel
+ */
+function FeatureItem({
+  icon,
+  title,
+  description,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex gap-4 items-start">
+      <div className="text-3xl flex-shrink-0">{icon}</div>
+      <div>
+        <div className="text-white font-semibold text-lg mb-1">{title}</div>
+        <div className="text-green-100 text-sm leading-relaxed">{description}</div>
+      </div>
     </div>
   );
 }
