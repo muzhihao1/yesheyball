@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -140,7 +141,7 @@ export default function Register() {
       <Card className="w-full max-w-md p-8 space-y-6">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold text-green-800">注册账号</h1>
-          <p className="text-gray-600">创建您的叶式台球账号</p>
+          <p className="text-gray-600">创建您的耶氏台球账号</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -187,13 +188,13 @@ export default function Register() {
             <Label htmlFor="password">
               密码 <span className="text-red-500">*</span>
             </Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="至少8个字符"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               required
+              autoComplete="new-password"
             />
             <p className="text-xs text-gray-500">密码至少需要8个字符</p>
           </div>
@@ -202,13 +203,13 @@ export default function Register() {
             <Label htmlFor="confirmPassword">
               确认密码 <span className="text-red-500">*</span>
             </Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
-              type="password"
               placeholder="再次输入密码"
               value={form.confirmPassword}
               onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
               required
+              autoComplete="new-password"
             />
           </div>
 

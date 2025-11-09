@@ -96,9 +96,9 @@ export default function Profile() {
         {/* Training Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
-            <div className="text-lg font-bold text-green-600">Lv.1</div>
+            <div className="text-lg font-bold text-green-600">Lv.{user.level}</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">当前等级</p>
-            <p className="text-xs text-gray-500">经验值: 0</p>
+            <p className="text-xs text-gray-500">经验值: {user.exp}</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">

@@ -10,6 +10,8 @@ import { RouteDebugger } from "@/components/RouteDebugger";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 
 import Levels from "@/pages/levels";
 import Tasks from "@/pages/tasks";
@@ -35,6 +37,8 @@ function Router() {
       {/* Public routes - accessible without authentication */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
 
       {/* Protected routes - require authentication */}
       <Route path="/" component={isAuthenticated ? Levels : Login} />

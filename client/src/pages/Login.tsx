@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -114,10 +115,17 @@ export default function Login() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">密码</Label>
-            <Input
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">密码</Label>
+              <a
+                href="/forgot-password"
+                className="text-sm text-green-600 hover:text-green-700 font-medium"
+              >
+                忘记密码？
+              </a>
+            </div>
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="输入您的密码"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}

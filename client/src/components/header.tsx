@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { User } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
 
 interface StreakData {
   currentStreak: number;
@@ -8,9 +8,7 @@ interface StreakData {
 }
 
 export default function Header() {
-  const { data: user, isLoading } = useQuery<User>({
-    queryKey: ["/api/user"],
-  });
+  const { user, isLoading } = useAuth();
 
   const { data: streakData } = useQuery<StreakData>({
     queryKey: ["/api/user/streak"],
