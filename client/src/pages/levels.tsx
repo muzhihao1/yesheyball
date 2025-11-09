@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Trophy, Target, Zap, Crown, Lock, Play, Pause, RotateCcw, CheckCircle, Star } from "lucide-react";
 import { Onboarding, hasCompletedOnboarding } from "@/components/Onboarding";
+import { DailyGoalsPanel } from "@/components/DailyGoalsPanel";
 
 // Lazy load JSON data to improve initial page load
 const loadExerciseData = async () => {
@@ -1200,6 +1201,11 @@ export default function Levels() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Daily Goals Panel */}
+      <div className="max-w-lg mx-auto px-4 mb-8">
+        <DailyGoalsPanel />
       </div>
 
       {/* Duolingo-style Level Map */}

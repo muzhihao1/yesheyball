@@ -327,6 +327,7 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/goals/daily"] }); // Refresh daily goals
 
       // Calculate experience points
       const baseExp = 50;
