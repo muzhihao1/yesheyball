@@ -18,7 +18,6 @@ import Tasks from "@/pages/tasks";
 import Ranking from "@/pages/ranking";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
-import SkillTreePage from "@/pages/skill-tree";
 
 import NotFound from "@/pages/not-found";
 
@@ -47,7 +46,6 @@ function Router() {
       <Route path="/levels" component={isAuthenticated ? Levels : Login} />
       <Route path="/tasks" component={isAuthenticated ? Tasks : Login} />
       <Route path="/growth" component={isAuthenticated ? Ranking : Login} />
-      <Route path="/skill-tree" component={isAuthenticated ? SkillTreePage : Login} />
       <Route path="/diary" component={isAuthenticated ? Diary : Login} />
       <Route path="/profile" component={isAuthenticated ? Profile : Login} />
       <Route component={isAuthenticated ? NotFound : Login} />
