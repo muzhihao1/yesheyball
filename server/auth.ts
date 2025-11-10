@@ -77,7 +77,7 @@ function createSessionMiddleware(): RequestHandler {
     const pgStore = connectPg(session);
     store = new pgStore({
       conString: process.env.DATABASE_URL,
-      createTableIfMissing: false,
+      createTableIfMissing: true, // ✅ 修复：允许自动创建sessions表
       tableName: "sessions",
       ttl: SESSION_TTL_MS / 1000,
     });
