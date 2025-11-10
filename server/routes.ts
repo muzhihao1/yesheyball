@@ -1910,6 +1910,248 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // ============================================================================
+  // Fu Jiajun V2.1 Training System API Endpoints
+  // ============================================================================
+
+  /**
+   * GET /api/v2/training-path
+   * Get complete training path for Level 4-8 with user progress
+   * Returns nested structure: levels -> skills -> sub-skills -> units with progress
+   */
+  app.get("/api/v2/training-path", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.json({ levels: [] });
+      }
+
+      const db = storage['ensureDb']();
+
+      // Query all Level 4-8 data with nested relations
+      const levels = await db
+        .select()
+        .from(trainingLevels)
+        .where(sql`${trainingLevels.levelNumber} BETWEEN 4 AND 8`)
+        .orderBy(trainingLevels.levelNumber);
+
+      // For each level, get skills, sub-skills, and units with progress
+      const levelsWithData = await Promise.all(
+        levels.map(async (level) => {
+          const skills = await db
+            .select()
+            .from(trainingSkills)
+            .where(eq(trainingSkills.levelId, level.id))
+            .orderBy(trainingSkills.skillOrder);
+
+          const skillsWithData = await Promise.all(
+            skills.map(async (skill) => {
+              const subSkillsData = await db
+                .select()
+                .from(subSkills)
+                .where(eq(subSkills.skillId, skill.id))
+                .orderBy(subSkills.subSkillOrder);
+
+              const subSkillsWithUnits = await Promise.all(
+                subSkillsData.map(async (subSkill) => {
+                  const units = await db
+                    .select({
+                      id: trainingUnits.id,
+                      title: trainingUnits.title,
+                      unitType: trainingUnits.unitType,
+                      unitOrder: trainingUnits.unitOrder,
+                      xpReward: trainingUnits.xpReward,
+                      estimatedMinutes: trainingUnits.estimatedMinutes,
+                      content: trainingUnits.content,
+                      status: sql`COALESCE(${userTrainingProgress.status}, 'not_started')`,
+                      completedAt: userTrainingProgress.completedAt,
+                    })
+                    .from(trainingUnits)
+                    .leftJoin(
+                      userTrainingProgress,
+                      sql`${userTrainingProgress.unitId} = ${trainingUnits.id} AND ${userTrainingProgress.userId} = ${userId}`
+                    )
+                    .where(eq(trainingUnits.subSkillId, subSkill.id))
+                    .orderBy(trainingUnits.unitOrder);
+
+                  return {
+                    ...subSkill,
+                    units,
+                  };
+                })
+              );
+
+              return {
+                ...skill,
+                subSkills: subSkillsWithUnits,
+              };
+            })
+          );
+
+          return {
+            ...level,
+            skills: skillsWithData,
+          };
+        })
+      );
+
+      res.json({ levels: levelsWithData });
+    } catch (error) {
+      console.error("Error fetching V2.1 training path:", error);
+      res.status(500).json({ message: "Failed to fetch training path" });
+    }
+  });
+
+  /**
+   * POST /api/v2/user-progress
+   * Update user progress for a training unit
+   * Body: { unitId, status, progressData }
+   */
+  app.post("/api/v2/user-progress", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const { unitId, status, progressData } = req.body;
+
+      if (!hasDatabase) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      // Validate required fields
+      if (!unitId || !status) {
+        return res.status(400).json({ message: "Unit ID and status are required" });
+      }
+
+      // Validate unitId is a valid UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(unitId)) {
+        return res.status(400).json({ message: "Invalid unit ID format" });
+      }
+
+      const db = storage['ensureDb']();
+
+      // Get unit details to find levelId
+      const [unit] = await db
+        .select({
+          unitId: trainingUnits.id,
+          levelId: trainingSkills.levelId,
+          xpReward: trainingUnits.xpReward,
+        })
+        .from(trainingUnits)
+        .innerJoin(subSkills, eq(trainingUnits.subSkillId, subSkills.id))
+        .innerJoin(trainingSkills, eq(subSkills.skillId, trainingSkills.id))
+        .where(eq(trainingUnits.id, unitId))
+        .limit(1);
+
+      if (!unit) {
+        return res.status(404).json({ message: "Training unit not found" });
+      }
+
+      // Upsert user progress
+      const now = new Date();
+      const progressRecord = {
+        userId,
+        levelId: unit.levelId,
+        unitId,
+        status,
+        progressData: progressData || {},
+        completedAt: status === 'completed' ? now : null,
+        updatedAt: now,
+      };
+
+      await db
+        .insert(userTrainingProgress)
+        .values(progressRecord)
+        .onConflictDoUpdate({
+          target: [userTrainingProgress.userId, userTrainingProgress.unitId],
+          set: {
+            status,
+            progressData: progressData || {},
+            completedAt: status === 'completed' ? now : null,
+            updatedAt: now,
+          },
+        });
+
+      // If completed, award XP to user
+      if (status === 'completed') {
+        await db
+          .update(users)
+          .set({
+            exp: sql`${users.exp} + ${unit.xpReward}`,
+          })
+          .where(eq(users.id, userId));
+      }
+
+      res.json({
+        message: "Progress updated successfully",
+        xpAwarded: status === 'completed' ? unit.xpReward : 0,
+      });
+    } catch (error) {
+      console.error("Error updating V2.1 user progress:", error);
+      res.status(500).json({ message: "Failed to update user progress" });
+    }
+  });
+
+  /**
+   * GET /api/v2/recommendations
+   * Get personalized training recommendations based on user progress
+   * Returns units that are not started or incomplete, prioritized by level
+   */
+  app.get("/api/v2/recommendations", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.json({ recommendations: [] });
+      }
+
+      const db = storage['ensureDb']();
+
+      // Find incomplete units (not started or in progress)
+      const recommendations = await db
+        .select({
+          unitId: trainingUnits.id,
+          title: trainingUnits.title,
+          unitType: trainingUnits.unitType,
+          xpReward: trainingUnits.xpReward,
+          estimatedMinutes: trainingUnits.estimatedMinutes,
+          levelNumber: trainingLevels.levelNumber,
+          skillName: trainingSkills.skillName,
+          subSkillName: subSkills.subSkillName,
+          status: sql`COALESCE(${userTrainingProgress.status}, 'not_started')`,
+        })
+        .from(trainingUnits)
+        .innerJoin(subSkills, eq(trainingUnits.subSkillId, subSkills.id))
+        .innerJoin(trainingSkills, eq(subSkills.skillId, trainingSkills.id))
+        .innerJoin(trainingLevels, eq(trainingSkills.levelId, trainingLevels.id))
+        .leftJoin(
+          userTrainingProgress,
+          sql`${userTrainingProgress.unitId} = ${trainingUnits.id} AND ${userTrainingProgress.userId} = ${userId}`
+        )
+        .where(
+          sql`${trainingLevels.levelNumber} BETWEEN 4 AND 8 AND (${userTrainingProgress.status} IS NULL OR ${userTrainingProgress.status} != 'completed')`
+        )
+        .orderBy(trainingLevels.levelNumber, trainingUnits.unitOrder)
+        .limit(10);
+
+      // Add recommendation reason
+      const recommendationsWithReason = recommendations.map((rec) => ({
+        ...rec,
+        reason:
+          rec.status === 'not_started'
+            ? '未开始训练'
+            : rec.status === 'in_progress'
+            ? '训练进行中'
+            : '推荐练习',
+      }));
+
+      res.json({ recommendations: recommendationsWithReason });
+    } catch (error) {
+      console.error("Error fetching V2.1 recommendations:", error);
+      res.status(500).json({ message: "Failed to fetch recommendations" });
+    }
+  });
+
   /**
    * GET /api/specialized-trainings
    * Get all specialized trainings (8 core skills)

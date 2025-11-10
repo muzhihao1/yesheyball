@@ -15,6 +15,7 @@ import ResetPassword from "@/pages/ResetPassword";
 
 import Levels from "@/pages/levels";
 import Tasks from "@/pages/tasks";
+import FuTraining from "@/pages/fu-training";
 import Ranking from "@/pages/ranking";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
@@ -43,6 +44,7 @@ function Router() {
       {/* Protected routes - require authentication */}
       <Route path="/" component={isAuthenticated ? Levels : Login} />
       <Route path="/training" component={isAuthenticated ? Tasks : Login} />
+      <Route path="/fu-training" component={isAuthenticated ? FuTraining : Login} />
       <Route path="/levels" component={isAuthenticated ? Levels : Login} />
       <Route path="/tasks" component={isAuthenticated ? Tasks : Login} />
       <Route path="/growth" component={isAuthenticated ? Ranking : Login} />
