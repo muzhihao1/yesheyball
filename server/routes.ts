@@ -694,6 +694,125 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Initialize skill tree (admin/development only)
+  app.post("/api/admin/init-skill-tree", async (req, res) => {
+    try {
+      const { initializeSkillTree } = await import("./skillTreeService.js");
+      const result = await initializeSkillTree();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({
+        message: "Failed to initialize skill tree",
+        error: error.message
+      });
+    }
+  });
+
+  // Get skill tree with user progress
+  app.get("/api/skill-tree", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const { getSkillTreeWithProgress } = await import("./skillTreeService.js");
+      const skillTreeData = await getSkillTreeWithProgress(userId);
+      res.json({ data: skillTreeData });
+    } catch (error: any) {
+      console.error("Error fetching skill tree:", error);
+      res.status(500).json({
+        message: "Failed to fetch skill tree",
+        error: error.message
+      });
+    }
+  });
+
+  // Get specific skill details
+  app.get("/api/skills/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const skillId = parseInt(req.params.id);
+
+      if (isNaN(skillId)) {
+        return res.status(400).json({
+          message: "Invalid skill ID"
+        });
+      }
+
+      const { getSkillDetails } = await import("./skillTreeService.js");
+      const skillData = await getSkillDetails(skillId, userId);
+
+      if (!skillData) {
+        return res.status(404).json({
+          message: "Skill not found"
+        });
+      }
+
+      res.json({ data: { skill: skillData } });
+    } catch (error: any) {
+      console.error("Error fetching skill details:", error);
+      res.status(500).json({
+        message: "Failed to fetch skill details",
+        error: error.message
+      });
+    }
+  });
+
+  // Unlock a skill
+  app.post("/api/skills/:id/unlock", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const skillId = parseInt(req.params.id);
+
+      if (isNaN(skillId)) {
+        return res.status(400).json({
+          message: "Invalid skill ID"
+        });
+      }
+
+      const context = req.body.context || {};
+      const { unlockSkill } = await import("./skillTreeService.js");
+      const result = await unlockSkill(skillId, userId, context);
+
+      if (!result.success) {
+        // Handle different error cases
+        if (result.error === "SKILL_NOT_FOUND") {
+          return res.status(404).json({
+            message: result.message
+          });
+        }
+
+        if (result.error === "CONDITIONS_NOT_MET") {
+          return res.status(400).json({
+            message: result.message,
+            details: result.details
+          });
+        }
+
+        if (result.alreadyUnlocked) {
+          return res.status(200).json({
+            data: {
+              unlocked: false,
+              alreadyUnlocked: true,
+              unlockedAt: result.unlockedAt,
+              message: result.message
+            }
+          });
+        }
+
+        return res.status(400).json({
+          message: result.message || "Failed to unlock skill"
+        });
+      }
+
+      // Success
+      res.json({ data: result });
+    } catch (error: any) {
+      console.error("Error unlocking skill:", error);
+      res.status(500).json({
+        message: "Failed to unlock skill",
+        error: error.message
+      });
+    }
+  });
+
   // Training program routes
   app.get("/api/training-programs", async (req, res) => {
     try {
