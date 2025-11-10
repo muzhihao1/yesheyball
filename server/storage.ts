@@ -1,6 +1,6 @@
-import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, achievements, userAchievements, type User, type InsertUser, type UpsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote, type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement } from "../shared/schema.js";
+import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, achievements, userAchievements, type User, type InsertUser, type UpsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote, type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement, trainingLevels, trainingSkills, subSkills, trainingUnits, userTrainingProgress, specializedTrainings, specializedTrainingPlans, type TrainingLevel, type TrainingSkill, type SubSkill, type TrainingUnit, type UserTrainingProgress as UserTrainingProgressType, type SpecializedTraining, type SpecializedTrainingPlan } from "../shared/schema.js";
 import { db } from "./db.js";
-import { eq, desc, gte, and, lte } from "drizzle-orm";
+import { eq, desc, gte, and, lte, sql, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations - Required for Replit Auth
@@ -61,6 +61,95 @@ export interface IStorage {
   unlockAchievement(userId: string, achievementId: number): Promise<UserAchievement>;
   updateAchievementProgress(userId: string, achievementId: number, progress: number): Promise<void>;
   initializeAchievements(): Promise<{ inserted: number; skipped: number; message: string }>;
+
+  // === V2.1 Training System Operations ===
+
+  // Training Levels
+  getAllTrainingLevels(userId: string): Promise<TrainingLevelWithProgress[]>;
+  getTrainingLevelById(levelId: string, userId: string): Promise<TrainingLevelDetail | undefined>;
+
+  // Training Units
+  getTrainingUnitById(unitId: string, userId: string): Promise<TrainingUnitDetail | undefined>;
+
+  // User Training Progress
+  getUserTrainingProgressByUnit(userId: string, unitId: string): Promise<UserTrainingProgressType | undefined>;
+  startTrainingUnit(userId: string, levelId: string, unitId: string): Promise<UserTrainingProgressType>;
+  updateTrainingProgress(userId: string, unitId: string, progressData: any): Promise<UserTrainingProgressType>;
+  completeTrainingUnit(userId: string, unitId: string, finalProgressData: any): Promise<{ progress: UserTrainingProgressType; xpAwarded: number }>;
+
+  // Specialized Training
+  getAllSpecializedTrainings(): Promise<SpecializedTraining[]>;
+  getSpecializedTrainingPlans(trainingId: string): Promise<SpecializedTrainingPlan[]>;
+}
+
+// V2.1 Training System Types for Storage Layer
+export interface TrainingLevelWithProgress {
+  id: string;
+  levelNumber: number;
+  title: string;
+  description: string | null;
+  orderIndex: number;
+  userProgress: {
+    totalUnits: number;
+    completedUnits: number;
+    inProgressUnits: number;
+    progressPercentage: number;
+    isLocked: boolean;
+  };
+}
+
+export interface TrainingLevelDetail {
+  id: string;
+  levelNumber: number;
+  title: string;
+  description: string | null;
+  skills: TrainingSkillWithContent[];
+}
+
+export interface TrainingSkillWithContent {
+  id: string;
+  skillName: string;
+  skillOrder: number;
+  description: string | null;
+  subSkills: SubSkillWithUnits[];
+}
+
+export interface SubSkillWithUnits {
+  id: string;
+  subSkillName: string;
+  subSkillOrder: number;
+  description: string | null;
+  units: TrainingUnitWithProgress[];
+}
+
+export interface TrainingUnitWithProgress {
+  id: string;
+  unitType: string;
+  unitOrder: number;
+  title: string;
+  xpReward: number | null;
+  estimatedMinutes: number | null;
+  userProgress?: {
+    status: string;
+    completedAt: Date | null;
+  };
+}
+
+export interface TrainingUnitDetail {
+  id: string;
+  title: string;
+  unitType: string;
+  content: any; // JSONB content
+  xpReward: number | null;
+  estimatedMinutes: number | null;
+  subSkill: {
+    id: string;
+    subSkillName: string;
+  };
+  userProgress?: {
+    status: string;
+    progressData: any;
+  };
 }
 
 export class DatabaseStorage implements IStorage {
@@ -759,6 +848,404 @@ export class DatabaseStorage implements IStorage {
       skipped: 0,
       message: `Successfully initialized ${inserted} achievements.`
     };
+  }
+
+  // === V2.1 Training System Implementation ===
+
+  /**
+   * Get all training levels with user progress summary
+   * Returns array of levels with aggregated progress data
+   */
+  async getAllTrainingLevels(userId: string): Promise<TrainingLevelWithProgress[]> {
+    const db = this.ensureDb();
+
+    // Fetch all levels ordered by levelNumber
+    const levels = await db
+      .select()
+      .from(trainingLevels)
+      .where(eq(trainingLevels.isActive, true))
+      .orderBy(trainingLevels.orderIndex);
+
+    // For each level, calculate user progress
+    const levelsWithProgress: TrainingLevelWithProgress[] = [];
+
+    for (const level of levels) {
+      // Get all units for this level (through skills -> subSkills -> units)
+      const levelUnits = await db
+        .select({
+          unitId: trainingUnits.id,
+        })
+        .from(trainingUnits)
+        .innerJoin(subSkills, eq(trainingUnits.subSkillId, subSkills.id))
+        .innerJoin(trainingSkills, eq(subSkills.skillId, trainingSkills.id))
+        .where(eq(trainingSkills.levelId, level.id));
+
+      const totalUnits = levelUnits.length;
+
+      // Get user progress for these units
+      const userProgressRecords = await db
+        .select()
+        .from(userTrainingProgress)
+        .where(
+          and(
+            eq(userTrainingProgress.userId, userId),
+            eq(userTrainingProgress.levelId, level.id)
+          )
+        );
+
+      const completedUnits = userProgressRecords.filter(p => p.status === 'completed').length;
+      const inProgressUnits = userProgressRecords.filter(p => p.status === 'in_progress').length;
+      const progressPercentage = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
+
+      // Check if level is locked (previous level not completed)
+      let isLocked = false;
+      if (level.prerequisiteLevelId) {
+        const prereqProgress = levelsWithProgress.find(l => l.id === level.prerequisiteLevelId);
+        isLocked = prereqProgress ? prereqProgress.userProgress.progressPercentage < 100 : true;
+      }
+
+      levelsWithProgress.push({
+        id: level.id,
+        levelNumber: level.levelNumber,
+        title: level.title,
+        description: level.description,
+        orderIndex: level.orderIndex,
+        userProgress: {
+          totalUnits,
+          completedUnits,
+          inProgressUnits,
+          progressPercentage,
+          isLocked,
+        },
+      });
+    }
+
+    return levelsWithProgress;
+  }
+
+  /**
+   * Get detailed training level data with full skill tree
+   * Includes: level -> skills -> subSkills -> units (with user progress)
+   */
+  async getTrainingLevelById(levelId: string, userId: string): Promise<TrainingLevelDetail | undefined> {
+    const db = this.ensureDb();
+
+    // Fetch the level
+    const [level] = await db
+      .select()
+      .from(trainingLevels)
+      .where(eq(trainingLevels.id, levelId));
+
+    if (!level) return undefined;
+
+    // Fetch all skills for this level
+    const skills = await db
+      .select()
+      .from(trainingSkills)
+      .where(eq(trainingSkills.levelId, levelId))
+      .orderBy(trainingSkills.skillOrder);
+
+    // Build the skill tree with nested data
+    const skillsWithContent: TrainingSkillWithContent[] = [];
+
+    for (const skill of skills) {
+      // Get sub-skills for this skill
+      const subSkillsData = await db
+        .select()
+        .from(subSkills)
+        .where(eq(subSkills.skillId, skill.id))
+        .orderBy(subSkills.subSkillOrder);
+
+      const subSkillsWithUnits: SubSkillWithUnits[] = [];
+
+      for (const subSkill of subSkillsData) {
+        // Get training units for this sub-skill
+        const units = await db
+          .select()
+          .from(trainingUnits)
+          .where(eq(trainingUnits.subSkillId, subSkill.id))
+          .orderBy(trainingUnits.unitOrder);
+
+        // Get user progress for these units
+        const unitIds = units.map(u => u.id);
+        const progressRecords = unitIds.length > 0
+          ? await db
+              .select()
+              .from(userTrainingProgress)
+              .where(
+                and(
+                  eq(userTrainingProgress.userId, userId),
+                  inArray(userTrainingProgress.unitId, unitIds)
+                )
+              )
+          : [];
+
+        const progressMap = new Map(progressRecords.map(p => [p.unitId, p]));
+
+        const unitsWithProgress: TrainingUnitWithProgress[] = units.map(unit => ({
+          id: unit.id,
+          unitType: unit.unitType,
+          unitOrder: unit.unitOrder,
+          title: unit.title,
+          xpReward: unit.xpReward,
+          estimatedMinutes: unit.estimatedMinutes,
+          userProgress: progressMap.has(unit.id)
+            ? {
+                status: progressMap.get(unit.id)!.status,
+                completedAt: progressMap.get(unit.id)!.completedAt,
+              }
+            : undefined,
+        }));
+
+        subSkillsWithUnits.push({
+          id: subSkill.id,
+          subSkillName: subSkill.subSkillName,
+          subSkillOrder: subSkill.subSkillOrder,
+          description: subSkill.description,
+          units: unitsWithProgress,
+        });
+      }
+
+      skillsWithContent.push({
+        id: skill.id,
+        skillName: skill.skillName,
+        skillOrder: skill.skillOrder,
+        description: skill.description,
+        subSkills: subSkillsWithUnits,
+      });
+    }
+
+    return {
+      id: level.id,
+      levelNumber: level.levelNumber,
+      title: level.title,
+      description: level.description,
+      skills: skillsWithContent,
+    };
+  }
+
+  /**
+   * Get training unit details with content and user progress
+   */
+  async getTrainingUnitById(unitId: string, userId: string): Promise<TrainingUnitDetail | undefined> {
+    const db = this.ensureDb();
+
+    // Fetch unit with sub-skill info
+    const [unit] = await db
+      .select({
+        id: trainingUnits.id,
+        title: trainingUnits.title,
+        unitType: trainingUnits.unitType,
+        content: trainingUnits.content,
+        xpReward: trainingUnits.xpReward,
+        estimatedMinutes: trainingUnits.estimatedMinutes,
+        subSkillId: subSkills.id,
+        subSkillName: subSkills.subSkillName,
+      })
+      .from(trainingUnits)
+      .innerJoin(subSkills, eq(trainingUnits.subSkillId, subSkills.id))
+      .where(eq(trainingUnits.id, unitId));
+
+    if (!unit) return undefined;
+
+    // Fetch user progress for this unit
+    const [progress] = await db
+      .select()
+      .from(userTrainingProgress)
+      .where(
+        and(
+          eq(userTrainingProgress.userId, userId),
+          eq(userTrainingProgress.unitId, unitId)
+        )
+      );
+
+    return {
+      id: unit.id,
+      title: unit.title,
+      unitType: unit.unitType,
+      content: unit.content,
+      xpReward: unit.xpReward,
+      estimatedMinutes: unit.estimatedMinutes,
+      subSkill: {
+        id: unit.subSkillId,
+        subSkillName: unit.subSkillName,
+      },
+      userProgress: progress
+        ? {
+            status: progress.status,
+            progressData: progress.progressData,
+          }
+        : undefined,
+    };
+  }
+
+  /**
+   * Get user progress for a specific training unit
+   */
+  async getUserTrainingProgressByUnit(userId: string, unitId: string): Promise<UserTrainingProgressType | undefined> {
+    const db = this.ensureDb();
+
+    const [progress] = await db
+      .select()
+      .from(userTrainingProgress)
+      .where(
+        and(
+          eq(userTrainingProgress.userId, userId),
+          eq(userTrainingProgress.unitId, unitId)
+        )
+      );
+
+    return progress || undefined;
+  }
+
+  /**
+   * Start a training unit (mark as in_progress)
+   */
+  async startTrainingUnit(userId: string, levelId: string, unitId: string): Promise<UserTrainingProgressType> {
+    const db = this.ensureDb();
+
+    const now = new Date();
+    const initialProgressData = {
+      started_at: now.toISOString(),
+      last_activity_at: now.toISOString(),
+      attempts: 1,
+    };
+
+    // Upsert progress record
+    const [progress] = await db
+      .insert(userTrainingProgress)
+      .values({
+        userId,
+        levelId,
+        unitId,
+        status: 'in_progress',
+        progressData: initialProgressData as any,
+      })
+      .onConflictDoUpdate({
+        target: [userTrainingProgress.userId, userTrainingProgress.unitId],
+        set: {
+          status: 'in_progress',
+          progressData: sql`COALESCE(${userTrainingProgress.progressData}, '{}'::jsonb) || ${JSON.stringify(initialProgressData)}::jsonb`,
+          updatedAt: now,
+        },
+      })
+      .returning();
+
+    return progress;
+  }
+
+  /**
+   * Update training progress (during training)
+   */
+  async updateTrainingProgress(userId: string, unitId: string, progressData: any): Promise<UserTrainingProgressType> {
+    const db = this.ensureDb();
+
+    const now = new Date();
+    const updatedData = {
+      ...progressData,
+      last_activity_at: now.toISOString(),
+    };
+
+    const [progress] = await db
+      .update(userTrainingProgress)
+      .set({
+        progressData: updatedData as any,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(userTrainingProgress.userId, userId),
+          eq(userTrainingProgress.unitId, unitId)
+        )
+      )
+      .returning();
+
+    if (!progress) {
+      throw new Error(`Training progress not found for user ${userId} and unit ${unitId}`);
+    }
+
+    return progress;
+  }
+
+  /**
+   * Complete a training unit and award XP
+   */
+  async completeTrainingUnit(
+    userId: string,
+    unitId: string,
+    finalProgressData: any
+  ): Promise<{ progress: UserTrainingProgressType; xpAwarded: number }> {
+    const db = this.ensureDb();
+
+    const now = new Date();
+
+    // Get unit XP reward
+    const [unit] = await db
+      .select({ xpReward: trainingUnits.xpReward })
+      .from(trainingUnits)
+      .where(eq(trainingUnits.id, unitId));
+
+    const xpAwarded = unit?.xpReward || 10;
+
+    // Update progress to completed
+    const [progress] = await db
+      .update(userTrainingProgress)
+      .set({
+        status: 'completed',
+        progressData: finalProgressData as any,
+        completedAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(userTrainingProgress.userId, userId),
+          eq(userTrainingProgress.unitId, unitId)
+        )
+      )
+      .returning();
+
+    if (!progress) {
+      throw new Error(`Training progress not found for user ${userId} and unit ${unitId}`);
+    }
+
+    // Award XP to user
+    await db
+      .update(users)
+      .set({
+        exp: sql`${users.exp} + ${xpAwarded}`,
+      })
+      .where(eq(users.id, userId));
+
+    return { progress, xpAwarded };
+  }
+
+  /**
+   * Get all specialized trainings
+   */
+  async getAllSpecializedTrainings(): Promise<SpecializedTraining[]> {
+    const db = this.ensureDb();
+
+    const trainings = await db
+      .select()
+      .from(specializedTrainings)
+      .orderBy(specializedTrainings.skillCategory, specializedTrainings.difficultyLevel);
+
+    return trainings;
+  }
+
+  /**
+   * Get training plans for a specialized training
+   */
+  async getSpecializedTrainingPlans(trainingId: string): Promise<SpecializedTrainingPlan[]> {
+    const db = this.ensureDb();
+
+    const plans = await db
+      .select()
+      .from(specializedTrainingPlans)
+      .where(eq(specializedTrainingPlans.trainingId, trainingId))
+      .orderBy(specializedTrainingPlans.planOrder);
+
+    return plans;
   }
 }
 

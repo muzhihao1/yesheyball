@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, index, uuid, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -21,7 +21,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash"), // Bcrypt hashed password for email authentication (cleared after migration)
 
   // Supabase Auth migration fields
-  supabaseUserId: varchar("supabase_user_id"), // UUID linking to auth.users.id
+  supabaseUserId: uuid("supabase_user_id"), // UUID linking to auth.users.id
   migratedToSupabase: boolean("migrated_to_supabase").notNull().default(false), // Migration tracking flag
 
   firstName: varchar("first_name"),
@@ -273,7 +273,221 @@ export type InsertGoalTemplate = z.infer<typeof insertGoalTemplateSchema>;
 export type UserDailyGoal = typeof userDailyGoals.$inferSelect;
 export type InsertUserDailyGoal = z.infer<typeof insertUserDailyGoalSchema>;
 
-// === Skill Tree System ===
+// === V2.1 Training System (十大招 System) ===
+
+/**
+ * Training Levels Table (训练关卡表)
+ * Represents the 8-level "十大招" training system
+ */
+export const trainingLevels = pgTable("training_levels", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  levelNumber: integer("level_number").notNull().unique(), // 1-8
+  title: varchar("title", { length: 100 }).notNull(), // e.g., "第一招：站姿与握杆"
+  description: text("description"),
+  prerequisiteLevelId: uuid("prerequisite_level_id").references((): any => trainingLevels.id),
+  orderIndex: integer("order_index").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * Training Skills Table (技能主表)
+ * Each level contains multiple skills (e.g., "站姿", "握杆")
+ * NOTE: This replaces the old skill tree "skills" table
+ */
+export const trainingSkills = pgTable("training_skills", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  levelId: uuid("level_id").notNull().references(() => trainingLevels.id, { onDelete: 'cascade' }),
+  skillName: varchar("skill_name", { length: 100 }).notNull(), // e.g., "站姿"
+  skillOrder: integer("skill_order").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * Sub Skills Table (子技能表)
+ * Each skill is broken down into sub-skills (e.g., "脚位", "身体姿态")
+ */
+export const subSkills = pgTable("sub_skills", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  skillId: uuid("skill_id").notNull().references(() => trainingSkills.id, { onDelete: 'cascade' }),
+  subSkillName: varchar("sub_skill_name", { length: 100 }).notNull(), // e.g., "脚位"
+  subSkillOrder: integer("sub_skill_order").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * Training Units Table (训练单元表)
+ * Each sub-skill contains training units: theory, practice, challenge
+ * Content is stored in JSONB for flexibility
+ */
+export const trainingUnits = pgTable("training_units", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  subSkillId: uuid("sub_skill_id").notNull().references(() => subSkills.id, { onDelete: 'cascade' }),
+  unitType: varchar("unit_type", { length: 20 }).notNull(), // 'theory', 'practice', 'challenge'
+  unitOrder: integer("unit_order").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  content: jsonb("content").notNull(), // Flexible content structure based on unitType
+  xpReward: integer("xp_reward").default(10),
+  estimatedMinutes: integer("estimated_minutes").default(5),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * User Training Progress Table (核心进度表)
+ * Tracks individual user progress through training units
+ * This is the core table for progress tracking
+ */
+export const userTrainingProgress = pgTable("user_training_progress", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  levelId: uuid("level_id").notNull().references(() => trainingLevels.id, { onDelete: 'cascade' }),
+  unitId: uuid("unit_id").notNull().references(() => trainingUnits.id, { onDelete: 'cascade' }),
+  status: varchar("status", { length: 20 }).notNull().default('not_started'), // 'not_started', 'in_progress', 'completed'
+  progressData: jsonb("progress_data"), // Stores detailed progress information
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("user_training_progress_user_unit_unique").on(table.userId, table.unitId),
+]);
+
+/**
+ * Specialized Trainings Table (专项训练主表)
+ * Represents the 8 core skill categories for specialized training
+ */
+export const specializedTrainings = pgTable("specialized_trainings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  skillCategory: varchar("skill_category", { length: 50 }).notNull(), // '准度', '走位', '防守', etc.
+  trainingName: varchar("training_name", { length: 100 }).notNull(),
+  description: text("description"),
+  difficultyLevel: integer("difficulty_level").default(1), // 1-5
+  thumbnailUrl: varchar("thumbnail_url", { length: 500 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * Specialized Training Plans Table (专项训练计划表)
+ * Contains the detailed exercises for each specialized training
+ */
+export const specializedTrainingPlans = pgTable("specialized_training_plans", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  trainingId: uuid("training_id").notNull().references(() => specializedTrainings.id, { onDelete: 'cascade' }),
+  planOrder: integer("plan_order").notNull(),
+  exerciseName: varchar("exercise_name", { length: 200 }).notNull(),
+  exerciseDescription: text("exercise_description"),
+  demoVideoUrl: varchar("demo_video_url", { length: 500 }),
+  targetMetrics: jsonb("target_metrics"), // Target performance metrics
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// V2.1 TypeScript Content Types
+export interface TheoryContent {
+  type: 'theory';
+  text: string;
+  images?: string[];
+  video?: string;
+}
+
+export interface PracticeContent {
+  type: 'practice';
+  instructions: string;
+  demo_video: string;
+  success_criteria: {
+    type: 'repetitions';
+    target: number;
+  };
+}
+
+export interface ChallengeContent {
+  type: 'challenge';
+  instructions: string;
+  success_criteria: {
+    type: 'success_rate';
+    target: number; // 0.0 - 1.0 (percentage)
+  };
+}
+
+export type TrainingUnitContent = TheoryContent | PracticeContent | ChallengeContent;
+
+export interface ProgressData {
+  started_at: string;
+  last_activity_at: string;
+  attempts: number;
+  current_count?: number; // For practice units
+  success_rate?: number; // For challenge units (0.0 - 1.0)
+  notes?: string;
+}
+
+// V2.1 Insert Schemas
+export const insertTrainingLevelSchema = createInsertSchema(trainingLevels).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrainingSkillSchema = createInsertSchema(trainingSkills).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSubSkillSchema = createInsertSchema(subSkills).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrainingUnitSchema = createInsertSchema(trainingUnits).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserTrainingProgressSchema = createInsertSchema(userTrainingProgress).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSpecializedTrainingSchema = createInsertSchema(specializedTrainings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSpecializedTrainingPlanSchema = createInsertSchema(specializedTrainingPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// V2.1 Types
+export type TrainingLevel = typeof trainingLevels.$inferSelect;
+export type InsertTrainingLevel = z.infer<typeof insertTrainingLevelSchema>;
+export type TrainingSkill = typeof trainingSkills.$inferSelect;
+export type InsertTrainingSkill = z.infer<typeof insertTrainingSkillSchema>;
+export type SubSkill = typeof subSkills.$inferSelect;
+export type InsertSubSkill = z.infer<typeof insertSubSkillSchema>;
+export type TrainingUnit = typeof trainingUnits.$inferSelect;
+export type InsertTrainingUnit = z.infer<typeof insertTrainingUnitSchema>;
+export type UserTrainingProgress = typeof userTrainingProgress.$inferSelect;
+export type InsertUserTrainingProgress = z.infer<typeof insertUserTrainingProgressSchema>;
+export type SpecializedTraining = typeof specializedTrainings.$inferSelect;
+export type InsertSpecializedTraining = z.infer<typeof insertSpecializedTrainingSchema>;
+export type SpecializedTrainingPlan = typeof specializedTrainingPlans.$inferSelect;
+export type InsertSpecializedTrainingPlan = z.infer<typeof insertSpecializedTrainingPlanSchema>;
+
+// === OLD Skill Tree System (DEPRECATED - To be removed) ===
+// NOTE: This old skill tree system conflicts with the new V2.1 training system
+// It should be removed after confirming it's not being used anywhere
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
@@ -352,6 +566,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   userAchievements: many(userAchievements),
   userDailyGoals: many(userDailyGoals),
   userSkillProgress: many(userSkillProgress),
+  // V2.1 Training System
+  userTrainingProgress: many(userTrainingProgress),
 }));
 
 export const tasksRelations = relations(tasks, ({ many }) => ({
@@ -453,6 +669,69 @@ export const userDailyGoalsRelations = relations(userDailyGoals, ({ one }) => ({
     references: [goalTemplates.id],
   }),
 }));
+
+// === V2.1 Training System Relations ===
+
+export const trainingLevelsRelations = relations(trainingLevels, ({ many, one }) => ({
+  skills: many(trainingSkills),
+  userProgress: many(userTrainingProgress),
+  prerequisiteLevel: one(trainingLevels, {
+    fields: [trainingLevels.prerequisiteLevelId],
+    references: [trainingLevels.id],
+  }),
+}));
+
+export const trainingSkillsRelations = relations(trainingSkills, ({ one, many }) => ({
+  level: one(trainingLevels, {
+    fields: [trainingSkills.levelId],
+    references: [trainingLevels.id],
+  }),
+  subSkills: many(subSkills),
+}));
+
+export const subSkillsRelations = relations(subSkills, ({ one, many }) => ({
+  skill: one(trainingSkills, {
+    fields: [subSkills.skillId],
+    references: [trainingSkills.id],
+  }),
+  trainingUnits: many(trainingUnits),
+}));
+
+export const trainingUnitsRelations = relations(trainingUnits, ({ one, many }) => ({
+  subSkill: one(subSkills, {
+    fields: [trainingUnits.subSkillId],
+    references: [subSkills.id],
+  }),
+  userProgress: many(userTrainingProgress),
+}));
+
+export const userTrainingProgressRelations = relations(userTrainingProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [userTrainingProgress.userId],
+    references: [users.id],
+  }),
+  level: one(trainingLevels, {
+    fields: [userTrainingProgress.levelId],
+    references: [trainingLevels.id],
+  }),
+  unit: one(trainingUnits, {
+    fields: [userTrainingProgress.unitId],
+    references: [trainingUnits.id],
+  }),
+}));
+
+export const specializedTrainingsRelations = relations(specializedTrainings, ({ many }) => ({
+  plans: many(specializedTrainingPlans),
+}));
+
+export const specializedTrainingPlansRelations = relations(specializedTrainingPlans, ({ one }) => ({
+  training: one(specializedTrainings, {
+    fields: [specializedTrainingPlans.trainingId],
+    references: [specializedTrainings.id],
+  }),
+}));
+
+// === OLD Skill Tree Relations (DEPRECATED) ===
 
 export const skillsRelations = relations(skills, ({ many }) => ({
   dependencies: many(skillDependencies, { relationName: 'source' }),

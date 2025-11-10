@@ -3,17 +3,17 @@ import { storage } from "./storage.js";
 import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse, demoUserProfile } from "./auth.js";
 import { generateCoachingFeedback, generateDiaryInsights } from "./openai.js";
 import { upload, persistUploadedImage } from "./upload.js";
-import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema } from "../shared/schema.js";
+import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema, trainingSkills, subSkills, trainingUnits } from "../shared/schema.js";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses.js";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer.js";
 import { adaptiveLearning } from "./adaptiveLearning.js";
 import { requirementCorrector } from "./manualCorrection.js";
 import { analyzeTableBounds } from "./imageAnalysis.js";
-import { 
-  calculateTrainingExperience, 
-  calculateLevelExperience, 
+import {
+  calculateTrainingExperience,
+  calculateLevelExperience,
   calculateUserLevel,
-  getExperienceBreakdown 
+  getExperienceBreakdown
 } from "./experienceSystem.js";
 import { recalculateUserExperience } from "./recalculateExperience.js";
 import { initializeGoalTemplates, getUserGoalsWithDetails, updateGoalProgress } from "./goalService.js";
@@ -21,6 +21,7 @@ import { z } from "zod";
 import OpenAI from "openai";
 import path from "path";
 import fs from "fs";
+import { eq, sql } from "drizzle-orm";
 
 function getSessionUserId(req: Request): string | undefined {
   const sessionUser = getSessionUser(req);
@@ -1670,7 +1671,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post("/api/analyze-table-bounds", async (req, res) => {
     try {
       const { imageUrl } = req.body;
-      
+
       if (!imageUrl) {
         return res.status(400).json({ message: "Image URL is required" });
       }
@@ -1680,6 +1681,276 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Table bounds analysis error:", error);
       res.status(500).json({ message: "Failed to analyze table bounds" });
+    }
+  });
+
+  // === V2.1 Training System API Routes ===
+
+  /**
+   * GET /api/training/levels
+   * Get all training levels with user progress summary
+   */
+  app.get("/api/training/levels", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.json({ levels: [] });
+      }
+
+      const levels = await storage.getAllTrainingLevels(userId);
+      res.json({ levels });
+    } catch (error) {
+      console.error("Error fetching training levels:", error);
+      res.status(500).json({ message: "Failed to fetch training levels" });
+    }
+  });
+
+  /**
+   * GET /api/training/levels/:levelId
+   * Get detailed training level data with full skill tree
+   */
+  app.get("/api/training/levels/:levelId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const { levelId } = req.params;
+
+      if (!hasDatabase) {
+        return res.status(404).json({ message: "Level not found" });
+      }
+
+      // Validate levelId is a valid UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(levelId)) {
+        return res.status(400).json({ message: "Invalid level ID format" });
+      }
+
+      const level = await storage.getTrainingLevelById(levelId, userId);
+
+      if (!level) {
+        return res.status(404).json({ message: "Level not found" });
+      }
+
+      res.json({ level });
+    } catch (error) {
+      console.error("Error fetching training level:", error);
+      res.status(500).json({ message: "Failed to fetch training level" });
+    }
+  });
+
+  /**
+   * GET /api/training/units/:unitId
+   * Get training unit details with content and user progress
+   */
+  app.get("/api/training/units/:unitId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const { unitId } = req.params;
+
+      if (!hasDatabase) {
+        return res.status(404).json({ message: "Unit not found" });
+      }
+
+      // Validate unitId is a valid UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(unitId)) {
+        return res.status(400).json({ message: "Invalid unit ID format" });
+      }
+
+      const unit = await storage.getTrainingUnitById(unitId, userId);
+
+      if (!unit) {
+        return res.status(404).json({ message: "Unit not found" });
+      }
+
+      res.json({ unit });
+    } catch (error) {
+      console.error("Error fetching training unit:", error);
+      res.status(500).json({ message: "Failed to fetch training unit" });
+    }
+  });
+
+  /**
+   * POST /api/training/progress/start
+   * Start a training unit (mark as in_progress)
+   */
+  app.post("/api/training/progress/start", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const { unitId } = req.body;
+
+      if (!hasDatabase) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      // Validate required fields
+      if (!unitId) {
+        return res.status(400).json({ message: "Unit ID is required" });
+      }
+
+      // Validate unitId is a valid UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(unitId)) {
+        return res.status(400).json({ message: "Invalid unit ID format" });
+      }
+
+      // Get unit details to find levelId
+      const unit = await storage.getTrainingUnitById(unitId, userId);
+      if (!unit) {
+        return res.status(404).json({ message: "Unit not found" });
+      }
+
+      // Find the levelId for this unit (query through relations)
+      // For now, we'll need to pass levelId from the client or fetch it
+      // Let's fetch it from the database
+      const [unitWithLevel] = await storage['ensureDb']()
+        .select({
+          levelId: trainingSkills.levelId
+        })
+        .from(trainingUnits)
+        .innerJoin(subSkills, eq(trainingUnits.subSkillId, subSkills.id))
+        .innerJoin(trainingSkills, eq(subSkills.skillId, trainingSkills.id))
+        .where(eq(trainingUnits.id, unitId))
+        .limit(1);
+
+      if (!unitWithLevel || !unitWithLevel.levelId) {
+        return res.status(404).json({ message: "Unit configuration error" });
+      }
+
+      const progress = await storage.startTrainingUnit(
+        userId,
+        unitWithLevel.levelId as string,
+        unitId
+      );
+
+      res.json({ progress });
+    } catch (error) {
+      console.error("Error starting training unit:", error);
+      res.status(500).json({ message: "Failed to start training unit" });
+    }
+  });
+
+  /**
+   * POST /api/training/progress/update
+   * Update training progress (during training)
+   */
+  app.post("/api/training/progress/update", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const { unitId, progressData } = req.body;
+
+      if (!hasDatabase) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      // Validate required fields
+      if (!unitId || !progressData) {
+        return res.status(400).json({ message: "Unit ID and progress data are required" });
+      }
+
+      // Validate unitId is a valid UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(unitId)) {
+        return res.status(400).json({ message: "Invalid unit ID format" });
+      }
+
+      const progress = await storage.updateTrainingProgress(userId, unitId, progressData);
+
+      res.json({ progress });
+    } catch (error) {
+      console.error("Error updating training progress:", error);
+      res.status(500).json({ message: "Failed to update training progress" });
+    }
+  });
+
+  /**
+   * POST /api/training/progress/complete
+   * Complete a training unit and award XP
+   */
+  app.post("/api/training/progress/complete", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const { unitId, finalProgressData } = req.body;
+
+      if (!hasDatabase) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      // Validate required fields
+      if (!unitId) {
+        return res.status(400).json({ message: "Unit ID is required" });
+      }
+
+      // Validate unitId is a valid UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(unitId)) {
+        return res.status(400).json({ message: "Invalid unit ID format" });
+      }
+
+      const result = await storage.completeTrainingUnit(
+        userId,
+        unitId,
+        finalProgressData || {}
+      );
+
+      // Get updated user stats
+      const user = await storage.getUser(userId);
+
+      res.json({
+        progress: result.progress,
+        xpAwarded: result.xpAwarded,
+        userStats: {
+          totalXp: user?.exp || 0,
+          level: user?.level || 1,
+        },
+      });
+    } catch (error) {
+      console.error("Error completing training unit:", error);
+      res.status(500).json({ message: "Failed to complete training unit" });
+    }
+  });
+
+  /**
+   * GET /api/specialized-trainings
+   * Get all specialized trainings (8 core skills)
+   */
+  app.get("/api/specialized-trainings", isAuthenticated, async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.json({ trainings: [] });
+      }
+
+      const trainings = await storage.getAllSpecializedTrainings();
+      res.json({ trainings });
+    } catch (error) {
+      console.error("Error fetching specialized trainings:", error);
+      res.status(500).json({ message: "Failed to fetch specialized trainings" });
+    }
+  });
+
+  /**
+   * GET /api/specialized-trainings/:trainingId/plans
+   * Get training plans for a specialized training
+   */
+  app.get("/api/specialized-trainings/:trainingId/plans", isAuthenticated, async (req, res) => {
+    try {
+      const { trainingId } = req.params;
+
+      if (!hasDatabase) {
+        return res.json({ plans: [] });
+      }
+
+      // Validate trainingId is a valid UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(trainingId)) {
+        return res.status(400).json({ message: "Invalid training ID format" });
+      }
+
+      const plans = await storage.getSpecializedTrainingPlans(trainingId);
+      res.json({ plans });
+    } catch (error) {
+      console.error("Error fetching training plans:", error);
+      res.status(500).json({ message: "Failed to fetch training plans" });
     }
   });
 
