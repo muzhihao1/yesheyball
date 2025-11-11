@@ -2196,5 +2196,231 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // ============================================================================
+  // 90-Day Training System API Endpoints (Fu Jiajun V2.1)
+  // ============================================================================
+
+  /**
+   * GET /api/tencore-skills
+   * Get all ten core skills (Fu Jiajun's 十大招)
+   * Returns list of 10 core skills with basic info
+   */
+  app.get("/api/tencore-skills", isAuthenticated, async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.json({ skills: [] });
+      }
+
+      const skills = await storage.getTencoreSkills();
+      res.json({ skills });
+    } catch (error) {
+      console.error("Error fetching ten core skills:", error);
+      res.status(500).json({ message: "Failed to fetch ten core skills" });
+    }
+  });
+
+  /**
+   * GET /api/ninety-day/curriculum
+   * Get 90-day curriculum with optional filters
+   * Query params: dayNumber, skillId
+   * Returns filtered curriculum data
+   */
+  app.get("/api/ninety-day/curriculum", isAuthenticated, async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.json({ curriculum: [] });
+      }
+
+      const { dayNumber, skillId } = req.query;
+
+      // Build filter params
+      const params: { dayNumber?: number; skillId?: string } = {};
+      if (dayNumber) {
+        const day = parseInt(dayNumber as string);
+        if (isNaN(day) || day < 1 || day > 90) {
+          return res.status(400).json({ message: "Day number must be between 1 and 90" });
+        }
+        params.dayNumber = day;
+      }
+      if (skillId) {
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(skillId as string)) {
+          return res.status(400).json({ message: "Invalid skill ID format" });
+        }
+        params.skillId = skillId as string;
+      }
+
+      const curriculum = await storage.getNinetyDayCurriculum(params);
+      res.json({ curriculum });
+    } catch (error) {
+      console.error("Error fetching 90-day curriculum:", error);
+      res.status(500).json({ message: "Failed to fetch 90-day curriculum" });
+    }
+  });
+
+  /**
+   * GET /api/ninety-day/progress
+   * Get current user's 90-day training progress
+   * Returns progress data including completed days, skill progress, current day
+   */
+  app.get("/api/ninety-day/progress", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.json({
+          currentDay: 1,
+          completedDays: [],
+          tencoreProgress: {},
+          specializedProgress: {},
+          totalTrainingTime: 0
+        });
+      }
+
+      const progress = await storage.getUserNinetyDayProgress(userId);
+
+      // Initialize progress if not exists
+      if (!progress) {
+        const newProgress = await storage.initializeUserNinetyDayProgress(userId);
+        return res.json(newProgress);
+      }
+
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching 90-day progress:", error);
+      res.status(500).json({ message: "Failed to fetch 90-day progress" });
+    }
+  });
+
+  /**
+   * POST /api/ninety-day/complete-day
+   * Complete a day's training in the 90-day curriculum
+   * Body: { dayNumber, duration, rating, notes? }
+   * Returns updated progress and training record
+   */
+  app.post("/api/ninety-day/complete-day", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const { dayNumber, duration, rating, notes } = req.body;
+
+      if (!hasDatabase) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      // Validate required fields
+      if (!dayNumber || duration === undefined || rating === undefined) {
+        return res.status(400).json({
+          message: "Day number, duration, and rating are required"
+        });
+      }
+
+      // Validate day number
+      const day = parseInt(dayNumber);
+      if (isNaN(day) || day < 1 || day > 90) {
+        return res.status(400).json({ message: "Day number must be between 1 and 90" });
+      }
+
+      // Validate duration
+      const durationNum = parseInt(duration);
+      if (isNaN(durationNum) || durationNum < 0) {
+        return res.status(400).json({ message: "Duration must be a non-negative number" });
+      }
+
+      // Validate rating
+      const ratingNum = parseInt(rating);
+      if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      }
+
+      // Complete the training day
+      const result = await storage.completeNinetyDayTraining(
+        userId,
+        day,
+        durationNum,
+        ratingNum,
+        notes
+      );
+
+      console.log(`90-day training completed: user ${userId}, day ${day}, duration ${durationNum}min, rating ${ratingNum}/5`);
+
+      res.json({
+        message: "Training day completed successfully",
+        record: result.record,
+        progress: result.progress
+      });
+    } catch (error) {
+      console.error("Error completing 90-day training:", error);
+      res.status(500).json({ message: "Failed to complete training day" });
+    }
+  });
+
+  /**
+   * GET /api/ninety-day/specialized-training
+   * Get specialized training exercises for 90-day system
+   * Query param: category (optional) - filter by training category
+   * Returns list of specialized training exercises
+   */
+  app.get("/api/ninety-day/specialized-training", isAuthenticated, async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.json({ trainings: [] });
+      }
+
+      const { category } = req.query;
+      const trainings = await storage.getNinetyDaySpecializedTrainings(
+        category ? String(category) : undefined
+      );
+
+      res.json({ trainings });
+    } catch (error) {
+      console.error("Error fetching 90-day specialized training:", error);
+      res.status(500).json({ message: "Failed to fetch specialized training" });
+    }
+  });
+
+  /**
+   * GET /api/ninety-day/records
+   * Get user's 90-day training history
+   * Query params: dayNumber (optional), limit (optional, default 50)
+   * Returns training records sorted by completion date (newest first)
+   */
+  app.get("/api/ninety-day/records", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.json({ records: [] });
+      }
+
+      const { dayNumber, limit } = req.query;
+
+      // Build filter params
+      const params: { dayNumber?: number; limit?: number } = {};
+      if (dayNumber) {
+        const day = parseInt(dayNumber as string);
+        if (isNaN(day) || day < 1 || day > 90) {
+          return res.status(400).json({ message: "Day number must be between 1 and 90" });
+        }
+        params.dayNumber = day;
+      }
+      if (limit) {
+        const limitNum = parseInt(limit as string);
+        if (isNaN(limitNum) || limitNum < 1 || limitNum > 500) {
+          return res.status(400).json({ message: "Limit must be between 1 and 500" });
+        }
+        params.limit = limitNum;
+      } else {
+        params.limit = 50; // Default limit
+      }
+
+      const records = await storage.getNinetyDayTrainingRecords(userId, params);
+      res.json({ records });
+    } catch (error) {
+      console.error("Error fetching 90-day training records:", error);
+      res.status(500).json({ message: "Failed to fetch training records" });
+    }
+  });
+
   return;
 }
