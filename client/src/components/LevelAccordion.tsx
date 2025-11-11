@@ -3,7 +3,7 @@
  *
  * Top-level organizational component for a training level (Level 4-8).
  * Contains multiple skills, each with sub-skills and training units.
- * Part of the Fu Jiajun V2.1 Training System.
+ * Part of the V2.1 Advanced Training System.
  *
  * Features:
  * - Level header with number, title, and description

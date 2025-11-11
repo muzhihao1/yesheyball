@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**
- * Fu Jiajun V2.1 Training System Hooks
+ * Advanced Training System Hooks (V2.1)
  *
- * Provides React Query hooks for interacting with the V2.1 training system API
+ * Provides React Query hooks for interacting with the V2.1 advanced training system API
  * including Level 4-8 training paths, user progress tracking, and recommendations.
  *
- * @module useFuTraining
+ * @module useAdvancedTraining
  */
 
 // ============================================================================

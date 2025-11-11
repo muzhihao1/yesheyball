@@ -2,7 +2,7 @@
  * Training Unit Card Component
  *
  * Displays a training unit with status, type, XP reward, and estimated time.
- * Part of the Fu Jiajun V2.1 Training System (Level 4-8).
+ * Part of the V2.1 Advanced Training System (Level 4-8).
  *
  * Features:
  * - Visual status indicator (not_started, in_progress, completed)

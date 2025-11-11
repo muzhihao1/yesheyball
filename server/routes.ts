@@ -1911,7 +1911,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // ============================================================================
-  // Fu Jiajun V2.1 Training System API Endpoints
+  // V2.1 Advanced Training System API Endpoints
   // ============================================================================
 
   /**

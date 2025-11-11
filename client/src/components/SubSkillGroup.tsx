@@ -2,7 +2,7 @@
  * Sub-Skill Group Component
  *
  * Groups multiple training units under a sub-skill category with progress tracking.
- * Part of the Fu Jiajun V2.1 Training System (Level 4-8).
+ * Part of the V2.1 Advanced Training System (Level 4-8).
  *
  * Features:
  * - Sub-skill header with name and description

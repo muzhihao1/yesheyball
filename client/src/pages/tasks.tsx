@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,31 +16,27 @@ import { RatingModal } from "@/components/RatingModal";
 import { AiFeedbackModal } from "@/components/AiFeedbackModal";
 import { AchievementUnlockModal } from "@/components/AchievementUnlockModal";
 import { DailyGoalsPanel } from "@/components/DailyGoalsPanel";
+import { LevelAccordion } from "@/components/LevelAccordion";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star } from "lucide-react";
+import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star, Trophy, TrendingUp } from "lucide-react";
+import { useTrainingPath, useUpdateProgress, useTrainingPathStats } from "@/hooks/useAdvancedTraining";
 
 export default function Tasks() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
-  // Training states
-  const [isGuidedTraining, setIsGuidedTraining] = useState(false);
-  const [isCustomTraining, setIsCustomTraining] = useState(false);
-  const [isSpecialTraining, setIsSpecialTraining] = useState(false);
-  const [guidedElapsedTime, setGuidedElapsedTime] = useState(0);
-  const [customElapsedTime, setCustomElapsedTime] = useState(0);
-  const [specialElapsedTime, setSpecialElapsedTime] = useState(0);
-  const [isGuidedPaused, setIsGuidedPaused] = useState(false);
-  const [isCustomPaused, setIsCustomPaused] = useState(false);
-  const [isSpecialPaused, setIsSpecialPaused] = useState(false);
+  // Training states - Unified for both 30-day and Level 4-8
+  const [isTrainingActive, setIsTrainingActive] = useState(false);
+  const [activeElapsedTime, setActiveElapsedTime] = useState(0);
+  const [isTrainingPaused, setIsTrainingPaused] = useState(false);
+  const [activeTrainingType, setActiveTrainingType] = useState<'30day' | 'advanced' | null>(null);
+  const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
+  const [activeDayId, setActiveDayId] = useState<number | null>(null);
   
   // Training completion states
-  const [showTrainingComplete, setShowTrainingComplete] = useState(false);
   const [trainingNotes, setTrainingNotes] = useState("");
-  const [completionRating, setCompletionRating] = useState("");
   const [currentSessionType, setCurrentSessionType] = useState("");
-  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
 
   // Celebration modal states
   const [showCelebration, setShowCelebration] = useState(false);
@@ -89,92 +86,24 @@ export default function Tasks() {
 
   const recordsArray = Array.isArray(trainingRecords) ? trainingRecords : [];
 
+  // Get V2.1 training path data for advanced training (Level 4-8)
+  const { data: trainingPathData, isLoading: pathLoading } = useTrainingPath();
+  const { mutate: updateProgress } = useUpdateProgress();
+  const stats = useTrainingPathStats(trainingPathData);
 
 
-  // Direct training completion mutation (simplified approach)
-  const completeTrainingMutation = useMutation({
-    mutationFn: async (sessionData: any) => {
-      // Create and complete session in one step
-      const response = await apiRequest("/api/training-sessions", "POST", {
-        ...sessionData,
-        completed: true
-      });
-      return response.json();
-    },
-    onSuccess: (data: any, variables: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/training-programs"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/training-records"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-
-      // Calculate experience points (simplified - you can adjust this based on your logic)
-      const baseExp = 50;
-      const durationBonus = Math.floor(variables.duration / 10) * 5; // 5 exp per 10 minutes
-      const ratingBonus = (variables.rating || 0) * 20; // 20 exp per star
-      const earnedExp = baseExp + durationBonus + ratingBonus;
-
-      // Set celebration modal data
-      setCelebrationData({
-        sessionTitle: variables.title || "训练课程",
-        earnedExp: earnedExp,
-        stars: variables.rating || 3,
-        duration: Math.floor(variables.duration / 60) // Convert seconds to minutes
-      });
-
-      // Close training complete dialog and show celebration
-      setShowTrainingComplete(false);
-      setTrainingNotes("");
-      setCompletionRating("");
-      resetTrainingStates();
-
-      // Show celebration modal
-      setShowCelebration(true);
-    },
-    onError: (error: Error) => {
-      console.error("Complete training error:", error);
-      toast({
-        title: "保存失败",
-        description: error.message || "训练记录保存失败，请重试",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Timer effects with cleanup
+  // Unified timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-    if (isGuidedTraining && !isGuidedPaused) {
+    if (isTrainingActive && !isTrainingPaused) {
       interval = setInterval(() => {
-        setGuidedElapsedTime(prev => prev + 1);
+        setActiveElapsedTime(prev => prev + 1);
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isGuidedTraining, isGuidedPaused]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isCustomTraining && !isCustomPaused) {
-      interval = setInterval(() => {
-        setCustomElapsedTime(prev => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isCustomTraining, isCustomPaused]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isSpecialTraining && !isSpecialPaused) {
-      interval = setInterval(() => {
-        setSpecialElapsedTime(prev => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isSpecialTraining, isSpecialPaused]);
+  }, [isTrainingActive, isTrainingPaused]);
 
   // Format time helper
   const formatTime = (seconds: number): string => {
@@ -193,20 +122,17 @@ export default function Tasks() {
 
   // Reset training states
   const resetTrainingStates = () => {
-    setIsGuidedTraining(false);
-    setIsCustomTraining(false);
-    setIsSpecialTraining(false);
-    setGuidedElapsedTime(0);
-    setCustomElapsedTime(0);
-    setSpecialElapsedTime(0);
-    setIsGuidedPaused(false);
-    setIsCustomPaused(false);
-    setIsSpecialPaused(false);
+    setIsTrainingActive(false);
+    setActiveElapsedTime(0);
+    setIsTrainingPaused(false);
+    setActiveTrainingType(null);
+    setActiveUnitId(null);
+    setActiveDayId(null);
   };
 
   // Training control handlers
-  const handleStartTraining = () => {
-    if (isGuidedTraining || isCustomTraining || isSpecialTraining) {
+  const handleStartTraining = (type: '30day' | 'advanced', title: string, unitId?: string) => {
+    if (isTrainingActive) {
       toast({
         title: "无法开始训练",
         description: "请先完成或取消当前训练",
@@ -216,55 +142,20 @@ export default function Tasks() {
     }
 
     setCurrentSessionType("系统训练");
-    setIsGuidedTraining(true);
-    setGuidedElapsedTime(0);
-    setIsGuidedPaused(false);
+    setActiveTrainingType(type);
+    setIsTrainingActive(true);
+    setActiveElapsedTime(0);
+    setIsTrainingPaused(false);
+
+    if (type === '30day') {
+      setActiveDayId(currentDay);
+    } else if (type === 'advanced' && unitId) {
+      setActiveUnitId(unitId);
+    }
 
     toast({
       title: "系统训练开始",
-      description: `第${currentDay}集训练已开始`
-    });
-  };
-
-  const handleStartCustomTraining = () => {
-    if (isGuidedTraining || isCustomTraining || isSpecialTraining) {
-      toast({ 
-        title: "无法开始训练", 
-        description: "请先完成或取消当前训练",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setCurrentSessionType("自主训练");
-    setIsCustomTraining(true);
-    setCustomElapsedTime(0);
-    setIsCustomPaused(false);
-    
-    toast({ 
-      title: "自主训练开始", 
-      description: "根据个人需要进行练习" 
-    });
-  };
-
-  const handleStartSpecialTraining = () => {
-    if (isGuidedTraining || isCustomTraining || isSpecialTraining) {
-      toast({ 
-        title: "无法开始训练", 
-        description: "请先完成或取消当前训练",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setCurrentSessionType("特训");
-    setIsSpecialTraining(true);
-    setSpecialElapsedTime(0);
-    setIsSpecialPaused(false);
-    
-    toast({ 
-      title: "特训开始", 
-      description: "专注于力度和准度的针对性训练" 
+      description: title
     });
   };
 
@@ -278,23 +169,29 @@ export default function Tasks() {
     try {
       setShowRatingModal(false);
 
-      const duration = isGuidedTraining ? guidedElapsedTime :
-                      isCustomTraining ? customElapsedTime :
-                      specialElapsedTime;
+      const duration = activeElapsedTime;
+
+      // Build session title and description based on training type
+      let title = "系统训练";
+      let description = "";
+
+      if (activeTrainingType === '30day') {
+        title = `第${currentDay}集：${currentDayTraining?.title || "训练"}`;
+        description = currentDayTraining?.description || "";
+      } else if (activeTrainingType === 'advanced' && activeUnitId) {
+        title = `进阶训练单元：${activeUnitId}`;
+        description = "十大招精通 - 进阶系统训练";
+      }
 
       const sessionData = {
-        title: currentSessionType === "系统训练" ?
-          `第${currentDay}集：${currentDayTraining?.title || "训练"}` :
-          currentSessionType,
-        description: currentSessionType === "系统训练" ?
-          currentDayTraining?.description || "" :
-          currentSessionType === "特训" ? "专注于力度和准度的针对性训练" : "根据个人需要进行针对性练习",
-        sessionType: currentSessionType === "系统训练" ? "guided" : "custom",
+        title,
+        description,
+        sessionType: "guided", // All system training is guided
         duration,
         notes: trainingNotes + (userFeedback ? `\n补充：${userFeedback}` : ''),
         rating,
-        programId: currentSessionType === "系统训练" ? mainProgram?.id : undefined,
-        dayId: currentSessionType === "系统训练" ? currentDayTraining?.day : undefined
+        programId: activeTrainingType === '30day' ? mainProgram?.id : undefined,
+        dayId: activeTrainingType === '30day' ? currentDayTraining?.day : undefined
       };
 
       // Create training session
@@ -303,6 +200,19 @@ export default function Tasks() {
         completed: true
       });
       const data = await response.json();
+
+      // If advanced training (十大招), update progress
+      if (activeTrainingType === 'advanced' && activeUnitId) {
+        await apiRequest("/api/v2/user-progress", "POST", {
+          unitId: activeUnitId,
+          status: 'completed',
+          progressData: {
+            completedAt: new Date().toISOString(),
+            rating,
+            duration
+          }
+        });
+      }
 
       // Check for achievement unlocks
       const achievementResponse = await apiRequest("/api/check-achievements", "POST", {});
@@ -345,9 +255,7 @@ export default function Tasks() {
       });
 
       // Reset training states
-      setShowTrainingComplete(false);
       setTrainingNotes("");
-      setCompletionRating("");
       resetTrainingStates();
 
       // Show celebration modal first
@@ -372,36 +280,6 @@ export default function Tasks() {
     }
   };
 
-  const handleCompleteTraining = () => {
-    if (!completionRating) {
-      toast({ 
-        title: "请选择训练评分", 
-        variant: "destructive" 
-      });
-      return;
-    }
-    
-    const duration = isGuidedTraining ? guidedElapsedTime : 
-                    isCustomTraining ? customElapsedTime : 
-                    specialElapsedTime;
-    
-    const sessionData = {
-      title: currentSessionType === "系统训练" ? 
-        `第${currentDay}集：${currentDayTraining?.title || "训练"}` : 
-        currentSessionType,
-      description: currentSessionType === "系统训练" ? 
-        currentDayTraining?.description || "" : 
-        currentSessionType === "特训" ? "专注于力度和准度的针对性训练" : "根据个人需要进行针对性练习",
-      sessionType: currentSessionType === "系统训练" ? "guided" : "custom",
-      duration,
-      notes: trainingNotes,
-      rating: parseInt(completionRating),
-      programId: currentSessionType === "系统训练" ? mainProgram?.id : undefined,
-      dayId: currentSessionType === "系统训练" ? currentDayTraining?.day : undefined
-    };
-    
-    completeTrainingMutation.mutate(sessionData);
-  };
 
   // Loading state
   if (programsLoading || daysLoading) {
@@ -445,7 +323,6 @@ export default function Tasks() {
   const currentEpisode = `第${currentDay}集`;
   const difficultyBadge = getDifficultyBadge(currentDay);
   const currentDayTraining = trainingDaysArray.find((day: any) => day?.day === currentDay);
-  const isAnyTrainingActive = isGuidedTraining || isCustomTraining || isSpecialTraining;
 
   return (
     <div className="p-4 space-y-6 pb-24">
@@ -459,29 +336,39 @@ export default function Tasks() {
             <div className="flex items-center space-x-3">
               <BookOpen className="h-6 w-6 text-green-600" />
               <div>
-                <CardTitle className="text-lg text-green-800">系统训练：{currentEpisode}</CardTitle>
+                <CardTitle className="text-lg text-green-800">系统训练</CardTitle>
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Badge className={`${difficultyBadge.color} text-xs`}>
-                {difficultyBadge.label}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                第{Math.ceil(currentDay / 7)}周
-              </Badge>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <h3 className="text-xl font-semibold mb-2">
-              第{currentDay}集：{currentDayTraining?.title || "握杆"}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {currentDayTraining?.description || `第${currentDay}集训练内容，持续提升台球技能。`}
-            </p>
-            
-            {/* Training Details - Always Visible */}
+          <Tabs defaultValue="30day" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="30day">基础课程（30天）</TabsTrigger>
+              <TabsTrigger value="advanced">进阶训练（十大招精通）</TabsTrigger>
+            </TabsList>
+
+            {/* Tab 1: 30-Day Course */}
+            <TabsContent value="30day" className="mt-4 space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-semibold">
+                    第{currentDay}集：{currentDayTraining?.title || "握杆"}
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={`${difficultyBadge.color} text-xs`}>
+                      {difficultyBadge.label}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      第{Math.ceil(currentDay / 7)}周
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-4">
+                  {currentDayTraining?.description || `第${currentDay}集训练内容，持续提升台球技能。`}
+                </p>
+
+                {/* Training Details - Always Visible */}
             <div className="space-y-3 mb-4">
               {/* Training Objectives */}
               {currentDayTraining?.objectives && currentDayTraining.objectives.length > 0 && (
@@ -526,13 +413,12 @@ export default function Tasks() {
               )}
             </div>
             
-            {!isGuidedTraining ? (
+            {!isTrainingActive ? (
               <Button
-                onClick={handleStartTraining}
+                onClick={() => handleStartTraining('30day', `第${currentDay}集训练已开始`)}
                 className="w-full bg-green-600 hover:bg-green-700 touch-target"
-                disabled={isAnyTrainingActive}
               >
-                {isAnyTrainingActive ? "其他训练进行中" : "开始系统训练"}
+                开始系统训练
               </Button>
             ) : (
               <div className="space-y-4">
@@ -541,19 +427,19 @@ export default function Tasks() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <Clock className="h-5 w-5 text-green-600" />
-                      <span className="font-mono text-2xl font-bold text-green-800">{formatTime(guidedElapsedTime)}</span>
+                      <span className="font-mono text-2xl font-bold text-green-800">{formatTime(activeElapsedTime)}</span>
                     </div>
                     <div className="flex space-x-2">
                       <Button
-                        onClick={() => setIsGuidedPaused(!isGuidedPaused)}
+                        onClick={() => setIsTrainingPaused(!isTrainingPaused)}
                         variant="outline"
                         size="sm"
                       >
-                        {isGuidedPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                        {isTrainingPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>
-                  
+
                   {/* 训练心得记录区域 */}
                   <div className="p-4 bg-white rounded-lg border border-green-200 mb-4">
                     <h4 className="text-sm font-medium text-green-800 mb-2">训练心得记录</h4>
@@ -564,13 +450,11 @@ export default function Tasks() {
                       className="w-full h-20 p-2 text-sm border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
-                  
+
                   <div className="flex space-x-2">
                     <Button
                       onClick={() => {
-                        setIsGuidedTraining(false);
-                        setGuidedElapsedTime(0);
-                        setIsGuidedPaused(false);
+                        resetTrainingStates();
                         setTrainingNotes("");
                         toast({
                           title: "训练已取消",
@@ -593,248 +477,123 @@ export default function Tasks() {
                 </div>
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </TabsContent>
 
-      {/* Special Training Section */}
-      <Card className="border-2 border-purple-200 bg-purple-50">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Target className="h-6 w-6 text-purple-600" />
-              <div>
-                <CardTitle className="text-lg text-purple-800">特训</CardTitle>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Badge className="bg-purple-100 text-purple-800 text-xs">
-                专项训练
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="text-xl font-semibold mb-2">
-              力度与准度专项训练
-            </h3>
-            <p className="text-gray-600 mb-4">
-              针对性训练，专注于提升击球力度控制和瞄准准确度，快速突破技术瓶颈。
-            </p>
-            
-            {!isSpecialTraining ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    onClick={handleStartSpecialTraining}
-                    className="bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center space-x-2"
-                    disabled={isAnyTrainingActive}
-                  >
-                    <Zap className="h-4 w-4" />
-                    <span>力度训练</span>
-                  </Button>
-                  <Button
-                    onClick={handleStartSpecialTraining}
-                    className="bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center space-x-2"
-                    disabled={isAnyTrainingActive}
-                  >
-                    <Target className="h-4 w-4" />
-                    <span>准度训练</span>
-                  </Button>
+            {/* Tab 2: Advanced Training (Ten Core Skills) */}
+            <TabsContent value="advanced" className="mt-4 space-y-4">
+              {pathLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                  <p className="text-sm text-gray-600 mt-4">加载训练内容...</p>
                 </div>
-                {isAnyTrainingActive && (
-                  <p className="text-sm text-gray-500 text-center">其他训练进行中</p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-purple-100 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Clock className="h-5 w-5 text-purple-600" />
-                      <span className="font-mono text-2xl font-bold text-purple-800">{formatTime(specialElapsedTime)}</span>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        onClick={() => setIsSpecialPaused(!isSpecialPaused)}
-                        variant="outline"
-                        size="sm"
-                        className="touch-target"
-                      >
-                        {isSpecialPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* 训练心得记录区域 */}
-                  <div className="p-4 bg-white rounded-lg border border-purple-200 mb-4">
-                    <h4 className="text-sm font-medium text-purple-800 mb-2">训练心得记录</h4>
-                    <textarea
-                      value={trainingNotes}
-                      onChange={(e) => setTrainingNotes(e.target.value)}
-                      placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
-                      className="w-full h-20 p-2 text-sm border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => {
-                        setIsSpecialTraining(false);
-                        setSpecialElapsedTime(0);
-                        setIsSpecialPaused(false);
-                        setTrainingNotes("");
-                        toast({
-                          title: "特训已取消",
-                          description: "你可以随时重新开始特训"
-                        });
-                      }}
-                      variant="outline"
-                      className="flex-1 touch-target"
-                    >
-                      取消特训
-                    </Button>
-                    <Button
-                      onClick={handleStopTraining}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 touch-target"
-                    >
-                      <Square className="h-4 w-4 mr-2" />
-                      完成特训
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              ) : trainingPathData && trainingPathData.levels && trainingPathData.levels.length > 0 ? (
+                <>
+                  {/* Statistics Dashboard - Compact Version */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    {/* Total Units */}
+                    <Card className="border border-blue-100 bg-blue-50/50">
+                      <CardContent className="pt-4 pb-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">训练单元</p>
+                            <p className="text-2xl font-bold text-blue-600">{stats.totalUnits}</p>
+                          </div>
+                          <Target className="h-5 w-5 text-blue-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
 
-      {/* Custom Training Section */}
-      <Card className="border-2 border-blue-200 bg-blue-50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg text-blue-800">自主训练</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-gray-600">
-            根据个人需要进行针对性练习，可以专注于特定技巧或弱项改进。
-          </p>
-          
-          {/* Custom Training Details - Always Visible */}
-          <div className="space-y-3 mb-4">
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-medium text-blue-800 mb-2">自主训练特点</h4>
-              <div className="space-y-1">
-                <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 text-sm">•</span>
-                  <span className="text-sm text-gray-700">灵活安排训练内容和时间</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 text-sm">•</span>
-                  <span className="text-sm text-gray-700">针对个人弱项进行专项练习</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 text-sm">•</span>
-                  <span className="text-sm text-gray-700">自由控制训练节奏和强度</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-medium text-green-800 mb-2">建议训练项目</h4>
-              <div className="space-y-1">
-                <div className="flex items-start space-x-2">
-                  <span className="text-green-600 text-sm">•</span>
-                  <span className="text-sm text-gray-700">基础姿势和握杆练习</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="text-green-600 text-sm">•</span>
-                  <span className="text-sm text-gray-700">特定球型的反复练习</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="text-green-600 text-sm">•</span>
-                  <span className="text-sm text-gray-700">战术组合和连续击球</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-3 rounded border">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-600">建议训练时长</span>
-                <Badge variant="outline" className="text-xs">
-                  10-60 分钟
-                </Badge>
-              </div>
-            </div>
-          </div>
-          
-          {!isCustomTraining ? (
-            <Button
-              onClick={handleStartCustomTraining}
-              className="w-full bg-blue-600 hover:bg-blue-700 touch-target"
-              disabled={isAnyTrainingActive}
-            >
-              {isAnyTrainingActive ? "其他训练进行中" : "开始自主训练"}
-            </Button>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-blue-100 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <span className="font-mono text-2xl font-bold text-blue-800">{formatTime(customElapsedTime)}</span>
+                    {/* Completion Rate */}
+                    <Card className="border border-green-100 bg-green-50/50">
+                      <CardContent className="pt-4 pb-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">完成率</p>
+                            <p className="text-2xl font-bold text-green-600">{stats.completionPercentage}%</p>
+                          </div>
+                          <TrendingUp className="h-5 w-5 text-green-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Total XP */}
+                    <Card className="border border-yellow-100 bg-yellow-50/50">
+                      <CardContent className="pt-4 pb-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">经验值</p>
+                            <p className="text-2xl font-bold text-yellow-600">{stats.totalXpEarned}</p>
+                          </div>
+                          <Trophy className="h-5 w-5 text-yellow-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* In Progress */}
+                    <Card className="border border-purple-100 bg-purple-50/50">
+                      <CardContent className="pt-4 pb-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">进行中</p>
+                            <p className="text-2xl font-bold text-purple-600">{stats.inProgressUnits}</p>
+                          </div>
+                          <Clock className="h-5 w-5 text-purple-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => setIsCustomPaused(!isCustomPaused)}
-                      variant="outline"
-                      size="sm"
-                      className="touch-target"
-                    >
-                      {isCustomPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                    </Button>
+
+                  {/* Training Levels */}
+                  <div className="space-y-4">
+                    {trainingPathData.levels.map((level) => (
+                      <LevelAccordion
+                        key={level.id}
+                        level={level}
+                        onUnitStatusChange={(unitId, status) => {
+                          updateProgress(
+                            { unitId, status },
+                            {
+                              onSuccess: (data) => {
+                                if (status === 'completed') {
+                                  toast({
+                                    title: '训练完成！',
+                                    description: `获得 ${data.xpAwarded} XP`,
+                                    duration: 3000,
+                                  });
+                                } else if (status === 'in_progress') {
+                                  toast({
+                                    title: '开始训练',
+                                    description: '加油，坚持就是胜利！',
+                                    duration: 2000,
+                                  });
+                                }
+                              },
+                              onError: (error) => {
+                                toast({
+                                  title: '更新失败',
+                                  description: error.message || '请稍后重试',
+                                  variant: 'destructive',
+                                  duration: 3000,
+                                });
+                              },
+                            }
+                          );
+                        }}
+                        defaultExpanded={level.levelNumber === 4}
+                      />
+                    ))}
                   </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-600">
+                  <Target className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-lg font-medium mb-2">暂无训练内容</p>
+                  <p className="text-sm">训练内容正在准备中，请稍后再来。</p>
                 </div>
-                
-                {/* 训练心得记录区域 */}
-                <div className="p-4 bg-white rounded-lg border border-blue-200 mb-4">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">训练心得记录</h4>
-                  <textarea
-                    value={trainingNotes}
-                    onChange={(e) => setTrainingNotes(e.target.value)}
-                    placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
-                    className="w-full h-20 p-2 text-sm border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={() => {
-                      setIsCustomTraining(false);
-                      setCustomElapsedTime(0);
-                      setIsCustomPaused(false);
-                      setTrainingNotes("");
-                      toast({
-                        title: "自主训练已取消",
-                        description: "你可以随时重新开始训练"
-                      });
-                    }}
-                    variant="outline"
-                    className="flex-1 touch-target"
-                  >
-                    取消训练
-                  </Button>
-                  <Button
-                    onClick={handleStopTraining}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 touch-target"
-                  >
-                    <Square className="h-4 w-4 mr-2" />
-                    完成训练
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -911,61 +670,6 @@ export default function Tasks() {
         </CardContent>
       </Card>
 
-      {/* Training Completion Dialog */}
-      <Dialog open={showTrainingComplete} onOpenChange={setShowTrainingComplete}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>完成训练</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="training-notes">训练心得</Label>
-              <Textarea
-                id="training-notes"
-                placeholder="记录训练过程中的感受、收获或需要改进的地方..."
-                value={trainingNotes}
-                onChange={(e) => setTrainingNotes(e.target.value)}
-                className="mt-1"
-                rows={4}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="completion-rating">训练评分</Label>
-              <Select value={completionRating} onValueChange={setCompletionRating}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="选择训练完成度" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5分 - 很满意</SelectItem>
-                  <SelectItem value="4">4分 - 满意</SelectItem>
-                  <SelectItem value="3">3分 - 一般</SelectItem>
-                  <SelectItem value="2">2分 - 不满意</SelectItem>
-                  <SelectItem value="1">1分 - 很不满意</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowTrainingComplete(false)}
-                className="flex-1"
-              >
-                继续训练
-              </Button>
-              <Button
-                onClick={handleCompleteTraining}
-                disabled={completeTrainingMutation.isPending}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {completeTrainingMutation.isPending ? "保存中..." : "完成训练"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Celebration Modal */}
       {showCelebration && celebrationData && (
         <TrainingCompleteModal
@@ -984,11 +688,7 @@ export default function Tasks() {
       {showRatingModal && (
         <RatingModal
           sessionType={currentSessionType}
-          duration={
-            isGuidedTraining ? guidedElapsedTime :
-            isCustomTraining ? customElapsedTime :
-            specialElapsedTime
-          }
+          duration={activeElapsedTime}
           notes={trainingNotes}
           onSubmit={handleRatingSubmit}
           onCancel={() => setShowRatingModal(false)}
