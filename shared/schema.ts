@@ -275,6 +275,112 @@ export type InsertUserDailyGoal = z.infer<typeof insertUserDailyGoalSchema>;
 
 // === V2.1 Training System (十大招 System) ===
 
+// ============================================================================
+// 90天训练系统 (90-Day Training System - Fu Jiajun Ten Core Skills)
+// ============================================================================
+
+/**
+ * Ten Core Skills Table (十大招主表)
+ * Fu Jiajun's 10 core billiards skills that form the foundation of the 90-day program
+ */
+export const tencoreSkills = pgTable("tencore_skills", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  skillNumber: integer("skill_number").notNull().unique(), // 1-10
+  skillName: varchar("skill_name", { length: 50 }).notNull(), // e.g., "基本功", "发力", "五分点"
+  description: text("description"),
+  trainingDays: integer("training_days").notNull(), // Number of days for this skill
+  orderIndex: integer("order_index").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * 90-Day Curriculum Table (90天课程表)
+ * Daily training curriculum mapped to the ten core skills
+ */
+export const ninetyDayCurriculum = pgTable("ninety_day_curriculum", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  dayNumber: integer("day_number").notNull().unique(), // 1-90
+  tencoreSkillId: uuid("tencore_skill_id").notNull().references(() => tencoreSkills.id, { onDelete: 'cascade' }),
+  trainingType: varchar("training_type", { length: 20 }).notNull(), // '系统', '专项', '测试', '理论', '考核'
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  originalCourseRef: varchar("original_course_ref", { length: 50 }), // e.g., "第1集"
+  objectives: jsonb("objectives").default([]), // ["目标1", "目标2"]
+  keyPoints: jsonb("key_points").default([]), // ["要点1", "要点2"]
+  practiceRequirements: jsonb("practice_requirements").default({}),
+  estimatedDuration: integer("estimated_duration").default(60), // minutes
+  difficulty: varchar("difficulty", { length: 10 }), // '初级', '中级', '高级'
+  orderIndex: integer("order_index").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * Specialized Training Table (专项训练表)
+ * Specialized drills for specific skills: 五分点, 力度, 分离角
+ */
+export const specializedTraining = pgTable("specialized_training", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  category: varchar("category", { length: 50 }).notNull(), // '五分点', '力度', '分离角'
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  trainingMethod: text("training_method"), // Detailed training instructions
+  evaluationCriteria: jsonb("evaluation_criteria").default({}), // {"初级": "...", "中级": "...", "高级": "..."}
+  relatedTencoreSkills: jsonb("related_tencore_skills").default([]), // [3, 4, 5]
+  difficulty: varchar("difficulty", { length: 10 }), // '初级', '中级', '高级'
+  estimatedDuration: integer("estimated_duration").default(30), // minutes
+  orderIndex: integer("order_index").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * User 90-Day Progress Table (用户90天训练进度表)
+ * Tracks user's progress through the 90-day program
+ */
+export const userNinetyDayProgress = pgTable("user_ninety_day_progress", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  currentDay: integer("current_day").notNull().default(1), // 1-90
+  completedDays: jsonb("completed_days").default([]), // [1, 2, 3]
+  tencoreProgress: jsonb("tencore_progress").default({}), // {"1": 60, "2": 40}
+  specializedProgress: jsonb("specialized_progress").default({}), // {"五分点": {"1分点": 80}}
+  totalTrainingTime: integer("total_training_time").default(0), // minutes
+  lastTrainingDate: timestamp("last_training_date", { withTimezone: true }),
+  startDate: timestamp("start_date", { withTimezone: true }).defaultNow().notNull(),
+  estimatedCompletionDate: timestamp("estimated_completion_date", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("user_ninety_day_progress_user_unique").on(table.userId),
+]);
+
+/**
+ * 90-Day Training Records Table (90天训练记录表)
+ * Detailed records of each training session
+ */
+export const ninetyDayTrainingRecords = pgTable("ninety_day_training_records", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  dayNumber: integer("day_number").notNull(), // 1-90
+  curriculumId: uuid("curriculum_id").references(() => ninetyDayCurriculum.id, { onDelete: 'cascade' }),
+  trainingType: varchar("training_type", { length: 20 }).notNull(), // '系统', '专项', '测试'
+  duration: integer("duration").notNull(), // minutes
+  rating: integer("rating"), // 1-5
+  notes: text("notes"),
+  aiFeedback: text("ai_feedback"),
+  completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ============================================================================
+// Old V2.1 Training System (8-Level System - Keep for now)
+// ============================================================================
+
 /**
  * Training Levels Table (训练关卡表)
  * Represents the 8-level "十大招" training system
@@ -388,7 +494,62 @@ export const specializedTrainingPlans = pgTable("specialized_training_plans", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-// V2.1 TypeScript Content Types
+// ============================================================================
+// 90-Day Training System Insert Schemas
+// ============================================================================
+
+export const insertTencoreSkillSchema = createInsertSchema(tencoreSkills).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNinetyDayCurriculumSchema = createInsertSchema(ninetyDayCurriculum).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSpecializedTrainingSchema = createInsertSchema(specializedTraining).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserNinetyDayProgressSchema = createInsertSchema(userNinetyDayProgress).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNinetyDayTrainingRecordSchema = createInsertSchema(ninetyDayTrainingRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
+// ============================================================================
+// 90-Day Training System TypeScript Types
+// ============================================================================
+
+export type TencoreSkill = typeof tencoreSkills.$inferSelect;
+export type InsertTencoreSkill = z.infer<typeof insertTencoreSkillSchema>;
+
+export type NinetyDayCurriculum = typeof ninetyDayCurriculum.$inferSelect;
+export type InsertNinetyDayCurriculum = z.infer<typeof insertNinetyDayCurriculumSchema>;
+
+export type SpecializedTraining = typeof specializedTraining.$inferSelect;
+export type InsertSpecializedTraining = z.infer<typeof insertSpecializedTrainingSchema>;
+
+export type UserNinetyDayProgress = typeof userNinetyDayProgress.$inferSelect;
+export type InsertUserNinetyDayProgress = z.infer<typeof insertUserNinetyDayProgressSchema>;
+
+export type NinetyDayTrainingRecord = typeof ninetyDayTrainingRecords.$inferSelect;
+export type InsertNinetyDayTrainingRecord = z.infer<typeof insertNinetyDayTrainingRecordSchema>;
+
+// ============================================================================
+// Old V2.1 TypeScript Content Types
+// ============================================================================
+
 export interface TheoryContent {
   type: 'theory';
   text: string;
@@ -568,6 +729,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   userSkillProgress: many(userSkillProgress),
   // V2.1 Training System
   userTrainingProgress: many(userTrainingProgress),
+  // 90-Day Training System
+  ninetyDayProgress: many(userNinetyDayProgress),
+  ninetyDayTrainingRecords: many(ninetyDayTrainingRecords),
 }));
 
 export const tasksRelations = relations(tasks, ({ many }) => ({
@@ -670,7 +834,43 @@ export const userDailyGoalsRelations = relations(userDailyGoals, ({ one }) => ({
   }),
 }));
 
-// === V2.1 Training System Relations ===
+// ============================================================================
+// 90-Day Training System Relations
+// ============================================================================
+
+export const tencoreSkillsRelations = relations(tencoreSkills, ({ many }) => ({
+  curriculumDays: many(ninetyDayCurriculum),
+}));
+
+export const ninetyDayCurriculumRelations = relations(ninetyDayCurriculum, ({ one, many }) => ({
+  tencoreSkill: one(tencoreSkills, {
+    fields: [ninetyDayCurriculum.tencoreSkillId],
+    references: [tencoreSkills.id],
+  }),
+  trainingRecords: many(ninetyDayTrainingRecords),
+}));
+
+export const userNinetyDayProgressRelations = relations(userNinetyDayProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [userNinetyDayProgress.userId],
+    references: [users.id],
+  }),
+}));
+
+export const ninetyDayTrainingRecordsRelations = relations(ninetyDayTrainingRecords, ({ one }) => ({
+  user: one(users, {
+    fields: [ninetyDayTrainingRecords.userId],
+    references: [users.id],
+  }),
+  curriculum: one(ninetyDayCurriculum, {
+    fields: [ninetyDayTrainingRecords.curriculumId],
+    references: [ninetyDayCurriculum.id],
+  }),
+}));
+
+// ============================================================================
+// Old V2.1 Training System Relations
+// ============================================================================
 
 export const trainingLevelsRelations = relations(trainingLevels, ({ many, one }) => ({
   skills: many(trainingSkills),
