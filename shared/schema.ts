@@ -510,7 +510,7 @@ export const insertNinetyDayCurriculumSchema = createInsertSchema(ninetyDayCurri
   updatedAt: true,
 });
 
-export const insertSpecializedTrainingSchema = createInsertSchema(specializedTraining).omit({
+export const insertNinetyDaySpecializedTrainingSchema = createInsertSchema(specializedTraining).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -537,8 +537,8 @@ export type InsertTencoreSkill = z.infer<typeof insertTencoreSkillSchema>;
 export type NinetyDayCurriculum = typeof ninetyDayCurriculum.$inferSelect;
 export type InsertNinetyDayCurriculum = z.infer<typeof insertNinetyDayCurriculumSchema>;
 
-export type SpecializedTraining = typeof specializedTraining.$inferSelect;
-export type InsertSpecializedTraining = z.infer<typeof insertSpecializedTrainingSchema>;
+export type NinetyDaySpecializedTraining = typeof specializedTraining.$inferSelect;
+export type InsertNinetyDaySpecializedTraining = z.infer<typeof insertNinetyDaySpecializedTrainingSchema>;
 
 export type UserNinetyDayProgress = typeof userNinetyDayProgress.$inferSelect;
 export type InsertUserNinetyDayProgress = z.infer<typeof insertUserNinetyDayProgressSchema>;
