@@ -1,4 +1,4 @@
-import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, achievements, userAchievements, type User, type InsertUser, type UpsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote, type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement, trainingLevels, trainingSkills, subSkills, trainingUnits, userTrainingProgress, specializedTrainings, specializedTrainingPlans, type TrainingLevel, type TrainingSkill, type SubSkill, type TrainingUnit, type UserTrainingProgress as UserTrainingProgressType, type SpecializedTraining, type SpecializedTrainingPlan } from "../shared/schema.js";
+import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, achievements, userAchievements, type User, type InsertUser, type UpsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote, type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement, trainingLevels, trainingSkills, subSkills, trainingUnits, userTrainingProgress, specializedTrainings, specializedTrainingPlans, type TrainingLevel, type TrainingSkill, type SubSkill, type TrainingUnit, type UserTrainingProgress as UserTrainingProgressType, type SpecializedTraining, type SpecializedTrainingPlan, tencoreSkills, ninetyDayCurriculum, specializedTraining, userNinetyDayProgress, ninetyDayTrainingRecords, type TencoreSkill, type NinetyDayCurriculum, type SpecializedTraining as NinetyDaySpecializedTraining, type UserNinetyDayProgress, type NinetyDayTrainingRecord, type InsertNinetyDayTrainingRecord, type InsertUserNinetyDayProgress } from "../shared/schema.js";
 import { db } from "./db.js";
 import { eq, desc, gte, and, lte, sql, inArray } from "drizzle-orm";
 
@@ -80,6 +80,31 @@ export interface IStorage {
   // Specialized Training
   getAllSpecializedTrainings(): Promise<SpecializedTraining[]>;
   getSpecializedTrainingPlans(trainingId: string): Promise<SpecializedTrainingPlan[]>;
+
+  // === 90-Day Training System Operations ===
+
+  // Ten Core Skills
+  getTencoreSkills(): Promise<TencoreSkill[]>;
+  getTencoreSkillById(id: string): Promise<TencoreSkill | undefined>;
+
+  // 90-Day Curriculum
+  getNinetyDayCurriculum(params?: { dayNumber?: number; skillId?: string }): Promise<NinetyDayCurriculum[]>;
+  getNinetyDayCurriculumByDay(dayNumber: number): Promise<NinetyDayCurriculum | undefined>;
+  getNinetyDayCurriculumBySkill(skillId: string): Promise<NinetyDayCurriculum[]>;
+
+  // Specialized Training (90-Day System)
+  getNinetyDaySpecializedTrainings(category?: string): Promise<NinetyDaySpecializedTraining[]>;
+  getNinetyDaySpecializedTrainingById(id: string): Promise<NinetyDaySpecializedTraining | undefined>;
+
+  // User Progress
+  getUserNinetyDayProgress(userId: string): Promise<UserNinetyDayProgress | undefined>;
+  initializeUserNinetyDayProgress(userId: string): Promise<UserNinetyDayProgress>;
+  updateUserNinetyDayProgress(userId: string, updates: Partial<InsertUserNinetyDayProgress>): Promise<UserNinetyDayProgress>;
+
+  // Training Records
+  getNinetyDayTrainingRecords(userId: string, params?: { dayNumber?: number; limit?: number }): Promise<NinetyDayTrainingRecord[]>;
+  createNinetyDayTrainingRecord(record: InsertNinetyDayTrainingRecord): Promise<NinetyDayTrainingRecord>;
+  completeNinetyDayTraining(userId: string, dayNumber: number, duration: number, rating: number, notes?: string): Promise<{ record: NinetyDayTrainingRecord; progress: UserNinetyDayProgress }>;
 }
 
 // V2.1 Training System Types for Storage Layer
@@ -1246,6 +1271,324 @@ export class DatabaseStorage implements IStorage {
       .orderBy(specializedTrainingPlans.planOrder);
 
     return plans;
+  }
+
+  // ============================================================================
+  // 90-Day Training System Implementation
+  // ============================================================================
+
+  /**
+   * Get all ten core skills
+   */
+  async getTencoreSkills(): Promise<TencoreSkill[]> {
+    const db = this.ensureDb();
+
+    const skills = await db
+      .select()
+      .from(tencoreSkills)
+      .where(eq(tencoreSkills.isActive, true))
+      .orderBy(tencoreSkills.orderIndex);
+
+    return skills;
+  }
+
+  /**
+   * Get a ten core skill by ID
+   */
+  async getTencoreSkillById(id: string): Promise<TencoreSkill | undefined> {
+    const db = this.ensureDb();
+
+    const [skill] = await db
+      .select()
+      .from(tencoreSkills)
+      .where(and(eq(tencoreSkills.id, id), eq(tencoreSkills.isActive, true)))
+      .limit(1);
+
+    return skill;
+  }
+
+  /**
+   * Get 90-day curriculum with optional filters
+   */
+  async getNinetyDayCurriculum(params?: { dayNumber?: number; skillId?: string }): Promise<NinetyDayCurriculum[]> {
+    const db = this.ensureDb();
+
+    let query = db
+      .select()
+      .from(ninetyDayCurriculum)
+      .where(eq(ninetyDayCurriculum.isActive, true))
+      .$dynamic();
+
+    if (params?.dayNumber) {
+      query = query.where(eq(ninetyDayCurriculum.dayNumber, params.dayNumber));
+    }
+
+    if (params?.skillId) {
+      query = query.where(eq(ninetyDayCurriculum.tencoreSkillId, params.skillId));
+    }
+
+    const curriculum = await query.orderBy(ninetyDayCurriculum.orderIndex);
+
+    return curriculum;
+  }
+
+  /**
+   * Get curriculum for a specific day
+   */
+  async getNinetyDayCurriculumByDay(dayNumber: number): Promise<NinetyDayCurriculum | undefined> {
+    const db = this.ensureDb();
+
+    const [curriculum] = await db
+      .select()
+      .from(ninetyDayCurriculum)
+      .where(and(
+        eq(ninetyDayCurriculum.dayNumber, dayNumber),
+        eq(ninetyDayCurriculum.isActive, true)
+      ))
+      .limit(1);
+
+    return curriculum;
+  }
+
+  /**
+   * Get all curriculum days for a specific skill
+   */
+  async getNinetyDayCurriculumBySkill(skillId: string): Promise<NinetyDayCurriculum[]> {
+    const db = this.ensureDb();
+
+    const curriculum = await db
+      .select()
+      .from(ninetyDayCurriculum)
+      .where(and(
+        eq(ninetyDayCurriculum.tencoreSkillId, skillId),
+        eq(ninetyDayCurriculum.isActive, true)
+      ))
+      .orderBy(ninetyDayCurriculum.orderIndex);
+
+    return curriculum;
+  }
+
+  /**
+   * Get specialized training exercises with optional category filter
+   */
+  async getNinetyDaySpecializedTrainings(category?: string): Promise<NinetyDaySpecializedTraining[]> {
+    const db = this.ensureDb();
+
+    let query = db
+      .select()
+      .from(specializedTraining)
+      .where(eq(specializedTraining.isActive, true))
+      .$dynamic();
+
+    if (category) {
+      query = query.where(eq(specializedTraining.category, category));
+    }
+
+    const trainings = await query.orderBy(specializedTraining.orderIndex);
+
+    return trainings;
+  }
+
+  /**
+   * Get a specialized training by ID
+   */
+  async getNinetyDaySpecializedTrainingById(id: string): Promise<NinetyDaySpecializedTraining | undefined> {
+    const db = this.ensureDb();
+
+    const [training] = await db
+      .select()
+      .from(specializedTraining)
+      .where(and(
+        eq(specializedTraining.id, id),
+        eq(specializedTraining.isActive, true)
+      ))
+      .limit(1);
+
+    return training;
+  }
+
+  /**
+   * Get user's 90-day training progress
+   */
+  async getUserNinetyDayProgress(userId: string): Promise<UserNinetyDayProgress | undefined> {
+    const db = this.ensureDb();
+
+    const [progress] = await db
+      .select()
+      .from(userNinetyDayProgress)
+      .where(eq(userNinetyDayProgress.userId, userId))
+      .limit(1);
+
+    return progress;
+  }
+
+  /**
+   * Initialize 90-day training progress for a new user
+   */
+  async initializeUserNinetyDayProgress(userId: string): Promise<UserNinetyDayProgress> {
+    const db = this.ensureDb();
+
+    // Check if progress already exists
+    const existing = await this.getUserNinetyDayProgress(userId);
+    if (existing) {
+      return existing;
+    }
+
+    // Create new progress record
+    const [progress] = await db
+      .insert(userNinetyDayProgress)
+      .values({
+        userId,
+        currentDay: 1,
+        completedDays: [],
+        tencoreProgress: {},
+        specializedProgress: {},
+        totalTrainingTime: 0,
+        startDate: new Date(),
+        estimatedCompletionDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
+      })
+      .returning();
+
+    return progress;
+  }
+
+  /**
+   * Update user's 90-day training progress
+   */
+  async updateUserNinetyDayProgress(
+    userId: string,
+    updates: Partial<InsertUserNinetyDayProgress>
+  ): Promise<UserNinetyDayProgress> {
+    const db = this.ensureDb();
+
+    const [progress] = await db
+      .update(userNinetyDayProgress)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(userNinetyDayProgress.userId, userId))
+      .returning();
+
+    if (!progress) {
+      throw new Error(`Progress not found for user ${userId}`);
+    }
+
+    return progress;
+  }
+
+  /**
+   * Get user's training records with optional filters
+   */
+  async getNinetyDayTrainingRecords(
+    userId: string,
+    params?: { dayNumber?: number; limit?: number }
+  ): Promise<NinetyDayTrainingRecord[]> {
+    const db = this.ensureDb();
+
+    let query = db
+      .select()
+      .from(ninetyDayTrainingRecords)
+      .where(eq(ninetyDayTrainingRecords.userId, userId))
+      .$dynamic();
+
+    if (params?.dayNumber) {
+      query = query.where(eq(ninetyDayTrainingRecords.dayNumber, params.dayNumber));
+    }
+
+    query = query.orderBy(desc(ninetyDayTrainingRecords.completedAt));
+
+    if (params?.limit) {
+      query = query.limit(params.limit);
+    }
+
+    const records = await query;
+
+    return records;
+  }
+
+  /**
+   * Create a training record
+   */
+  async createNinetyDayTrainingRecord(record: InsertNinetyDayTrainingRecord): Promise<NinetyDayTrainingRecord> {
+    const db = this.ensureDb();
+
+    const [newRecord] = await db
+      .insert(ninetyDayTrainingRecords)
+      .values(record)
+      .returning();
+
+    return newRecord;
+  }
+
+  /**
+   * Complete a day's training and update progress
+   */
+  async completeNinetyDayTraining(
+    userId: string,
+    dayNumber: number,
+    duration: number,
+    rating: number,
+    notes?: string
+  ): Promise<{ record: NinetyDayTrainingRecord; progress: UserNinetyDayProgress }> {
+    const db = this.ensureDb();
+
+    // Get curriculum for this day
+    const curriculum = await this.getNinetyDayCurriculumByDay(dayNumber);
+    if (!curriculum) {
+      throw new Error(`Curriculum not found for day ${dayNumber}`);
+    }
+
+    // Get or create user progress
+    let progress = await this.getUserNinetyDayProgress(userId);
+    if (!progress) {
+      progress = await this.initializeUserNinetyDayProgress(userId);
+    }
+
+    // Create training record
+    const record = await this.createNinetyDayTrainingRecord({
+      userId,
+      dayNumber,
+      curriculumId: curriculum.id,
+      trainingType: curriculum.trainingType,
+      duration,
+      rating,
+      notes,
+    });
+
+    // Update progress
+    const completedDays = Array.isArray(progress.completedDays) ? progress.completedDays : [];
+    const tencoreProgress = typeof progress.tencoreProgress === 'object' ? progress.tencoreProgress : {};
+
+    // Add this day to completed days if not already present
+    const updatedCompletedDays = completedDays.includes(dayNumber)
+      ? completedDays
+      : [...completedDays, dayNumber].sort((a, b) => a - b);
+
+    // Update ten core skill progress
+    const skillNumber = curriculum.tencoreSkillId;
+    const skillProgress = (tencoreProgress as any)[skillNumber] || 0;
+    const updatedTencoreProgress = {
+      ...tencoreProgress,
+      [skillNumber]: Math.min(100, skillProgress + 10), // Increment by 10%, max 100%
+    };
+
+    // Calculate next day
+    const nextDay = dayNumber < 90 ? dayNumber + 1 : 90;
+
+    // Update progress record
+    const updatedProgress = await this.updateUserNinetyDayProgress(userId, {
+      currentDay: nextDay,
+      completedDays: updatedCompletedDays,
+      tencoreProgress: updatedTencoreProgress,
+      totalTrainingTime: (progress.totalTrainingTime || 0) + duration,
+      lastTrainingDate: new Date(),
+    });
+
+    return {
+      record,
+      progress: updatedProgress,
+    };
   }
 }
 
