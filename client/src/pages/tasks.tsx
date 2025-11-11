@@ -17,22 +17,26 @@ import { AiFeedbackModal } from "@/components/AiFeedbackModal";
 import { AchievementUnlockModal } from "@/components/AchievementUnlockModal";
 import { DailyGoalsPanel } from "@/components/DailyGoalsPanel";
 import { LevelAccordion } from "@/components/LevelAccordion";
+import { NinetyDayProgressBar } from "@/components/NinetyDayProgressBar";
+import { DayCurriculumCard } from "@/components/DayCurriculumCard";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star, Trophy, TrendingUp } from "lucide-react";
 import { useTrainingPath, useUpdateProgress, useTrainingPathStats } from "@/hooks/useAdvancedTraining";
+import { useNinetyDayProgress, useCurrentDayCurriculum, useCompleteDay, isDayCompleted } from "@/hooks/useNinetyDayTraining";
 
 export default function Tasks() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
-  // Training states - Unified for both 30-day and Level 4-8
+  // Training states - Unified for 30-day, 90-day, and Level 4-8
   const [isTrainingActive, setIsTrainingActive] = useState(false);
   const [activeElapsedTime, setActiveElapsedTime] = useState(0);
   const [isTrainingPaused, setIsTrainingPaused] = useState(false);
-  const [activeTrainingType, setActiveTrainingType] = useState<'30day' | 'advanced' | null>(null);
+  const [activeTrainingType, setActiveTrainingType] = useState<'30day' | '90day' | 'advanced' | null>(null);
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
   const [activeDayId, setActiveDayId] = useState<number | null>(null);
+  const [active90DayNumber, setActive90DayNumber] = useState<number | null>(null);
   
   // Training completion states
   const [trainingNotes, setTrainingNotes] = useState("");
@@ -90,6 +94,13 @@ export default function Tasks() {
   const { data: trainingPathData, isLoading: pathLoading } = useTrainingPath();
   const { mutate: updateProgress } = useUpdateProgress();
   const stats = useTrainingPathStats(trainingPathData);
+
+  // Get 90-day training system data
+  const { data: ninetyDayProgress, isLoading: ninetyDayProgressLoading } = useNinetyDayProgress();
+  const ninetyDayCurrentDay = ninetyDayProgress?.currentDay || 1;
+  const { data: currentDayCurriculumData, isLoading: currentDayLoading } = useCurrentDayCurriculum(ninetyDayCurrentDay);
+  const { mutate: completeDay } = useCompleteDay();
+  const currentDayCurriculum = currentDayCurriculumData?.curriculum?.[0];
 
 
   // Unified timer effect
@@ -178,6 +189,9 @@ export default function Tasks() {
       if (activeTrainingType === '30day') {
         title = `第${currentDay}集：${currentDayTraining?.title || "训练"}`;
         description = currentDayTraining?.description || "";
+      } else if (activeTrainingType === '90day' && active90DayNumber && currentDayCurriculum) {
+        title = `第${active90DayNumber}天：${currentDayCurriculum.title}`;
+        description = currentDayCurriculum.description || "十大招系统训练";
       } else if (activeTrainingType === 'advanced' && activeUnitId) {
         title = `进阶训练单元：${activeUnitId}`;
         description = "十大招精通 - 进阶系统训练";
@@ -200,6 +214,28 @@ export default function Tasks() {
         completed: true
       });
       const data = await response.json();
+
+      // If 90-day training, complete the day
+      if (activeTrainingType === '90day' && active90DayNumber) {
+        completeDay({
+          dayNumber: active90DayNumber,
+          duration,
+          rating,
+          notes: sessionData.notes || undefined
+        }, {
+          onSuccess: (completionData) => {
+            console.log('90-day training completed:', completionData);
+          },
+          onError: (error) => {
+            console.error('Failed to complete 90-day training:', error);
+            toast({
+              title: "进度更新失败",
+              description: "训练已记录，但进度更新失败",
+              variant: "destructive"
+            });
+          }
+        });
+      }
 
       // If advanced training (十大招), update progress
       if (activeTrainingType === 'advanced' && activeUnitId) {
@@ -342,13 +378,132 @@ export default function Tasks() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Tabs defaultValue="30day" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue="90day" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="90day">十大招系统训练</TabsTrigger>
               <TabsTrigger value="30day">基础课程（30天）</TabsTrigger>
-              <TabsTrigger value="advanced">进阶训练（十大招精通）</TabsTrigger>
+              <TabsTrigger value="advanced">进阶训练（专项）</TabsTrigger>
             </TabsList>
 
-            {/* Tab 1: 30-Day Course */}
+            {/* Tab 1: 90-Day Training System (Ten Core Skills) */}
+            <TabsContent value="90day" className="mt-4 space-y-4">
+              {/* Progress Bar */}
+              <NinetyDayProgressBar />
+
+              {/* Current Day Training Card */}
+              {ninetyDayProgressLoading || currentDayLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-sm text-muted-foreground mt-4">加载训练内容...</p>
+                </div>
+              ) : currentDayCurriculum ? (
+                <DayCurriculumCard
+                  curriculum={currentDayCurriculum}
+                  isCompleted={isDayCompleted(ninetyDayProgress, ninetyDayCurrentDay)}
+                  isCurrent={true}
+                  onStartTraining={() => {
+                    setIsTrainingActive(true);
+                    setActiveTrainingType('90day');
+                    setActive90DayNumber(ninetyDayCurrentDay);
+                    setActiveElapsedTime(0);
+                    setIsTrainingPaused(false);
+                    setCurrentSessionType(`第${ninetyDayCurrentDay}天 - ${currentDayCurriculum.title}`);
+                    toast({
+                      title: "训练开始",
+                      description: `第${ninetyDayCurrentDay}天训练已开始，加油！`,
+                    });
+                  }}
+                  disabled={isTrainingActive}
+                />
+              ) : (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground">暂无训练内容</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Active Training Interface */}
+              {isTrainingActive && activeTrainingType === '90day' && (
+                <Card className="border-primary">
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      {/* Timer Display */}
+                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <Clock className="h-5 w-5 text-primary" />
+                            <span className="font-mono text-2xl font-bold text-primary">
+                              {formatTime(activeElapsedTime)}
+                            </span>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              onClick={() => setIsTrainingPaused(!isTrainingPaused)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              {isTrainingPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Training Notes */}
+                        <div className="p-4 bg-background rounded-lg border mb-4">
+                          <h4 className="text-sm font-medium text-primary mb-2">训练心得记录</h4>
+                          <Textarea
+                            value={trainingNotes}
+                            onChange={(e) => setTrainingNotes(e.target.value)}
+                            placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
+                            className="h-20 resize-none"
+                          />
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex space-x-2">
+                          <Button
+                            onClick={() => {
+                              setIsTrainingActive(false);
+                              setActiveTrainingType(null);
+                              setActive90DayNumber(null);
+                              setActiveElapsedTime(0);
+                              setTrainingNotes("");
+                              toast({
+                                title: "训练已取消",
+                                description: "你可以随时重新开始训练"
+                              });
+                            }}
+                            variant="outline"
+                            className="flex-1"
+                          >
+                            取消训练
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              if (active90DayNumber && activeElapsedTime > 0) {
+                                setShowRatingModal(true);
+                              } else {
+                                toast({
+                                  title: "训练时间过短",
+                                  description: "请至少训练1分钟再提交",
+                                  variant: "destructive"
+                                });
+                              }
+                            }}
+                            className="flex-1"
+                          >
+                            <Square className="h-4 w-4 mr-2" />
+                            完成训练
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* Tab 2: 30-Day Course */}
             <TabsContent value="30day" className="mt-4 space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
