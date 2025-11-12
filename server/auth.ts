@@ -1,6 +1,7 @@
 import type { Express, Request, RequestHandler } from "express";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import pg from "pg";
 import { storage } from "./storage.js";
 import { randomUUID } from "crypto";
 
@@ -74,12 +75,30 @@ function createSessionMiddleware(): RequestHandler {
   let store: session.Store;
 
   if (hasDatabase) {
+    // 🔧 关键修复：创建限制大小的连接池以适配Vercel serverless
+    // 避免超过Supabase Session Pooler的pool_size限制
+    const sessionPool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 2,                      // 最大连接数：2（用于serverless环境）
+      idleTimeoutMillis: 20000,    // 空闲超时20秒
+      connectionTimeoutMillis: 10000, // 连接超时10秒
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    });
+
     const pgStore = connectPg(session);
     store = new pgStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true, // ✅ 修复：允许自动创建sessions表
+      pool: sessionPool,           // 使用自定义连接池
+      createTableIfMissing: true,  // ✅ 修复：允许自动创建sessions表
       tableName: "sessions",
       ttl: SESSION_TTL_MS / 1000,
+
+      // 🔧 添加错误日志
+      errorLog: (err: any) => {
+        console.error("Session store database error:", err);
+      },
+
+      // 🔧 定期清理过期session
+      pruneSessionInterval: 60, // 每60秒清理一次过期session
     });
 
     store.on("error", (error: unknown) => {
