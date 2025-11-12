@@ -4,7 +4,6 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,10 +18,11 @@ import { DailyGoalsPanel } from "@/components/DailyGoalsPanel";
 import { LevelAccordion } from "@/components/LevelAccordion";
 import { NinetyDayProgressBar } from "@/components/NinetyDayProgressBar";
 import { DayCurriculumCard } from "@/components/DayCurriculumCard";
+import { SpecializedTrainingCard } from "@/components/SpecializedTrainingCard";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Clock, Play, Pause, Square, BookOpen, Target, Zap, Star, Trophy, TrendingUp } from "lucide-react";
 import { useTrainingPath, useUpdateProgress, useTrainingPathStats } from "@/hooks/useAdvancedTraining";
-import { useNinetyDayProgress, useCurrentDayCurriculum, useCompleteDay, isDayCompleted } from "@/hooks/useNinetyDayTraining";
+import { useNinetyDayProgress, useCurrentDayCurriculum, useCompleteDay, isDayCompleted, useNinetyDaySpecializedTraining } from "@/hooks/useNinetyDayTraining";
 
 export default function Tasks() {
   const { toast } = useToast();
@@ -101,6 +101,8 @@ export default function Tasks() {
   const { data: currentDayCurriculumData, isLoading: currentDayLoading } = useCurrentDayCurriculum(ninetyDayCurrentDay);
   const { mutate: completeDay } = useCompleteDay();
   const currentDayCurriculum = currentDayCurriculumData?.curriculum?.[0];
+  const { data: specializedTrainingData, isLoading: specializedLoading } = useNinetyDaySpecializedTraining();
+  const specializedTrainings = specializedTrainingData?.trainings || [];
 
 
   // Unified timer effect
@@ -365,390 +367,182 @@ export default function Tasks() {
       {/* Daily Goals Section */}
       <DailyGoalsPanel />
 
-      {/* System Training Section */}
+      {/* System Training Section - Unified 90-Day Training System */}
       <Card className="border-2 border-green-200 bg-green-50">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <BookOpen className="h-6 w-6 text-green-600" />
+              <Target className="h-6 w-6 text-green-600" />
               <div>
-                <CardTitle className="text-lg text-green-800">系统训练</CardTitle>
+                <CardTitle className="text-lg text-green-800">傅家俊十大招系统训练</CardTitle>
+                <p className="text-sm text-green-700 mt-1">90天系统化训练计划</p>
               </div>
             </div>
+            {ninetyDayProgress && (
+              <Badge className="bg-green-600 text-white">
+                第 {ninetyDayCurrentDay} 天
+              </Badge>
+            )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Tabs defaultValue="90day" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="90day">十大招系统训练</TabsTrigger>
-              <TabsTrigger value="30day">基础课程（30天）</TabsTrigger>
-              <TabsTrigger value="advanced">进阶训练（专项）</TabsTrigger>
-            </TabsList>
+        <CardContent className="space-y-6">
+          {/* Progress Bar */}
+          <NinetyDayProgressBar />
 
-            {/* Tab 1: 90-Day Training System (Ten Core Skills) */}
-            <TabsContent value="90day" className="mt-4 space-y-4">
-              {/* Progress Bar */}
-              <NinetyDayProgressBar />
-
-              {/* Current Day Training Card */}
-              {ninetyDayProgressLoading || currentDayLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-sm text-muted-foreground mt-4">加载训练内容...</p>
-                </div>
-              ) : currentDayCurriculum ? (
-                <DayCurriculumCard
-                  curriculum={currentDayCurriculum}
-                  isCompleted={isDayCompleted(ninetyDayProgress, ninetyDayCurrentDay)}
-                  isCurrent={true}
-                  onStartTraining={() => {
-                    setIsTrainingActive(true);
-                    setActiveTrainingType('90day');
-                    setActive90DayNumber(ninetyDayCurrentDay);
-                    setActiveElapsedTime(0);
-                    setIsTrainingPaused(false);
-                    setCurrentSessionType(`第${ninetyDayCurrentDay}天 - ${currentDayCurriculum.title}`);
-                    toast({
-                      title: "训练开始",
-                      description: `第${ninetyDayCurrentDay}天训练已开始，加油！`,
-                    });
-                  }}
-                  disabled={isTrainingActive}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="py-8 text-center">
-                    <p className="text-muted-foreground">暂无训练内容</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Active Training Interface */}
-              {isTrainingActive && activeTrainingType === '90day' && (
-                <Card className="border-primary">
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      {/* Timer Display */}
-                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-2">
-                            <Clock className="h-5 w-5 text-primary" />
-                            <span className="font-mono text-2xl font-bold text-primary">
-                              {formatTime(activeElapsedTime)}
-                            </span>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              onClick={() => setIsTrainingPaused(!isTrainingPaused)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              {isTrainingPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Training Notes */}
-                        <div className="p-4 bg-background rounded-lg border mb-4">
-                          <h4 className="text-sm font-medium text-primary mb-2">训练心得记录</h4>
-                          <Textarea
-                            value={trainingNotes}
-                            onChange={(e) => setTrainingNotes(e.target.value)}
-                            placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
-                            className="h-20 resize-none"
-                          />
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex space-x-2">
-                          <Button
-                            onClick={() => {
-                              setIsTrainingActive(false);
-                              setActiveTrainingType(null);
-                              setActive90DayNumber(null);
-                              setActiveElapsedTime(0);
-                              setTrainingNotes("");
-                              toast({
-                                title: "训练已取消",
-                                description: "你可以随时重新开始训练"
-                              });
-                            }}
-                            variant="outline"
-                            className="flex-1"
-                          >
-                            取消训练
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              if (active90DayNumber && activeElapsedTime > 0) {
-                                setShowRatingModal(true);
-                              } else {
-                                toast({
-                                  title: "训练时间过短",
-                                  description: "请至少训练1分钟再提交",
-                                  variant: "destructive"
-                                });
-                              }
-                            }}
-                            className="flex-1"
-                          >
-                            <Square className="h-4 w-4 mr-2" />
-                            完成训练
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            {/* Tab 2: 30-Day Course */}
-            <TabsContent value="30day" className="mt-4 space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xl font-semibold">
-                    第{currentDay}集：{currentDayTraining?.title || "握杆"}
-                  </h3>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={`${difficultyBadge.color} text-xs`}>
-                      {difficultyBadge.label}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      第{Math.ceil(currentDay / 7)}周
-                    </Badge>
-                  </div>
-                </div>
-                <p className="text-gray-600 mb-4">
-                  {currentDayTraining?.description || `第${currentDay}集训练内容，持续提升台球技能。`}
-                </p>
-
-                {/* Training Details - Always Visible */}
-            <div className="space-y-3 mb-4">
-              {/* Training Objectives */}
-              {currentDayTraining?.objectives && currentDayTraining.objectives.length > 0 && (
-                <div className="bg-white p-3 rounded border">
-                  <h4 className="font-medium text-green-800 mb-2">训练目标</h4>
-                  <div className="space-y-1">
-                    {currentDayTraining.objectives.map((objective: string, index: number) => (
-                      <div key={index} className="flex items-start space-x-2">
-                        <span className="text-green-600 text-sm">•</span>
-                        <span className="text-sm text-gray-700">{objective}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Key Points */}
-              {currentDayTraining?.keyPoints && currentDayTraining.keyPoints.length > 0 && (
-                <div className="bg-white p-3 rounded border">
-                  <h4 className="font-medium text-blue-800 mb-2">技术要点</h4>
-                  <div className="space-y-1">
-                    {currentDayTraining.keyPoints.map((point: string, index: number) => (
-                      <div key={index} className="flex items-start space-x-2">
-                        <span className="text-blue-600 text-sm">•</span>
-                        <span className="text-sm text-gray-700">{point}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Duration Info */}
-              {currentDayTraining?.estimatedDuration && (
-                <div className="bg-white p-3 rounded border">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">预计训练时长</span>
-                    <Badge variant="outline" className="text-xs">
-                      {currentDayTraining.estimatedDuration} 分钟
-                    </Badge>
-                  </div>
-                </div>
-              )}
+          {/* Current Day Training Card */}
+          {ninetyDayProgressLoading || currentDayLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-sm text-muted-foreground mt-4">加载训练内容...</p>
             </div>
-            
-            {!isTrainingActive ? (
-              <Button
-                onClick={() => handleStartTraining('30day', `第${currentDay}集训练已开始`)}
-                className="w-full bg-green-600 hover:bg-green-700 touch-target"
-              >
-                开始系统训练
-              </Button>
-            ) : (
-              <div className="space-y-4">
-                {/* Training Content Display */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-5 w-5 text-green-600" />
-                      <span className="font-mono text-2xl font-bold text-green-800">{formatTime(activeElapsedTime)}</span>
+          ) : currentDayCurriculum ? (
+            <DayCurriculumCard
+              curriculum={currentDayCurriculum}
+              isCompleted={isDayCompleted(ninetyDayProgress, ninetyDayCurrentDay)}
+              isCurrent={true}
+              onStartTraining={() => {
+                setIsTrainingActive(true);
+                setActiveTrainingType('90day');
+                setActive90DayNumber(ninetyDayCurrentDay);
+                setActiveElapsedTime(0);
+                setIsTrainingPaused(false);
+                setCurrentSessionType(`第${ninetyDayCurrentDay}天 - ${currentDayCurriculum.title}`);
+                toast({
+                  title: "训练开始",
+                  description: `第${ninetyDayCurrentDay}天训练已开始，加油！`,
+                });
+              }}
+              disabled={isTrainingActive}
+            />
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <p className="text-muted-foreground">暂无训练内容</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Active Training Interface */}
+          {isTrainingActive && activeTrainingType === '90day' && (
+            <Card className="border-primary">
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  {/* Timer Display */}
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-5 w-5 text-primary" />
+                        <span className="font-mono text-2xl font-bold text-primary">
+                          {formatTime(activeElapsedTime)}
+                        </span>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => setIsTrainingPaused(!isTrainingPaused)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          {isTrainingPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </div>
+
+                    {/* Training Notes */}
+                    <div className="p-4 bg-background rounded-lg border mb-4">
+                      <h4 className="text-sm font-medium text-primary mb-2">训练心得记录</h4>
+                      <Textarea
+                        value={trainingNotes}
+                        onChange={(e) => setTrainingNotes(e.target.value)}
+                        placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
+                        className="h-20 resize-none"
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
                     <div className="flex space-x-2">
                       <Button
-                        onClick={() => setIsTrainingPaused(!isTrainingPaused)}
+                        onClick={() => {
+                          setIsTrainingActive(false);
+                          setActiveTrainingType(null);
+                          setActive90DayNumber(null);
+                          setActiveElapsedTime(0);
+                          setTrainingNotes("");
+                          toast({
+                            title: "训练已取消",
+                            description: "你可以随时重新开始训练"
+                          });
+                        }}
                         variant="outline"
-                        size="sm"
+                        className="flex-1"
                       >
-                        {isTrainingPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                        取消训练
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (active90DayNumber && activeElapsedTime > 0) {
+                            setShowRatingModal(true);
+                          } else {
+                            toast({
+                              title: "训练时间过短",
+                              description: "请至少训练1分钟再提交",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
+                        className="flex-1"
+                      >
+                        <Square className="h-4 w-4 mr-2" />
+                        完成训练
                       </Button>
                     </div>
                   </div>
-
-                  {/* 训练心得记录区域 */}
-                  <div className="p-4 bg-white rounded-lg border border-green-200 mb-4">
-                    <h4 className="text-sm font-medium text-green-800 mb-2">训练心得记录</h4>
-                    <textarea
-                      value={trainingNotes}
-                      onChange={(e) => setTrainingNotes(e.target.value)}
-                      placeholder="记录这次训练的收获、发现的问题或需要改进的地方..."
-                      className="w-full h-20 p-2 text-sm border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => {
-                        resetTrainingStates();
-                        setTrainingNotes("");
-                        toast({
-                          title: "训练已取消",
-                          description: "你可以随时重新开始训练"
-                        });
-                      }}
-                      variant="outline"
-                      className="flex-1 touch-target"
-                    >
-                      取消训练
-                    </Button>
-                    <Button
-                      onClick={handleStopTraining}
-                      className="flex-1 bg-green-600 hover:bg-green-700 touch-target"
-                    >
-                      <Square className="h-4 w-4 mr-2" />
-                      完成训练
-                    </Button>
-                  </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Specialized Training Section - Independent Display */}
+          <div className="space-y-4 pt-6 border-t border-green-300">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-green-600" />
+              <h3 className="text-xl font-semibold text-green-800">专项训练</h3>
+              <Badge variant="outline" className="ml-auto">
+                {specializedTrainings.length} 个训练项目
+              </Badge>
+            </div>
+
+            {specializedLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                <p className="text-sm text-muted-foreground mt-4">加载专项训练...</p>
               </div>
-            )}
+            ) : specializedTrainings.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {specializedTrainings.map((training) => (
+                  <SpecializedTrainingCard
+                    key={training.id}
+                    training={training}
+                    onStartTraining={() => {
+                      // TODO: Implement specialized training start logic
+                      toast({
+                        title: "专项训练",
+                        description: `即将开始 ${training.name} 训练`,
+                      });
+                    }}
+                    disabled={isTrainingActive}
+                  />
+                ))}
               </div>
-            </TabsContent>
-
-            {/* Tab 2: Advanced Training (Ten Core Skills) */}
-            <TabsContent value="advanced" className="mt-4 space-y-4">
-              {pathLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                  <p className="text-sm text-gray-600 mt-4">加载训练内容...</p>
-                </div>
-              ) : trainingPathData && trainingPathData.levels && trainingPathData.levels.length > 0 ? (
-                <>
-                  {/* Statistics Dashboard - Compact Version */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    {/* Total Units */}
-                    <Card className="border border-blue-100 bg-blue-50/50">
-                      <CardContent className="pt-4 pb-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs text-gray-600 mb-1">训练单元</p>
-                            <p className="text-2xl font-bold text-blue-600">{stats.totalUnits}</p>
-                          </div>
-                          <Target className="h-5 w-5 text-blue-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Completion Rate */}
-                    <Card className="border border-green-100 bg-green-50/50">
-                      <CardContent className="pt-4 pb-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs text-gray-600 mb-1">完成率</p>
-                            <p className="text-2xl font-bold text-green-600">{stats.completionPercentage}%</p>
-                          </div>
-                          <TrendingUp className="h-5 w-5 text-green-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Total XP */}
-                    <Card className="border border-yellow-100 bg-yellow-50/50">
-                      <CardContent className="pt-4 pb-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs text-gray-600 mb-1">经验值</p>
-                            <p className="text-2xl font-bold text-yellow-600">{stats.totalXpEarned}</p>
-                          </div>
-                          <Trophy className="h-5 w-5 text-yellow-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* In Progress */}
-                    <Card className="border border-purple-100 bg-purple-50/50">
-                      <CardContent className="pt-4 pb-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs text-gray-600 mb-1">进行中</p>
-                            <p className="text-2xl font-bold text-purple-600">{stats.inProgressUnits}</p>
-                          </div>
-                          <Clock className="h-5 w-5 text-purple-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Training Levels */}
-                  <div className="space-y-4">
-                    {trainingPathData.levels.map((level) => (
-                      <LevelAccordion
-                        key={level.id}
-                        level={level}
-                        onUnitStatusChange={(unitId, status) => {
-                          updateProgress(
-                            { unitId, status },
-                            {
-                              onSuccess: (data) => {
-                                if (status === 'completed') {
-                                  toast({
-                                    title: '训练完成！',
-                                    description: `获得 ${data.xpAwarded} XP`,
-                                    duration: 3000,
-                                  });
-                                } else if (status === 'in_progress') {
-                                  toast({
-                                    title: '开始训练',
-                                    description: '加油，坚持就是胜利！',
-                                    duration: 2000,
-                                  });
-                                }
-                              },
-                              onError: (error) => {
-                                toast({
-                                  title: '更新失败',
-                                  description: error.message || '请稍后重试',
-                                  variant: 'destructive',
-                                  duration: 3000,
-                                });
-                              },
-                            }
-                          );
-                        }}
-                        defaultExpanded={level.levelNumber === 4}
-                      />
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8 text-gray-600">
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center">
                   <Target className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-lg font-medium mb-2">暂无训练内容</p>
-                  <p className="text-sm">训练内容正在准备中，请稍后再来。</p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                  <p className="text-muted-foreground">暂无专项训练项目</p>
+                  <p className="text-sm text-muted-foreground mt-1">更多训练内容正在准备中</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </CardContent>
       </Card>
 
