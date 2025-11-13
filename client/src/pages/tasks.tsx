@@ -115,12 +115,11 @@ export default function TasksPage() {
   };
 
   // Handle rating submission
-  const handleRatingSubmit = (rating: number) => {
+  const handleRatingSubmit = async (rating: number) => {
     setCurrentRating(rating);
     setShowRatingModal(false);
 
-    // TODO: Save training session to backend
-    // For now, just show celebration
+    // Show celebration first
     setCelebrationData({
       sessionTitle: activeUnit?.title || "训练",
       earnedExp: 50 + rating * 10,
@@ -128,6 +127,29 @@ export default function TasksPage() {
       duration: activeElapsedTime,
     });
     setShowCelebration(true);
+
+    // Generate AI feedback in background
+    try {
+      const response = await fetch("/api/coaching-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          duration: activeElapsedTime,
+          notes: trainingNotes || "完成了训练",
+          rating: rating,
+          sessionType: activeUnit?.title,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiFeedback(data.feedback);
+        // AI feedback will be shown after celebration modal closes
+      }
+    } catch (error) {
+      console.error("Failed to generate AI feedback:", error);
+      // Continue even if AI feedback fails
+    }
 
     // Reset training state
     setIsTrainingActive(false);
@@ -257,7 +279,13 @@ export default function TasksPage() {
         {/* Modals */}
         <TrainingCompleteModal
           isOpen={showCelebration}
-          onClose={() => setShowCelebration(false)}
+          onClose={() => {
+            setShowCelebration(false);
+            // Show AI feedback after celebration if available
+            if (aiFeedback) {
+              setShowAiFeedbackModal(true);
+            }
+          }}
           celebrationData={celebrationData}
         />
         <RatingModal
@@ -265,11 +293,16 @@ export default function TasksPage() {
           onClose={() => setShowRatingModal(false)}
           onSubmit={handleRatingSubmit}
         />
-        <AiFeedbackModal
-          isOpen={showAiFeedbackModal}
-          onClose={() => setShowAiFeedbackModal(false)}
-          feedback={aiFeedback}
-        />
+        {showAiFeedbackModal && (
+          <AiFeedbackModal
+            onClose={() => {
+              setShowAiFeedbackModal(false);
+              setAiFeedback(""); // Clear feedback after closing
+            }}
+            feedback={aiFeedback}
+            rating={currentRating}
+          />
+        )}
         <AchievementUnlockModal
           isOpen={showAchievementModal}
           onClose={() => setShowAchievementModal(false)}
@@ -399,7 +432,13 @@ export default function TasksPage() {
       {/* Modals */}
       <TrainingCompleteModal
         isOpen={showCelebration}
-        onClose={() => setShowCelebration(false)}
+        onClose={() => {
+          setShowCelebration(false);
+          // Show AI feedback after celebration if available
+          if (aiFeedback) {
+            setShowAiFeedbackModal(true);
+          }
+        }}
         celebrationData={celebrationData}
       />
       <RatingModal
@@ -407,11 +446,16 @@ export default function TasksPage() {
         onClose={() => setShowRatingModal(false)}
         onSubmit={handleRatingSubmit}
       />
-      <AiFeedbackModal
-        isOpen={showAiFeedbackModal}
-        onClose={() => setShowAiFeedbackModal(false)}
-        feedback={aiFeedback}
-      />
+      {showAiFeedbackModal && (
+        <AiFeedbackModal
+          onClose={() => {
+            setShowAiFeedbackModal(false);
+            setAiFeedback(""); // Clear feedback after closing
+          }}
+          feedback={aiFeedback}
+          rating={currentRating}
+        />
+      )}
       <AchievementUnlockModal
         isOpen={showAchievementModal}
         onClose={() => setShowAchievementModal(false)}
