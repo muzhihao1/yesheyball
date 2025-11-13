@@ -78,10 +78,7 @@ function createSessionMiddleware(): RequestHandler {
     // 🔧 关键修复：创建限制大小的连接池以适配Vercel serverless
     // 避免超过Supabase Session Pooler的pool_size限制
 
-    // ⚠️ 临时修复：Vercel 环境变量未生效，使用硬编码的正确 URL
-    const databaseUrl = process.env.NODE_ENV === 'production'
-      ? "postgresql://postgres.ksgksoeubyvkuwfpdhet:IEPELVaPJnBoDtHX@aws-1-us-east-2.pooler.supabase.com:5432/postgres"
-      : process.env.DATABASE_URL;
+    const databaseUrl = process.env.DATABASE_URL;
 
     console.log(`Session store using database: ${databaseUrl?.substring(0, 50)}...`);
 

@@ -5,10 +5,7 @@ import * as schema from "../shared/schema.js";
 // Allow running without database in demo mode
 export let db: ReturnType<typeof drizzle> | null = null;
 
-// ⚠️ 临时修复：Vercel 环境变量未生效，使用硬编码的正确 URL
-const databaseUrl = process.env.NODE_ENV === 'production'
-  ? "postgresql://postgres.ksgksoeubyvkuwfpdhet:IEPELVaPJnBoDtHX@aws-1-us-east-2.pooler.supabase.com:5432/postgres"
-  : process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL;
 
 if (databaseUrl) {
   console.log(`Drizzle using database: ${databaseUrl?.substring(0, 50)}...`);
