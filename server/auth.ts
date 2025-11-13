@@ -77,8 +77,16 @@ function createSessionMiddleware(): RequestHandler {
   if (hasDatabase) {
     // 🔧 关键修复：创建限制大小的连接池以适配Vercel serverless
     // 避免超过Supabase Session Pooler的pool_size限制
+
+    // ⚠️ 临时修复：Vercel 环境变量未生效，使用硬编码的正确 URL
+    const databaseUrl = process.env.NODE_ENV === 'production'
+      ? "postgresql://postgres.ksgksoeubyvkuwfpdhet:IEPELVaPJnBoDtHX@aws-1-us-east-2.pooler.supabase.com:5432/postgres"
+      : process.env.DATABASE_URL;
+
+    console.log(`Session store using database: ${databaseUrl?.substring(0, 50)}...`);
+
     const sessionPool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: databaseUrl,
       max: 1,                      // 最大连接数：1（与 Drizzle 保持一致，避免连接池耗尽）
       idleTimeoutMillis: 20000,    // 空闲超时20秒
       connectionTimeoutMillis: 10000, // 连接超时10秒
