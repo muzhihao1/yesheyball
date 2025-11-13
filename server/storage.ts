@@ -1,4 +1,4 @@
-import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, achievements, userAchievements, type User, type InsertUser, type UpsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote, type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement, trainingLevels, trainingSkills, subSkills, trainingUnits, userTrainingProgress, specializedTrainings, specializedTrainingPlans, type TrainingLevel, type TrainingSkill, type SubSkill, type TrainingUnit, type UserTrainingProgress as UserTrainingProgressType, type SpecializedTraining, type SpecializedTrainingPlan, tencoreSkills, ninetyDayCurriculum, specializedTraining, userNinetyDayProgress, ninetyDayTrainingRecords, type TencoreSkill, type NinetyDayCurriculum, type NinetyDaySpecializedTraining, type UserNinetyDayProgress, type NinetyDayTrainingRecord, type InsertNinetyDayTrainingRecord, type InsertUserNinetyDayProgress } from "../shared/schema.js";
+import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, achievements, userAchievements, type User, type InsertUser, type UpsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote, type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement, trainingLevels, trainingSkills, subSkills, trainingUnits, userTrainingProgress, specializedTrainings, specializedTrainingPlans, type TrainingLevel, type TrainingSkill, type SubSkill, type TrainingUnit, type UserTrainingProgress as UserTrainingProgressType, type SpecializedTraining, type SpecializedTrainingPlan, tencoreSkills, ninetyDayCurriculum, specializedTraining, userNinetyDayProgress, ninetyDayTrainingRecords, type TencoreSkill, type NinetyDayCurriculum, type NinetyDaySpecializedTraining, type UserNinetyDayProgress, type NinetyDayTrainingRecord, type InsertNinetyDayTrainingRecord, type InsertUserNinetyDayProgress, skillsV3, subSkillsV3, trainingUnitsV3, specializedTrainingsV3, specializedTrainingPlansV3, curriculumDayUnits, userSkillProgressV3, userUnitCompletions, type SkillV3, type SubSkillV3, type TrainingUnitV3, type UserSkillProgressV3, type UserUnitCompletion, type CurriculumDayUnit } from "../shared/schema.js";
 import { db } from "./db.js";
 import { eq, desc, gte, and, lte, sql, inArray } from "drizzle-orm";
 
@@ -105,6 +105,28 @@ export interface IStorage {
   getNinetyDayTrainingRecords(userId: string, params?: { dayNumber?: number; limit?: number }): Promise<NinetyDayTrainingRecord[]>;
   createNinetyDayTrainingRecord(record: InsertNinetyDayTrainingRecord): Promise<NinetyDayTrainingRecord>;
   completeNinetyDayTraining(userId: string, dayNumber: number, duration: number, rating: number, notes?: string): Promise<{ record: NinetyDayTrainingRecord; progress: UserNinetyDayProgress }>;
+
+  // === Ten Core Skills System V3 Operations (VARCHAR主键版本) ===
+
+  // Skills (十大招)
+  getSkillsV3(): Promise<any[]>; // Returns SkillV3[]
+  getSkillV3ById(skillId: string): Promise<any | undefined>; // Returns SkillV3 | undefined
+
+  // Sub Skills (子技能)
+  getSubSkillsV3BySkillId(skillId: string): Promise<any[]>; // Returns SubSkillV3[]
+  getSubSkillV3ById(subSkillId: string): Promise<any | undefined>; // Returns SubSkillV3 | undefined
+
+  // Training Units (训练单元)
+  getTrainingUnitsV3BySubSkillId(subSkillId: string): Promise<any[]>; // Returns TrainingUnitV3[]
+  getTrainingUnitV3ById(unitId: string): Promise<any | undefined>; // Returns TrainingUnitV3 | undefined
+
+  // User Progress (用户进度)
+  getUserSkillProgressV3(userId: string, skillId?: string): Promise<any[]>; // Returns UserSkillProgressV3[]
+  getUserUnitCompletions(userId: string, unitId?: string): Promise<any[]>; // Returns UserUnitCompletion[]
+  completeTrainingUnitV3(userId: string, unitId: string, score?: number, notes?: string): Promise<any>; // Returns UserUnitCompletion
+
+  // Curriculum Mapping (90天课程关联)
+  getCurriculumDayUnits(dayNumber: number): Promise<any[]>; // Returns CurriculumDayUnit[]
 }
 
 // V2.1 Training System Types for Storage Layer
@@ -1589,6 +1611,252 @@ export class DatabaseStorage implements IStorage {
       record,
       progress: updatedProgress,
     };
+  }
+
+  // ========================================================================
+  // === Ten Core Skills System V3 Operations (VARCHAR主键版本) ===
+  // ========================================================================
+
+  /**
+   * Get all skills (十大招)
+   */
+  async getSkillsV3(): Promise<SkillV3[]> {
+    const db = this.ensureDb();
+    const skills = await db
+      .select()
+      .from(skillsV3)
+      .where(eq(skillsV3.isActive, true))
+      .orderBy(skillsV3.skillOrder);
+    return skills;
+  }
+
+  /**
+   * Get skill by ID
+   */
+  async getSkillV3ById(skillId: string): Promise<SkillV3 | undefined> {
+    const db = this.ensureDb();
+    const [skill] = await db
+      .select()
+      .from(skillsV3)
+      .where(and(eq(skillsV3.id, skillId), eq(skillsV3.isActive, true)))
+      .limit(1);
+    return skill;
+  }
+
+  /**
+   * Get sub-skills by skill ID
+   */
+  async getSubSkillsV3BySkillId(skillId: string): Promise<SubSkillV3[]> {
+    const db = this.ensureDb();
+    const subSkills = await db
+      .select()
+      .from(subSkillsV3)
+      .where(and(eq(subSkillsV3.skillId, skillId), eq(subSkillsV3.isActive, true)))
+      .orderBy(subSkillsV3.subSkillOrder);
+    return subSkills;
+  }
+
+  /**
+   * Get sub-skill by ID
+   */
+  async getSubSkillV3ById(subSkillId: string): Promise<SubSkillV3 | undefined> {
+    const db = this.ensureDb();
+    const [subSkill] = await db
+      .select()
+      .from(subSkillsV3)
+      .where(and(eq(subSkillsV3.id, subSkillId), eq(subSkillsV3.isActive, true)))
+      .limit(1);
+    return subSkill;
+  }
+
+  /**
+   * Get training units by sub-skill ID
+   */
+  async getTrainingUnitsV3BySubSkillId(subSkillId: string): Promise<TrainingUnitV3[]> {
+    const db = this.ensureDb();
+    const units = await db
+      .select()
+      .from(trainingUnitsV3)
+      .where(and(eq(trainingUnitsV3.subSkillId, subSkillId), eq(trainingUnitsV3.isActive, true)))
+      .orderBy(trainingUnitsV3.unitOrder);
+    return units;
+  }
+
+  /**
+   * Get training unit by ID
+   */
+  async getTrainingUnitV3ById(unitId: string): Promise<TrainingUnitV3 | undefined> {
+    const db = this.ensureDb();
+    const [unit] = await db
+      .select()
+      .from(trainingUnitsV3)
+      .where(and(eq(trainingUnitsV3.id, unitId), eq(trainingUnitsV3.isActive, true)))
+      .limit(1);
+    return unit;
+  }
+
+  /**
+   * Get user skill progress
+   */
+  async getUserSkillProgressV3(userId: string, skillId?: string): Promise<UserSkillProgressV3[]> {
+    const db = this.ensureDb();
+    let query = db
+      .select()
+      .from(userSkillProgressV3)
+      .where(eq(userSkillProgressV3.userId, userId))
+      .$dynamic();
+
+    if (skillId) {
+      query = query.where(eq(userSkillProgressV3.skillId, skillId));
+    }
+
+    const progress = await query;
+    return progress;
+  }
+
+  /**
+   * Get user unit completions
+   */
+  async getUserUnitCompletions(userId: string, unitId?: string): Promise<UserUnitCompletion[]> {
+    const db = this.ensureDb();
+    let query = db
+      .select()
+      .from(userUnitCompletions)
+      .where(eq(userUnitCompletions.userId, userId))
+      .$dynamic();
+
+    if (unitId) {
+      query = query.where(eq(userUnitCompletions.unitId, unitId));
+    }
+
+    query = query.orderBy(desc(userUnitCompletions.completedAt));
+
+    const completions = await query;
+    return completions;
+  }
+
+  /**
+   * Complete a training unit
+   */
+  async completeTrainingUnitV3(
+    userId: string,
+    unitId: string,
+    score?: number,
+    notes?: string
+  ): Promise<UserUnitCompletion> {
+    const db = this.ensureDb();
+
+    // Get unit details for XP reward
+    const unit = await this.getTrainingUnitV3ById(unitId);
+    if (!unit) {
+      throw new Error(`Training unit not found: ${unitId}`);
+    }
+
+    // Check if already completed
+    const [existing] = await db
+      .select()
+      .from(userUnitCompletions)
+      .where(and(eq(userUnitCompletions.userId, userId), eq(userUnitCompletions.unitId, unitId)))
+      .limit(1);
+
+    if (existing) {
+      // Update existing completion
+      const [updated] = await db
+        .update(userUnitCompletions)
+        .set({
+          completedAt: new Date(),
+          score,
+          notes,
+        })
+        .where(and(eq(userUnitCompletions.userId, userId), eq(userUnitCompletions.unitId, unitId)))
+        .returning();
+      return updated;
+    }
+
+    // Create new completion
+    const [completion] = await db
+      .insert(userUnitCompletions)
+      .values({
+        userId,
+        unitId,
+        score,
+        notes,
+        xpEarned: unit.xpReward || 10,
+      })
+      .returning();
+
+    // Update user skill progress
+    const subSkill = await this.getSubSkillV3ById(unit.subSkillId);
+    if (subSkill) {
+      // Get all units for this sub-skill
+      const allUnits = await this.getTrainingUnitsV3BySubSkillId(unit.subSkillId);
+      const totalUnits = allUnits.length;
+
+      // Get completed units for this sub-skill
+      const completedUnits = await db
+        .select()
+        .from(userUnitCompletions)
+        .where(
+          and(
+            eq(userUnitCompletions.userId, userId),
+            inArray(
+              userUnitCompletions.unitId,
+              allUnits.map((u) => u.id)
+            )
+          )
+        );
+
+      const completedCount = completedUnits.length;
+
+      // Get or create skill progress
+      const [existingProgress] = await db
+        .select()
+        .from(userSkillProgressV3)
+        .where(and(eq(userSkillProgressV3.userId, userId), eq(userSkillProgressV3.skillId, subSkill.skillId)))
+        .limit(1);
+
+      if (existingProgress) {
+        // Update progress
+        await db
+          .update(userSkillProgressV3)
+          .set({
+            completedSubSkills: completedCount >= totalUnits ? (existingProgress.completedSubSkills || 0) + 1 : existingProgress.completedSubSkills,
+            progressPercentage: Math.floor((completedCount / totalUnits) * 100),
+            lastAccessedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(and(eq(userSkillProgressV3.userId, userId), eq(userSkillProgressV3.skillId, subSkill.skillId)));
+      } else {
+        // Create progress
+        const skill = await this.getSkillV3ById(subSkill.skillId);
+        if (skill) {
+          const allSubSkills = await this.getSubSkillsV3BySkillId(skill.id);
+          await db.insert(userSkillProgressV3).values({
+            userId,
+            skillId: skill.id,
+            completedSubSkills: completedCount >= totalUnits ? 1 : 0,
+            totalSubSkills: allSubSkills.length,
+            progressPercentage: Math.floor((completedCount / totalUnits) * 100),
+            lastAccessedAt: new Date(),
+          });
+        }
+      }
+    }
+
+    return completion;
+  }
+
+  /**
+   * Get curriculum day units (90天课程关联训练单元)
+   */
+  async getCurriculumDayUnits(dayNumber: number): Promise<CurriculumDayUnit[]> {
+    const db = this.ensureDb();
+    const units = await db
+      .select()
+      .from(curriculumDayUnits)
+      .where(eq(curriculumDayUnits.dayNumber, dayNumber))
+      .orderBy(curriculumDayUnits.unitOrder);
+    return units;
   }
 }
 

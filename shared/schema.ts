@@ -970,3 +970,310 @@ export const userSkillProgressRelations = relations(userSkillProgress, ({ one })
     references: [skills.id],
   }),
 }));
+
+// ============================================================================
+// === TEN CORE SKILLS SYSTEM V3 (VARCHAR主键版本) ===
+// 十大招核心系统 - 与SQL 26/27/28创建的数据库表匹配
+// ============================================================================
+
+/**
+ * Skills Table - 十大招主表
+ * 10 core skills forming the theoretical framework
+ */
+export const skillsV3 = pgTable("skills", {
+  id: varchar("id", { length: 50 }).primaryKey(), // 'skill_1' to 'skill_10'
+  title: varchar("title", { length: 100 }).notNull(),
+  description: text("description"),
+  skillOrder: integer("skill_order").notNull().unique(),
+  iconName: varchar("icon_name", { length: 50 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * Sub Skills Table - 子技能表
+ * Each skill contains multiple sub-skills (关卡组)
+ */
+export const subSkillsV3 = pgTable("sub_skills", {
+  id: varchar("id", { length: 50 }).primaryKey(), // 'sub_skill_1_1', 'sub_skill_1_2'
+  skillId: varchar("skill_id", { length: 50 }).notNull().references(() => skillsV3.id, { onDelete: 'cascade' }),
+  title: varchar("title", { length: 100 }).notNull(),
+  description: text("description"),
+  subSkillOrder: integer("sub_skill_order").notNull(),
+  unlockCondition: text("unlock_condition"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * Training Units Table - 训练单元表
+ * Theory, practice, and challenge units for each sub-skill
+ */
+export const trainingUnitsV3 = pgTable("training_units", {
+  id: varchar("id", { length: 50 }).primaryKey(), // 'unit_1_1_1', 'unit_1_1_2'
+  subSkillId: varchar("sub_skill_id", { length: 50 }).notNull().references(() => subSkillsV3.id, { onDelete: 'cascade' }),
+  unitType: varchar("unit_type", { length: 20 }).notNull(), // 'theory', 'practice', 'challenge'
+  title: varchar("title", { length: 255 }).notNull(),
+  content: jsonb("content"), // JSONB: { text, images[], videos[], keyPoints[] }
+  goalDescription: text("goal_description"),
+  xpReward: integer("xp_reward").default(10),
+  unitOrder: integer("unit_order").notNull(),
+  estimatedMinutes: integer("estimated_minutes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * Specialized Trainings Table - 专项训练主表
+ * 8 specialized training categories
+ */
+export const specializedTrainingsV3 = pgTable("specialized_trainings", {
+  id: varchar("id", { length: 50 }).primaryKey(), // 'spec_training_1'
+  title: varchar("title", { length: 100 }).notNull(),
+  description: text("description"),
+  iconName: varchar("icon_name", { length: 50 }),
+  category: varchar("category", { length: 50 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * Specialized Training Plans Table - 专项训练计划表
+ * Detailed training plans for each specialized training
+ */
+export const specializedTrainingPlansV3 = pgTable("specialized_training_plans", {
+  id: varchar("id", { length: 50 }).primaryKey(), // 'plan_1_1'
+  trainingId: varchar("training_id", { length: 50 }).notNull().references(() => specializedTrainingsV3.id, { onDelete: 'cascade' }),
+  title: varchar("title", { length: 100 }).notNull(),
+  description: text("description"),
+  difficulty: varchar("difficulty", { length: 20 }), // 'easy', 'medium', 'hard'
+  estimatedTimeMinutes: integer("estimated_time_minutes"),
+  content: jsonb("content"),
+  xpReward: integer("xp_reward").default(20),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * Plan Unit Mappings Table - 专项计划与训练单元的多对多关联
+ */
+export const planUnitMappings = pgTable("plan_unit_mappings", {
+  id: serial("id").primaryKey(),
+  planId: varchar("plan_id", { length: 50 }).notNull().references(() => specializedTrainingPlansV3.id, { onDelete: 'cascade' }),
+  unitId: varchar("unit_id", { length: 50 }).notNull().references(() => trainingUnitsV3.id, { onDelete: 'cascade' }),
+  unitOrder: integer("unit_order").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("plan_unit_mappings_unique").on(table.planId, table.unitId),
+]);
+
+/**
+ * Curriculum Day Units Table - 90天课程与训练单元的多对多关联
+ */
+export const curriculumDayUnits = pgTable("curriculum_day_units", {
+  id: serial("id").primaryKey(),
+  dayNumber: integer("day_number").notNull(), // References ninety_day_curriculum.day_number
+  unitId: varchar("unit_id", { length: 50 }).notNull().references(() => trainingUnitsV3.id, { onDelete: 'cascade' }),
+  unitOrder: integer("unit_order").notNull(),
+  isRequired: boolean("is_required").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("curriculum_day_units_unique").on(table.dayNumber, table.unitId),
+]);
+
+/**
+ * User Skill Progress Table - 用户十大招学习进度
+ */
+export const userSkillProgressV3 = pgTable("user_skill_progress", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  skillId: varchar("skill_id", { length: 50 }).notNull().references(() => skillsV3.id, { onDelete: 'cascade' }),
+  completedSubSkills: integer("completed_sub_skills").default(0),
+  totalSubSkills: integer("total_sub_skills").default(0),
+  progressPercentage: integer("progress_percentage").default(0),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("user_skill_progress_v3_unique").on(table.userId, table.skillId),
+]);
+
+/**
+ * User Unit Completions Table - 用户训练单元完成记录
+ */
+export const userUnitCompletions = pgTable("user_unit_completions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  unitId: varchar("unit_id", { length: 50 }).notNull().references(() => trainingUnitsV3.id, { onDelete: 'cascade' }),
+  completedAt: timestamp("completed_at").defaultNow().notNull(),
+  score: integer("score"),
+  notes: text("notes"),
+  xpEarned: integer("xp_earned"),
+}, (table) => [
+  uniqueIndex("user_unit_completions_unique").on(table.userId, table.unitId),
+]);
+
+// ============================================================================
+// Insert Schemas - Ten Core Skills V3
+// ============================================================================
+
+export const insertSkillV3Schema = createInsertSchema(skillsV3).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSubSkillV3Schema = createInsertSchema(subSkillsV3).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrainingUnitV3Schema = createInsertSchema(trainingUnitsV3).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSpecializedTrainingV3Schema = createInsertSchema(specializedTrainingsV3).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSpecializedTrainingPlanV3Schema = createInsertSchema(specializedTrainingPlansV3).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPlanUnitMappingSchema = createInsertSchema(planUnitMappings).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCurriculumDayUnitSchema = createInsertSchema(curriculumDayUnits).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserSkillProgressV3Schema = createInsertSchema(userSkillProgressV3).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserUnitCompletionSchema = createInsertSchema(userUnitCompletions).omit({
+  id: true,
+  completedAt: true,
+});
+
+// ============================================================================
+// TypeScript Types - Ten Core Skills V3
+// ============================================================================
+
+export type SkillV3 = typeof skillsV3.$inferSelect;
+export type InsertSkillV3 = z.infer<typeof insertSkillV3Schema>;
+
+export type SubSkillV3 = typeof subSkillsV3.$inferSelect;
+export type InsertSubSkillV3 = z.infer<typeof insertSubSkillV3Schema>;
+
+export type TrainingUnitV3 = typeof trainingUnitsV3.$inferSelect;
+export type InsertTrainingUnitV3 = z.infer<typeof insertTrainingUnitV3Schema>;
+
+export type SpecializedTrainingV3 = typeof specializedTrainingsV3.$inferSelect;
+export type InsertSpecializedTrainingV3 = z.infer<typeof insertSpecializedTrainingV3Schema>;
+
+export type SpecializedTrainingPlanV3 = typeof specializedTrainingPlansV3.$inferSelect;
+export type InsertSpecializedTrainingPlanV3 = z.infer<typeof insertSpecializedTrainingPlanV3Schema>;
+
+export type PlanUnitMapping = typeof planUnitMappings.$inferSelect;
+export type InsertPlanUnitMapping = z.infer<typeof insertPlanUnitMappingSchema>;
+
+export type CurriculumDayUnit = typeof curriculumDayUnits.$inferSelect;
+export type InsertCurriculumDayUnit = z.infer<typeof insertCurriculumDayUnitSchema>;
+
+export type UserSkillProgressV3 = typeof userSkillProgressV3.$inferSelect;
+export type InsertUserSkillProgressV3 = z.infer<typeof insertUserSkillProgressV3Schema>;
+
+export type UserUnitCompletion = typeof userUnitCompletions.$inferSelect;
+export type InsertUserUnitCompletion = z.infer<typeof insertUserUnitCompletionSchema>;
+
+// ============================================================================
+// Relations - Ten Core Skills V3
+// ============================================================================
+
+export const skillsV3Relations = relations(skillsV3, ({ many }) => ({
+  subSkills: many(subSkillsV3),
+  userProgress: many(userSkillProgressV3),
+}));
+
+export const subSkillsV3Relations = relations(subSkillsV3, ({ one, many }) => ({
+  skill: one(skillsV3, {
+    fields: [subSkillsV3.skillId],
+    references: [skillsV3.id],
+  }),
+  trainingUnits: many(trainingUnitsV3),
+}));
+
+export const trainingUnitsV3Relations = relations(trainingUnitsV3, ({ one, many }) => ({
+  subSkill: one(subSkillsV3, {
+    fields: [trainingUnitsV3.subSkillId],
+    references: [subSkillsV3.id],
+  }),
+  planMappings: many(planUnitMappings),
+  curriculumMappings: many(curriculumDayUnits),
+  userCompletions: many(userUnitCompletions),
+}));
+
+export const specializedTrainingsV3Relations = relations(specializedTrainingsV3, ({ many }) => ({
+  plans: many(specializedTrainingPlansV3),
+}));
+
+export const specializedTrainingPlansV3Relations = relations(specializedTrainingPlansV3, ({ one, many }) => ({
+  training: one(specializedTrainingsV3, {
+    fields: [specializedTrainingPlansV3.trainingId],
+    references: [specializedTrainingsV3.id],
+  }),
+  unitMappings: many(planUnitMappings),
+}));
+
+export const planUnitMappingsRelations = relations(planUnitMappings, ({ one }) => ({
+  plan: one(specializedTrainingPlansV3, {
+    fields: [planUnitMappings.planId],
+    references: [specializedTrainingPlansV3.id],
+  }),
+  unit: one(trainingUnitsV3, {
+    fields: [planUnitMappings.unitId],
+    references: [trainingUnitsV3.id],
+  }),
+}));
+
+export const curriculumDayUnitsRelations = relations(curriculumDayUnits, ({ one }) => ({
+  unit: one(trainingUnitsV3, {
+    fields: [curriculumDayUnits.unitId],
+    references: [trainingUnitsV3.id],
+  }),
+}));
+
+export const userSkillProgressV3Relations = relations(userSkillProgressV3, ({ one }) => ({
+  user: one(users, {
+    fields: [userSkillProgressV3.userId],
+    references: [users.id],
+  }),
+  skill: one(skillsV3, {
+    fields: [userSkillProgressV3.skillId],
+    references: [skillsV3.id],
+  }),
+}));
+
+export const userUnitCompletionsRelations = relations(userUnitCompletions, ({ one }) => ({
+  user: one(users, {
+    fields: [userUnitCompletions.userId],
+    references: [users.id],
+  }),
+  unit: one(trainingUnitsV3, {
+    fields: [userUnitCompletions.unitId],
+    references: [trainingUnitsV3.id],
+  }),
+}));

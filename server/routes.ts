@@ -2422,5 +2422,274 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // ========================================================================
+  // === Ten Core Skills System V3 API Routes (十大招系统) ===
+  // ========================================================================
+
+  /**
+   * GET /api/skills-v3
+   * Get all ten core skills (十大招列表)
+   * Returns array of skills ordered by skillOrder
+   */
+  app.get("/api/skills-v3", async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.json({ skills: [] });
+      }
+
+      const skills = await storage.getSkillsV3();
+      res.json({ skills });
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+      res.status(500).json({ message: "Failed to fetch skills" });
+    }
+  });
+
+  /**
+   * GET /api/skills-v3/:skillId
+   * Get a specific skill by ID
+   * Params: skillId (e.g., 'skill_1')
+   * Returns skill details
+   */
+  app.get("/api/skills-v3/:skillId", async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.status(404).json({ message: "Skill not found" });
+      }
+
+      const { skillId } = req.params;
+      const skill = await storage.getSkillV3ById(skillId);
+
+      if (!skill) {
+        return res.status(404).json({ message: "Skill not found" });
+      }
+
+      res.json({ skill });
+    } catch (error) {
+      console.error("Error fetching skill:", error);
+      res.status(500).json({ message: "Failed to fetch skill" });
+    }
+  });
+
+  /**
+   * GET /api/skills-v3/:skillId/sub-skills
+   * Get all sub-skills for a specific skill
+   * Params: skillId (e.g., 'skill_1')
+   * Returns array of sub-skills ordered by subSkillOrder
+   */
+  app.get("/api/skills-v3/:skillId/sub-skills", async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.json({ subSkills: [] });
+      }
+
+      const { skillId } = req.params;
+      const subSkills = await storage.getSubSkillsV3BySkillId(skillId);
+
+      res.json({ subSkills });
+    } catch (error) {
+      console.error("Error fetching sub-skills:", error);
+      res.status(500).json({ message: "Failed to fetch sub-skills" });
+    }
+  });
+
+  /**
+   * GET /api/sub-skills-v3/:subSkillId
+   * Get a specific sub-skill by ID
+   * Params: subSkillId (e.g., 'sub_skill_1_1')
+   * Returns sub-skill details
+   */
+  app.get("/api/sub-skills-v3/:subSkillId", async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.status(404).json({ message: "Sub-skill not found" });
+      }
+
+      const { subSkillId } = req.params;
+      const subSkill = await storage.getSubSkillV3ById(subSkillId);
+
+      if (!subSkill) {
+        return res.status(404).json({ message: "Sub-skill not found" });
+      }
+
+      res.json({ subSkill });
+    } catch (error) {
+      console.error("Error fetching sub-skill:", error);
+      res.status(500).json({ message: "Failed to fetch sub-skill" });
+    }
+  });
+
+  /**
+   * GET /api/sub-skills-v3/:subSkillId/units
+   * Get all training units for a specific sub-skill
+   * Params: subSkillId (e.g., 'sub_skill_1_1')
+   * Returns array of training units ordered by unitOrder
+   */
+  app.get("/api/sub-skills-v3/:subSkillId/units", async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.json({ units: [] });
+      }
+
+      const { subSkillId } = req.params;
+      const units = await storage.getTrainingUnitsV3BySubSkillId(subSkillId);
+
+      res.json({ units });
+    } catch (error) {
+      console.error("Error fetching training units:", error);
+      res.status(500).json({ message: "Failed to fetch training units" });
+    }
+  });
+
+  /**
+   * GET /api/training-units-v3/:unitId
+   * Get a specific training unit by ID
+   * Params: unitId (e.g., 'unit_1_1_1')
+   * Returns training unit details including content (JSONB)
+   */
+  app.get("/api/training-units-v3/:unitId", async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.status(404).json({ message: "Training unit not found" });
+      }
+
+      const { unitId } = req.params;
+      const unit = await storage.getTrainingUnitV3ById(unitId);
+
+      if (!unit) {
+        return res.status(404).json({ message: "Training unit not found" });
+      }
+
+      res.json({ unit });
+    } catch (error) {
+      console.error("Error fetching training unit:", error);
+      res.status(500).json({ message: "Failed to fetch training unit" });
+    }
+  });
+
+  /**
+   * GET /api/user/skills-v3/progress
+   * Get user's progress across all skills
+   * Query param: skillId (optional) - filter by specific skill
+   * Returns array of skill progress records
+   */
+  app.get("/api/user/skills-v3/progress", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.json({ progress: [] });
+      }
+
+      const { skillId } = req.query;
+      const progress = await storage.getUserSkillProgressV3(
+        userId,
+        skillId ? String(skillId) : undefined
+      );
+
+      res.json({ progress });
+    } catch (error) {
+      console.error("Error fetching skill progress:", error);
+      res.status(500).json({ message: "Failed to fetch skill progress" });
+    }
+  });
+
+  /**
+   * GET /api/user/units-v3/completions
+   * Get user's completed training units
+   * Query param: unitId (optional) - filter by specific unit
+   * Returns array of completion records sorted by completion date (newest first)
+   */
+  app.get("/api/user/units-v3/completions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.json({ completions: [] });
+      }
+
+      const { unitId } = req.query;
+      const completions = await storage.getUserUnitCompletions(
+        userId,
+        unitId ? String(unitId) : undefined
+      );
+
+      res.json({ completions });
+    } catch (error) {
+      console.error("Error fetching unit completions:", error);
+      res.status(500).json({ message: "Failed to fetch unit completions" });
+    }
+  });
+
+  /**
+   * POST /api/training-units-v3/:unitId/complete
+   * Mark a training unit as completed
+   * Params: unitId (e.g., 'unit_1_1_1')
+   * Body: { score?: number, notes?: string }
+   * Returns completion record and updates skill progress
+   */
+  app.post("/api/training-units-v3/:unitId/complete", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      const { unitId } = req.params;
+      const { score, notes } = req.body;
+
+      // Validate score if provided
+      if (score !== undefined && score !== null) {
+        const scoreNum = parseInt(score);
+        if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
+          return res.status(400).json({ message: "Score must be between 0 and 100" });
+        }
+      }
+
+      const completion = await storage.completeTrainingUnitV3(
+        userId,
+        unitId,
+        score ? parseInt(score) : undefined,
+        notes
+      );
+
+      res.json({
+        message: "Training unit completed successfully",
+        completion,
+      });
+    } catch (error) {
+      console.error("Error completing training unit:", error);
+      res.status(500).json({ message: "Failed to complete training unit" });
+    }
+  });
+
+  /**
+   * GET /api/curriculum/:dayNumber/units
+   * Get training units linked to a specific day in 90-day curriculum
+   * Params: dayNumber (1-90)
+   * Returns array of curriculum-unit mappings
+   */
+  app.get("/api/curriculum/:dayNumber/units", async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.json({ units: [] });
+      }
+
+      const { dayNumber } = req.params;
+      const day = parseInt(dayNumber);
+
+      if (isNaN(day) || day < 1 || day > 90) {
+        return res.status(400).json({ message: "Day number must be between 1 and 90" });
+      }
+
+      const units = await storage.getCurriculumDayUnits(day);
+      res.json({ units });
+    } catch (error) {
+      console.error("Error fetching curriculum units:", error);
+      res.status(500).json({ message: "Failed to fetch curriculum units" });
+    }
+  });
+
   return;
 }
