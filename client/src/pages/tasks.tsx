@@ -115,7 +115,7 @@ export default function TasksPage() {
   };
 
   // Handle rating submission
-  const handleRatingSubmit = async (rating: number) => {
+  const handleRatingSubmit = async (rating: number, additionalFeedback?: string) => {
     setCurrentRating(rating);
     setShowRatingModal(false);
 
@@ -128,6 +128,11 @@ export default function TasksPage() {
     });
     setShowCelebration(true);
 
+    // Combine training notes with additional feedback
+    const combinedNotes = [trainingNotes, additionalFeedback]
+      .filter(Boolean)
+      .join("\n") || "完成了训练";
+
     // Generate AI feedback in background
     try {
       const response = await fetch("/api/coaching-feedback", {
@@ -135,7 +140,7 @@ export default function TasksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           duration: activeElapsedTime,
-          notes: trainingNotes || "完成了训练",
+          notes: combinedNotes,
           rating: rating,
           sessionType: activeUnit?.title,
         }),
@@ -288,11 +293,6 @@ export default function TasksPage() {
           }}
           celebrationData={celebrationData}
         />
-        <RatingModal
-          isOpen={showRatingModal}
-          onClose={() => setShowRatingModal(false)}
-          onSubmit={handleRatingSubmit}
-        />
         {showAiFeedbackModal && (
           <AiFeedbackModal
             onClose={() => {
@@ -441,11 +441,15 @@ export default function TasksPage() {
         }}
         celebrationData={celebrationData}
       />
-      <RatingModal
-        isOpen={showRatingModal}
-        onClose={() => setShowRatingModal(false)}
-        onSubmit={handleRatingSubmit}
-      />
+      {showRatingModal && activeUnit && (
+        <RatingModal
+          sessionType={activeUnit.title}
+          duration={activeElapsedTime}
+          notes={trainingNotes}
+          onCancel={() => setShowRatingModal(false)}
+          onSubmit={handleRatingSubmit}
+        />
+      )}
       {showAiFeedbackModal && (
         <AiFeedbackModal
           onClose={() => {
