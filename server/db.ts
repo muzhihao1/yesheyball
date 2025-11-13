@@ -5,12 +5,19 @@ import * as schema from "../shared/schema.js";
 // Allow running without database in demo mode
 export let db: ReturnType<typeof drizzle> | null = null;
 
-if (process.env.DATABASE_URL) {
+// ⚠️ 临时修复：Vercel 环境变量未生效，使用硬编码的正确 URL
+const databaseUrl = process.env.NODE_ENV === 'production'
+  ? "postgresql://postgres.ksgksoeubyvkuwfpdhet:IEPELVaPJnBoDtHX@aws-1-us-east-2.pooler.supabase.com:5432/postgres"
+  : process.env.DATABASE_URL;
+
+if (databaseUrl) {
+  console.log(`Drizzle using database: ${databaseUrl?.substring(0, 50)}...`);
+
   // Create postgres client for Supabase connection with SSL
   // CRITICAL: For Vercel serverless, use minimal connection pool
   // Each serverless function instance creates its own pool
   // Using max: 1 prevents connection pool exhaustion
-  const client = postgres(process.env.DATABASE_URL, {
+  const client = postgres(databaseUrl, {
     ssl: { rejectUnauthorized: false }, // Supabase SSL configuration
     max: 1, // IMPORTANT: Keep at 1 for serverless environments to prevent pool exhaustion
     idle_timeout: 20, // Close idle connections after 20 seconds
