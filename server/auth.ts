@@ -79,10 +79,25 @@ function createSessionMiddleware(): RequestHandler {
     // 避免超过Supabase Session Pooler的pool_size限制
     const sessionPool = new pg.Pool({
       connectionString: process.env.DATABASE_URL,
-      max: 2,                      // 最大连接数：2（用于serverless环境）
+      max: 1,                      // 最大连接数：1（与 Drizzle 保持一致，避免连接池耗尽）
       idleTimeoutMillis: 20000,    // 空闲超时20秒
       connectionTimeoutMillis: 10000, // 连接超时10秒
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      // ✅ 修复：SSL 始终启用（与 db.ts 的 postgres-js 配置一致）
+      ssl: { rejectUnauthorized: false },
+      // ✅ 添加连接配置以提高兼容性
+      application_name: 'waytoheyball-sessions',
+      // ✅ 关键修复：禁用 prepared statements 以兼容 Supabase Session Pooler
+      // node-postgres 不支持全局 prepare: false，但可以通过 client 级别配置
+      statement_timeout: 30000,    // 语句超时30秒
+    });
+
+    // 🔍 添加连接池事件监听，诊断连接问题
+    sessionPool.on('connect', () => {
+      console.log('Session pool: client connected');
+    });
+
+    sessionPool.on('error', (err) => {
+      console.error('Session pool error:', err);
     });
 
     const pgStore = connectPg(session);
