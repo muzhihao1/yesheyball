@@ -86,7 +86,7 @@ function createSessionMiddleware(): RequestHandler {
       connectionString: databaseUrl,
       max: 1,                      // 最大连接数：1（与 Drizzle 保持一致，避免连接池耗尽）
       idleTimeoutMillis: 20000,    // 空闲超时20秒
-      connectionTimeoutMillis: 10000, // 连接超时10秒
+      connectionTimeoutMillis: 30000, // 连接超时30秒（增加以兼容Supabase Session Pooler）
       // ✅ 修复：SSL 始终启用（与 db.ts 的 postgres-js 配置一致）
       ssl: { rejectUnauthorized: false },
       // ✅ 添加连接配置以提高兼容性
