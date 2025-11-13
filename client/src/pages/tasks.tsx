@@ -291,7 +291,10 @@ export default function TasksPage() {
               setShowAiFeedbackModal(true);
             }
           }}
-          celebrationData={celebrationData}
+          sessionTitle={celebrationData?.sessionTitle || ""}
+          earnedExp={celebrationData?.earnedExp || 0}
+          stars={celebrationData?.stars || 0}
+          duration={celebrationData?.duration}
         />
         {showAiFeedbackModal && (
           <AiFeedbackModal
@@ -439,7 +442,10 @@ export default function TasksPage() {
             setShowAiFeedbackModal(true);
           }
         }}
-        celebrationData={celebrationData}
+        sessionTitle={celebrationData?.sessionTitle || ""}
+        earnedExp={celebrationData?.earnedExp || 0}
+        stars={celebrationData?.stars || 0}
+        duration={celebrationData?.duration}
       />
       {showRatingModal && activeUnit && (
         <RatingModal

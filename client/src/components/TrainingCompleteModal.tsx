@@ -12,23 +12,23 @@
  * - Responsive design
  *
  * Props:
+ * - isOpen: Boolean to control modal visibility
  * - sessionTitle: Name of completed training session
  * - earnedExp: Experience points earned
  * - stars: Rating (1-5)
- * - duration: Training duration in minutes
+ * - duration: Training duration in minutes (optional)
  * - onClose: Callback when modal is closed
  *
  * Usage:
  * ```tsx
- * {showComplete && (
- *   <TrainingCompleteModal
- *     sessionTitle="准度训练"
- *     earnedExp={150}
- *     stars={4}
- *     duration={30}
- *     onClose={() => setShowComplete(false)}
- *   />
- * )}
+ * <TrainingCompleteModal
+ *   isOpen={showComplete}
+ *   sessionTitle="准度训练"
+ *   earnedExp={150}
+ *   stars={4}
+ *   duration={30}
+ *   onClose={() => setShowComplete(false)}
+ * />
  * ```
  */
 
@@ -39,6 +39,7 @@ import { Button } from '@/components/ui/button';
 import { Star, Clock, Trophy } from 'lucide-react';
 
 interface TrainingCompleteModalProps {
+  isOpen: boolean;
   sessionTitle: string;
   earnedExp: number;
   stars: number;
@@ -47,6 +48,7 @@ interface TrainingCompleteModalProps {
 }
 
 export function TrainingCompleteModal({
+  isOpen,
   sessionTitle,
   earnedExp,
   stars,
@@ -54,6 +56,9 @@ export function TrainingCompleteModal({
   onClose,
 }: TrainingCompleteModalProps) {
   const { width, height } = useWindowSize();
+
+  // Don't render if modal is not open
+  if (!isOpen) return null;
 
   return (
     <>
