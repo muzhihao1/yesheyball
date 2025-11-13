@@ -104,25 +104,12 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
 
         console.log(`✅ Express session created for ${normalizedEmail}`);
 
-        // Save session to database before responding
-        req.session.save((err) => {
-          if (err) {
-            console.error(`❌ Failed to save session for ${normalizedEmail}:`, err);
-            res.status(500).json({
-              success: false,
-              error: 'Failed to save session'
-            });
-            return;
-          }
-
-          console.log(`✅ Session persisted to database for ${normalizedEmail}`);
-
-          res.json({
-            success: true,
-            migrated: true,
-            user: signInData.user,
-            session: signInData.session,
-          });
+        // Note: MemoryStore auto-saves, no need for explicit save() call
+        res.json({
+          success: true,
+          migrated: true,
+          user: signInData.user,
+          session: signInData.session,
         });
         return;
       }
@@ -238,26 +225,13 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
 
       console.log(`✅ Express session created after migration for ${normalizedEmail}`);
 
-      // Save session to database before responding
-      req.session.save((err) => {
-        if (err) {
-          console.error(`❌ Failed to save session after migration for ${normalizedEmail}:`, err);
-          res.status(500).json({
-            success: false,
-            error: 'Failed to save session after migration'
-          });
-          return;
-        }
-
-        console.log(`✅ Session persisted to database after migration for ${normalizedEmail}`);
-
-        res.json({
-          success: true,
-          migrated: true,
-          user: sessionData.user,
-          session: sessionData.session,
-          message: 'Account upgraded to new authentication system',
-        });
+      // Note: MemoryStore auto-saves, no need for explicit save() call
+      res.json({
+        success: true,
+        migrated: true,
+        user: sessionData.user,
+        session: sessionData.session,
+        message: 'Account upgraded to new authentication system',
       });
       return;
     }
