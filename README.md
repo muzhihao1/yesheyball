@@ -71,8 +71,10 @@ WayToHeyball/
 ├── shared/              # 前后端共享代码
 │   └── schema.ts       # 数据库Schema和类型
 ├── docs/                # 📚 项目文档
-│   ├── CLAUDE.md       # 开发指南
-│   └── deployment-vercel.md  # 部署文档
+│   ├── README.md       # 文档索引
+│   ├── api/            # API文档
+│   ├── guides/         # 操作指南
+│   └── archive/        # 归档文档
 ├── migrations/          # 数据库迁移
 ├── api/                 # Vercel Serverless入口
 └── scripts/             # 构建脚本
@@ -96,11 +98,12 @@ WayToHeyball/
 
 ## 📖 文档
 
-- **[开发指南](./docs/CLAUDE.md)** - 详细的开发文档和架构说明
-- **[部署指南](./docs/deployment-vercel.md)** - Vercel部署步骤
-- **[详细README](./docs/README-detailed.md)** - 完整的项目说明
+- **[开发指南 (CLAUDE.md)](./CLAUDE.md)** - 详细的开发文档和架构说明
+- **[文档中心 (docs/)](./docs/)** - API文档、操作指南、归档文档
+- **[十大招系统 API](./docs/api/ten-core-skills.md)** - Ten Core Skills V3 API文档
+- **[SQL执行指南](./docs/guides/sql-execution.md)** - 数据库初始化步骤
 
-更多文档请查看 `/docs` 目录。
+更多文档请查看 [/docs 目录](./docs/)。
 
 ## 🔧 常用命令
 
@@ -120,7 +123,7 @@ npm run db:push      # 推送数据库Schema变更
 2. 配置环境变量
 3. 自动构建和部署
 
-详细步骤参见 [部署文档](./docs/deployment-vercel.md)。
+详细步骤参见 [CLAUDE.md - 部署章节](./CLAUDE.md#production-deployment-vercel)。
 
 ## 📝 开发规范
 
@@ -140,4 +143,4 @@ MIT License
 
 ---
 
-**技术支持**: 如有问题，请查看 [docs/CLAUDE.md](./docs/CLAUDE.md) 或提交 Issue。
+**技术支持**: 如有问题，请查看 [CLAUDE.md](./CLAUDE.md) 或 [文档中心](./docs/) 或提交 Issue。
