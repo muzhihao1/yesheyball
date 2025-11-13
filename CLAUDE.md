@@ -91,10 +91,12 @@ server/
 **Key Patterns**:
 - **API Design**: RESTful with Zod validation, JSON responses
 - **Auth Flow**:
-  - Primary: Supabase Auth with JWT tokens
-  - Fallback: Session-based auth for legacy users
+  - Primary: Supabase Auth with JWT tokens (stateless, serverless-compatible)
+  - JWT tokens stored in localStorage: `supabase_access_token`, `supabase_refresh_token`
+  - Server validates JWT via `Authorization: Bearer <token>` header
+  - Fallback: Session-based auth for legacy users (MemoryStore in production)
   - Migration: Automatic migration from password-based to Supabase Auth on login
-  - `isAuthenticated` middleware protects routes
+  - `isAuthenticated` middleware protects routes (JWT first, then session)
   - Demo mode when `AUTH_DISABLED=true` (no database)
 - **Database**: Drizzle ORM with PostgreSQL (Neon/Vercel/Supabase)
 - **AI Integration**: OpenAI API for coaching feedback and image analysis
@@ -197,6 +199,14 @@ The application supports both Supabase Auth and legacy session-based auth during
 4. Password hash cleared, `migratedToSupabase` set to true
 5. User receives Supabase JWT for future requests
 
+**JWT Token Flow** (Stateless Auth):
+1. User logs in → Client receives JWT tokens from Supabase
+2. Tokens saved to localStorage: `supabase_access_token`, `supabase_refresh_token`
+3. Client includes `Authorization: Bearer <token>` header in all API requests
+4. Server's `isAuthenticated` middleware validates JWT via Supabase Admin client
+5. If JWT valid → creates `SessionUser` and attaches to `req.user`
+6. If JWT invalid → falls back to session-based auth
+
 **Demo Mode**:
 - Set `AUTH_DISABLED=true` for local testing
 - Uses hardcoded `demoUserProfile` from `server/auth.ts`
@@ -280,6 +290,29 @@ export function useTrainingSessions() {
 const { data: sessions, isLoading } = useTrainingSessions();
 ```
 
+**Important**: TanStack Query's default `queryFn` in `queryClient.ts` automatically adds JWT Authorization headers. If you create custom `queryFn`, you must manually add headers:
+
+```typescript
+// Add getAuthHeaders() helper for custom fetch calls
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const accessToken = localStorage.getItem('supabase_access_token');
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  return headers;
+}
+
+// Use in custom queryFn
+queryFn: async () => {
+  const response = await fetch('/api/endpoint', {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+  return response.json();
+}
+```
+
 ### Image Upload Flow
 1. Client uploads to `/api/upload` (multer middleware)
 2. Development: Saved to `uploads/` directory
@@ -350,6 +383,18 @@ Since automated tests are minimal, manually verify:
    - Password hash is cleared after migration
    - `migratedToSupabase` flag prevents double migration
    - Migration happens transparently in `/api/auth/migrate-login`
+
+8. **JWT Authentication in Custom Hooks**:
+   - Default `queryClient` automatically includes JWT headers
+   - Custom `queryFn` must manually add Authorization headers
+   - See examples in `useSkillsV3.ts` and `useDailyGoals.ts`
+   - Always include `credentials: 'include'` for session fallback
+
+9. **Session Store in Production**:
+   - Uses MemoryStore (not database) to avoid connection pool exhaustion
+   - Sessions don't persist across serverless cold starts
+   - Primary authentication relies on JWT tokens in localStorage
+   - Database session store disabled to prevent Supabase pooler issues
 
 ## Production Deployment (Vercel)
 
