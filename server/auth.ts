@@ -196,6 +196,11 @@ export function getSessionUser(req: Request): SessionUser | undefined {
     return req.session.user;
   }
 
+  // Check req.user set by JWT authentication in isAuthenticated middleware
+  if (req.user) {
+    return req.user as SessionUser;
+  }
+
   if (authDisabled && !hasDatabase) {
     const demoSession = getDemoSessionUser();
     (req as any).session = (req as any).session ?? {};
