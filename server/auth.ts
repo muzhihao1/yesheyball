@@ -103,7 +103,7 @@ function createSessionMiddleware(): RequestHandler {
     const pgStore = connectPg(session);
     store = new pgStore({
       pool: sessionPool,           // 使用自定义连接池
-      createTableIfMissing: true,  // ✅ 修复：允许自动创建sessions表
+      createTableIfMissing: false, // ✅ 关键修复：禁用自动创建（避免 serverless 竞态条件）
       tableName: "sessions",
       ttl: SESSION_TTL_MS / 1000,
 
@@ -112,8 +112,8 @@ function createSessionMiddleware(): RequestHandler {
         console.error("Session store database error:", err);
       },
 
-      // 🔧 定期清理过期session
-      pruneSessionInterval: 60, // 每60秒清理一次过期session
+      // 🔧 禁用自动清理（serverless 环境不适合后台任务）
+      pruneSessionInterval: false,
     });
 
     store.on("error", (error: unknown) => {
