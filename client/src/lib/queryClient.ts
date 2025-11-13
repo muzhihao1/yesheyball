@@ -7,14 +7,31 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+
+  // Add JWT token from localStorage if available
+  const accessToken = localStorage.getItem('supabase_access_token');
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  return headers;
+}
+
 export async function apiRequest(
   url: string,
   method: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  const headers = {
+    ...getAuthHeaders(),
+    ...(data ? { "Content-Type": "application/json" } : {}),
+  };
+
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -29,8 +46,11 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    const headers = getAuthHeaders();
+
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

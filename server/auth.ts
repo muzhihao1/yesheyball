@@ -450,10 +450,39 @@ export function setupAuth(app: Express) {
   });
 }
 
-export const isAuthenticated: RequestHandler = (req, res, next) => {
+export const isAuthenticated: RequestHandler = async (req, res, next) => {
   if (authDisabled) {
     return next();
   }
+
+  // Try JWT token first (for serverless/stateless auth)
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const { supabaseAdmin, hasSupabaseAdmin } = await import("./supabaseAdmin.js");
+
+      if (hasSupabaseAdmin()) {
+        // Verify JWT token with Supabase
+        const { data: { user }, error } = await supabaseAdmin!.auth.getUser(token);
+
+        if (user && !error) {
+          // Get user from database
+          const dbUser = await storage.getUserByEmail(user.email!);
+          if (dbUser) {
+            // Create session user object and attach to request
+            const sessionUser = buildSessionUser(dbUser);
+            req.user = sessionUser as any;
+            return next();
+          }
+        }
+      }
+    } catch (error) {
+      console.error('JWT verification failed:', error);
+    }
+  }
+
+  // Fall back to session-based auth
   const sessionUser = req.session?.user;
   if (!sessionUser) {
     return res.status(401).json({ message: "Unauthorized" });
