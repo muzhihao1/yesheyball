@@ -74,13 +74,18 @@ function createSessionMiddleware(): RequestHandler {
 
   let store: session.Store;
 
-  if (hasDatabase) {
+  // 🚨 关键修复：在生产环境（Vercel serverless）中禁用数据库session store
+  // 原因：Session Pooler连接数有限，serverless环境下会快速达到MaxClientsInSessionMode
+  // 解决方案：使用MemoryStore（serverless下session会在冷启动后丢失，但避免连接耗尽）
+  const useDbSessionStore = hasDatabase && process.env.NODE_ENV !== 'production';
+
+  if (useDbSessionStore) {
     // 🔧 关键修复：创建限制大小的连接池以适配Vercel serverless
     // 避免超过Supabase Session Pooler的pool_size限制
 
     const databaseUrl = process.env.DATABASE_URL;
 
-    console.log(`Session store using database: ${databaseUrl?.substring(0, 50)}...`);
+    console.log(`Session store using database (DEV ONLY): ${databaseUrl?.substring(0, 50)}...`);
 
     const sessionPool = new pg.Pool({
       connectionString: databaseUrl,
@@ -125,6 +130,9 @@ function createSessionMiddleware(): RequestHandler {
       console.error("Session store error:", error);
     });
   } else {
+    console.log('⚠️  Using MemoryStore for sessions (production/serverless mode)');
+    console.log('💡 Note: Sessions will not persist across serverless cold starts');
+    console.log('💡 Relying on Supabase Auth JWT for authentication instead');
     store = new session.MemoryStore();
   }
 
