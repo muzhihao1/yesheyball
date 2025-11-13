@@ -18,7 +18,7 @@ if (databaseUrl) {
     ssl: { rejectUnauthorized: false }, // Supabase SSL configuration
     max: 1, // IMPORTANT: Keep at 1 for serverless environments to prevent pool exhaustion
     idle_timeout: 20, // Close idle connections after 20 seconds
-    connect_timeout: 10, // Reduced timeout for faster failure detection
+    connect_timeout: 30, // Increased timeout for Supabase Session Pooler
     max_lifetime: 60 * 30, // Close connections after 30 minutes (prevents stale connections)
     connection: {
       application_name: 'waytoheyball'
