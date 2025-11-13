@@ -487,11 +487,16 @@ export default function TasksPage() {
           onSubmit={handleRatingSubmit}
         />
 
-        <AiFeedbackModal
-          isOpen={showAiFeedbackModal}
-          onClose={() => setShowAiFeedbackModal(false)}
-          feedback={aiFeedback}
-        />
+        {showAiFeedbackModal && (
+          <AiFeedbackModal
+            onClose={() => {
+              setShowAiFeedbackModal(false);
+              setAiFeedback(""); // Clear feedback after closing
+            }}
+            feedback={aiFeedback}
+            rating={currentRating}
+          />
+        )}
 
         <TrainingCompleteModal
           isOpen={showCelebration}

@@ -74,10 +74,11 @@ function createSessionMiddleware(): RequestHandler {
 
   let store: session.Store;
 
-  // 🚨 关键修复：在生产环境（Vercel serverless）中禁用数据库session store
-  // 原因：Session Pooler连接数有限，serverless环境下会快速达到MaxClientsInSessionMode
-  // 解决方案：使用MemoryStore（serverless下session会在冷启动后丢失，但避免连接耗尽）
-  const useDbSessionStore = hasDatabase && process.env.NODE_ENV !== 'production';
+  // 🚨 关键修复：完全禁用数据库 session store
+  // 原因1：Session Pooler连接数有限，serverless环境下会快速达到MaxClientsInSessionMode
+  // 原因2：node-postgres 默认启用 prepared statements，Supabase Session Pooler 不支持
+  // 解决方案：始终使用MemoryStore + 依赖 Supabase Auth JWT 进行认证
+  const useDbSessionStore = false; // 完全禁用数据库 session store
 
   if (useDbSessionStore) {
     // 🔧 关键修复：创建限制大小的连接池以适配Vercel serverless
