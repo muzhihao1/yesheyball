@@ -38,11 +38,13 @@ import { Star, Sparkles, Loader2 } from 'lucide-react';
 
 interface RatingModalProps {
   sessionType: string;
-  duration: number;
+  duration: number | undefined;
   notes?: string;
   onSubmit: (rating: number, feedback?: string) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  isOpen?: boolean; // For compatibility with old usage
+  onClose?: () => void; // For compatibility with old usage
 }
 
 export function RatingModal({
@@ -72,7 +74,10 @@ export function RatingModal({
     onSubmit(rating, feedback || undefined);
   };
 
-  const formatDuration = (seconds: number): string => {
+  const formatDuration = (seconds: number | undefined): string => {
+    if (seconds === undefined || isNaN(seconds)) {
+      return '0分0秒';
+    }
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes}分${secs}秒`;

@@ -481,11 +481,15 @@ export default function TasksPage() {
         )}
 
         {/* Modals */}
-        <RatingModal
-          isOpen={showRatingModal}
-          onClose={() => setShowRatingModal(false)}
-          onSubmit={handleRatingSubmit}
-        />
+        {showRatingModal && activeUnit && (
+          <RatingModal
+            sessionType={activeUnit.title}
+            duration={activeElapsedTime}
+            notes={trainingNotes}
+            onCancel={() => setShowRatingModal(false)}
+            onSubmit={handleRatingSubmit}
+          />
+        )}
 
         {showAiFeedbackModal && (
           <AiFeedbackModal
