@@ -22,6 +22,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Clock, Play, Pause, Square, Target, Star, TrendingUp, ChevronRight } from "lucide-react";
 import {
   useSkillsV3,
+  useSubSkillsV3,
+  useTrainingUnitsV3,
   useUserSkillProgressV3,
   useUserUnitCompletions,
   type SkillV3,
@@ -73,6 +75,16 @@ export default function TasksPage() {
   const { data: skills = [], isLoading: skillsLoading } = useSkillsV3();
   const { data: userProgress = [], isLoading: progressLoading } = useUserSkillProgressV3();
   const { data: allCompletions = [] } = useUserUnitCompletions();
+
+  // Fetch sub-skills for selected skill
+  const { data: subSkills = [], isLoading: subSkillsLoading } = useSubSkillsV3(
+    selectedSkill?.id || ""
+  );
+
+  // Fetch training units for selected sub-skill
+  const { data: trainingUnits = [], isLoading: unitsLoading } = useTrainingUnitsV3(
+    selectedSubSkill?.id || ""
+  );
 
   // Timer effect
   useEffect(() => {
@@ -315,6 +327,193 @@ export default function TasksPage() {
     );
   }
 
+  // Sub-skill selected - show training units
+  if (selectedSubSkill) {
+    return (
+      <div className="p-4 space-y-6 pb-24">
+        {/* Back button */}
+        <Button
+          variant="ghost"
+          onClick={() => setSelectedSubSkill(null)}
+          className="mb-4"
+        >
+          ← 返回子技能列表
+        </Button>
+
+        {/* Selected Sub-Skill Header */}
+        <Card className="border-2 border-blue-200">
+          <CardHeader>
+            <CardTitle>{selectedSubSkill.title}</CardTitle>
+            <p className="text-sm text-gray-600">{selectedSubSkill.description}</p>
+          </CardHeader>
+        </Card>
+
+        {/* Training units */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-800">训练单元</h3>
+          {unitsLoading ? (
+            <div className="text-center py-8 text-gray-500">加载中...</div>
+          ) : trainingUnits.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">暂无训练单元数据</div>
+          ) : (
+            trainingUnits.map((unit) => {
+              const isCompleted = allCompletions.some((c) => c.unitId === unit.id);
+              const unitTypeMap = {
+                theory: { label: "理论", color: "bg-blue-100 text-blue-700" },
+                practice: { label: "实践", color: "bg-green-100 text-green-700" },
+                challenge: { label: "挑战", color: "bg-orange-100 text-orange-700" },
+              };
+              const typeInfo = unitTypeMap[unit.unitType];
+
+              return (
+                <Card
+                  key={unit.id}
+                  className={`border-gray-200 ${
+                    isCompleted ? "bg-green-50" : ""
+                  }`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className={typeInfo.color}>{typeInfo.label}</Badge>
+                          {isCompleted && (
+                            <Badge className="bg-green-500 text-white">✓ 已完成</Badge>
+                          )}
+                        </div>
+                        <p className="font-medium text-sm mb-1">{unit.title}</p>
+                        <p className="text-xs text-gray-600 mb-2">
+                          {unit.goalDescription}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span>⭐ +{unit.xpReward} XP</span>
+                          {unit.estimatedMinutes && (
+                            <span>⏱️ 约 {unit.estimatedMinutes} 分钟</span>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          handleStartTraining(unit, selectedSkill!, selectedSubSkill)
+                        }
+                        disabled={isTrainingActive}
+                        variant={isCompleted ? "outline" : "default"}
+                      >
+                        {isCompleted ? "重新训练" : "开始训练"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
+
+        {/* Active Training Interface */}
+        {isTrainingActive && activeUnit && (
+          <Card className="border-primary border-2">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>{activeUnit.title}</span>
+                <Badge variant="outline" className="text-lg">
+                  {formatTime(activeElapsedTime)}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Unit content */}
+              {activeUnit.content && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm whitespace-pre-wrap">
+                    {typeof activeUnit.content === "string"
+                      ? activeUnit.content
+                      : activeUnit.content.text || ""}
+                  </p>
+                </div>
+              )}
+
+              {/* Training controls */}
+              <div className="flex gap-2">
+                {!isTrainingPaused ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsTrainingPaused(true)}
+                    className="flex-1"
+                  >
+                    <Pause className="w-4 h-4 mr-2" />
+                    暂停
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsTrainingPaused(false)}
+                    className="flex-1"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    继续
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  onClick={handleStopTraining}
+                  className="flex-1"
+                >
+                  <Square className="w-4 h-4 mr-2" />
+                  结束训练
+                </Button>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  训练笔记（可选）
+                </label>
+                <Textarea
+                  value={trainingNotes}
+                  onChange={(e) => setTrainingNotes(e.target.value)}
+                  placeholder="记录训练中的感受、发现或问题..."
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Modals */}
+        <RatingModal
+          isOpen={showRatingModal}
+          onClose={() => setShowRatingModal(false)}
+          onSubmit={handleRatingSubmit}
+        />
+
+        <AiFeedbackModal
+          isOpen={showAiFeedbackModal}
+          onClose={() => setShowAiFeedbackModal(false)}
+          feedback={aiFeedback}
+        />
+
+        <TrainingCompleteModal
+          isOpen={showCelebration}
+          onClose={() => {
+            setShowCelebration(false);
+            setCelebrationData(null);
+          }}
+          sessionTitle={celebrationData?.sessionTitle || ""}
+          earnedExp={celebrationData?.earnedExp || 0}
+          stars={celebrationData?.stars || 0}
+          duration={celebrationData?.duration}
+        />
+
+        <AchievementUnlockModal
+          isOpen={showAchievementModal}
+          onClose={() => setShowAchievementModal(false)}
+          achievements={unlockedAchievements}
+        />
+      </div>
+    );
+  }
+
   // Skill selected - show sub-skills
   return (
     <div className="p-4 space-y-6 pb-24">
@@ -334,37 +533,27 @@ export default function TasksPage() {
       {/* Sub-skills */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-800">子技能列表</h3>
-        {selectedSkill.subSkills?.map((subSkill) => (
-          <Card key={subSkill.id} className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-base">{subSkill.title}</CardTitle>
-              <p className="text-sm text-gray-600">{subSkill.description}</p>
-            </CardHeader>
-            <CardContent>
-              {/* Training units */}
-              <div className="space-y-2">
-                {subSkill.trainingUnits?.map((unit) => (
-                  <div
-                    key={unit.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{unit.title}</p>
-                      <p className="text-xs text-gray-600">{unit.goalDescription}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleStartTraining(unit, selectedSkill, subSkill)}
-                      disabled={isTrainingActive}
-                    >
-                      开始训练
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {subSkillsLoading ? (
+          <div className="text-center py-8 text-gray-500">加载中...</div>
+        ) : subSkills.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">暂无子技能数据</div>
+        ) : (
+          subSkills.map((subSkill) => (
+            <Card
+              key={subSkill.id}
+              className="border-gray-200 cursor-pointer hover:border-blue-300 transition-colors"
+              onClick={() => setSelectedSubSkill(subSkill)}
+            >
+              <CardHeader>
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span>{subSkill.title}</span>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </CardTitle>
+                <p className="text-sm text-gray-600">{subSkill.description}</p>
+              </CardHeader>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Active Training Interface */}
