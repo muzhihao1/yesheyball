@@ -7,6 +7,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { AchievementGrid } from "@/components/AchievementGrid";
 import { TrainingTrendChart } from "@/components/TrainingTrendChart";
 import { SkillRadarChart } from "@/components/SkillRadarChart";
+import { useAbilityScoresForProfile } from "@/hooks/useAbilityScoresForProfile";
+import AbilityRadarChart from "@/components/ninety-day/AbilityRadarChart";
+import AbilityScoreBars from "@/components/AbilityScoreBars";
 import {
   Settings,
   Trophy,
@@ -23,7 +26,10 @@ import {
 
 export default function Profile() {
   const { user, isLoading } = useAuth();
-  
+
+  const { data: abilityScores, isLoading: isLoadingAbilityScores } =
+    useAbilityScoresForProfile(user?.id);
+
   const { data: userStats } = useQuery({
     queryKey: ["/api/user/streak"],
     enabled: !!user,
@@ -153,6 +159,32 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
+
+        {/* Ability Analysis Section - 能力分析 */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <Target className="w-6 h-6 text-blue-600" />
+            能力分析
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left: Radar Chart - Hidden on mobile */}
+            <div className="hidden lg:block">
+              <AbilityRadarChart
+                scores={abilityScores}
+                isLoading={isLoadingAbilityScores}
+              />
+            </div>
+
+            {/* Right: Detailed Score Bars - Full width on mobile */}
+            <div className="lg:col-span-1">
+              <AbilityScoreBars
+                scores={abilityScores}
+                isLoading={isLoadingAbilityScores}
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Data Visualization Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

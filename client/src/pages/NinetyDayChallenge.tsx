@@ -3,8 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertCircle, BookOpen, PlayCircle, Target } from 'lucide-react';
-import AbilityRadarChart from '@/components/ninety-day/AbilityRadarChart';
-import AbilityScoreCards from '@/components/ninety-day/AbilityScoreCards';
 import ProgressCalendar, { type DayStatus } from '@/components/ninety-day/ProgressCalendar';
 import StatsPanel from '@/components/ninety-day/StatsPanel';
 import WelcomeModal from '@/components/ninety-day/WelcomeModal';
@@ -22,17 +20,17 @@ import {
 /**
  * Ninety Day Challenge Page
  *
- * Main page for the 90-day billiards training challenge with ability scoring system
+ * Main page for the 90-day billiards training challenge
  *
  * Features:
- * - Ability score dashboard (radar chart + cards)
  * - Current day curriculum display
  * - 90-day progress calendar
  * - Training statistics panel
  * - Training modal for session submission
+ * - Clearance score display in header
  *
  * Layout:
- * - Top: Ability scores visualization
+ * - Top: Header with clearance score and current day
  * - Middle: Current day card + action buttons
  * - Bottom: Progress calendar + stats panel
  */
@@ -223,7 +221,7 @@ export default function NinetyDayChallenge() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
               90天台球挑战
@@ -232,33 +230,25 @@ export default function NinetyDayChallenge() {
               系统化训练 · 能力提升 · 成为更强的球手
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Target className="w-8 h-8 text-blue-600" />
-            <span className="text-2xl font-bold text-blue-600">
-              第 {currentDay} 天
-            </span>
+          <div className="flex items-center gap-6">
+            {/* 清台能力总分 */}
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground mb-1">清台能力</div>
+              <div className="text-3xl font-bold text-blue-600">
+                {abilityScores?.clearance_score || 0}
+              </div>
+              <div className="text-xs text-muted-foreground">分</div>
+            </div>
+
+            {/* 当前天数 */}
+            <div className="flex items-center gap-2">
+              <Target className="w-8 h-8 text-blue-600" />
+              <span className="text-2xl font-bold text-blue-600">
+                第 {currentDay} 天
+              </span>
+            </div>
           </div>
         </div>
-
-        {/* Ability Scores Section */}
-        <section className="space-y-6">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Target className="w-6 h-6 text-blue-600" />
-            能力分析
-          </h2>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Radar Chart */}
-            <div className="lg:col-span-1">
-              <AbilityRadarChart scores={abilityScores} isLoading={scoresLoading} />
-            </div>
-
-            {/* Score Cards */}
-            <div className="lg:col-span-2">
-              <AbilityScoreCards scores={abilityScores} isLoading={scoresLoading} />
-            </div>
-          </div>
-        </section>
 
         {/* Current Day Section */}
         <section className="space-y-4">
@@ -339,6 +329,18 @@ export default function NinetyDayChallenge() {
                 >
                   <PlayCircle className="w-6 h-6 mr-2" />
                   开始今日训练
+                </Button>
+              </div>
+
+              {/* 能力分析链接 */}
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.location.href = '/profile'}
+                >
+                  <Target className="w-4 h-4 mr-2" />
+                  查看完整能力分析
                 </Button>
               </div>
             </CardContent>

@@ -227,18 +227,30 @@ export default function ScoreFeedbackModal({
             </div>
           )}
 
-          {/* Close Button */}
+          {/* Action Buttons */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
+            className="flex flex-col sm:flex-row gap-3"
           >
             <Button
               onClick={onClose}
               size="lg"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold"
+              variant="outline"
+              className="flex-1 font-semibold"
             >
-              太棒了，继续加油！
+              继续训练
+            </Button>
+            <Button
+              onClick={() => {
+                window.location.href = '/profile';
+              }}
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold"
+            >
+              <Target className="w-4 h-4 mr-2" />
+              查看完整能力分析
             </Button>
           </motion.div>
         </div>
