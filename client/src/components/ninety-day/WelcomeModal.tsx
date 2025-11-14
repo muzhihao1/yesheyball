@@ -16,17 +16,19 @@ import { Target, Calendar, TrendingUp, Award, Rocket } from 'lucide-react';
  *
  * Props:
  * - open: Whether modal is visible
+ * - onOpenChange: Handler when modal open state changes (for closing)
  * - onStart: Handler to initialize challenge
  * - isStarting: Loading state during initialization
  */
 
 interface WelcomeModalProps {
   open: boolean;
+  onOpenChange: (open: boolean) => void;
   onStart: () => void;
   isStarting?: boolean;
 }
 
-export default function WelcomeModal({ open, onStart, isStarting }: WelcomeModalProps) {
+export default function WelcomeModal({ open, onOpenChange, onStart, isStarting }: WelcomeModalProps) {
   const features = [
     {
       icon: Target,
@@ -55,8 +57,8 @@ export default function WelcomeModal({ open, onStart, isStarting }: WelcomeModal
   ];
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-3xl [&>button]:hidden">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
         <div className="py-6 space-y-8">
           {/* Header */}
           <motion.div

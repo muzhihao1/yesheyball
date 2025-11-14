@@ -2706,8 +2706,8 @@ export async function registerRoutes(app: Express): Promise<void> {
    * Start 90-day challenge for the user
    * POST /api/ninety-day/start-challenge
    *
-   * Initializes the challenge by setting challenge_start_date
-   * Can only be called once per user (unless challenge_start_date is null)
+   * Initializes the challenge by setting start_date in user_ninety_day_progress table
+   * Can only be called once per user (unless start_date is null)
    */
   app.post("/api/ninety-day/start-challenge", isAuthenticated, async (req, res) => {
     try {
@@ -2720,27 +2720,37 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
-      // Get current user data
-      const [user] = await db!.select().from(users).where(eq(users.id, userId));
+      // Check user_ninety_day_progress table (primary source of truth)
+      let progress = await storage.getUserNinetyDayProgress(userId);
 
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // Check if challenge already started
-      if (user.challengeStartDate) {
+      // If progress exists and already has start date, return 400
+      if (progress && progress.startDate) {
         return res.status(400).json({
           message: "Challenge already started",
-          startDate: user.challengeStartDate
+          startDate: progress.startDate
         });
       }
 
-      // Initialize challenge with current date
+      const now = new Date();
+      const completionDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+      // If no progress record exists, create one
+      if (!progress) {
+        progress = await storage.initializeUserNinetyDayProgress(userId);
+      } else {
+        // If progress exists but startDate is null, update it
+        progress = await storage.updateUserNinetyDayProgress(userId, {
+          startDate: now,
+          estimatedCompletionDate: completionDate,
+        });
+      }
+
+      // Sync to users table for backward compatibility
       await db!.update(users)
         .set({
-          challengeStartDate: new Date(),
-          challengeCurrentDay: 1,
-          challengeCompletedDays: 0,
+          challengeStartDate: progress.startDate,
+          challengeCurrentDay: progress.currentDay,
+          challengeCompletedDays: (progress.completedDays as number[]).length,
         })
         .where(eq(users.id, userId));
 
@@ -2749,7 +2759,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.json({
         success: true,
         message: "90天挑战已开始！",
-        startDate: new Date(),
+        startDate: progress.startDate,
       });
     } catch (error) {
       console.error("Error starting 90-day challenge:", error);

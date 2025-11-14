@@ -106,7 +106,17 @@ export default function NinetyDayChallenge() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start challenge');
+        // If challenge already started (400 error), silently handle it
+        if (response.status === 400) {
+          console.log('Challenge already started, refreshing data...');
+          await refetchProgress();
+          setShowWelcomeModal(false);
+          setIsStartingChallenge(false);
+          return;
+        }
+
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to start challenge');
       }
 
       // Refresh progress data
@@ -358,6 +368,7 @@ export default function NinetyDayChallenge() {
       {/* Welcome Modal - First-time user onboarding */}
       <WelcomeModal
         open={showWelcomeModal}
+        onOpenChange={setShowWelcomeModal}
         onStart={handleStartChallenge}
         isStarting={isStartingChallenge}
       />
