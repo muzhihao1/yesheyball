@@ -32,19 +32,22 @@ export interface TencoreSkill {
  * 90-Day Curriculum Entry
  */
 export interface NinetyDayCurriculum {
-  id: string;
-  dayNumber: number; // 1-90
-  tencoreSkillId: string;
+  dayNumber: number; // 1-90 (PRIMARY KEY)
+  tencoreSkillId: string | null;
   trainingType: string; // '系统', '专项', '测试', '理论', '考核'
   title: string;
   description: string | null;
   originalCourseRef: string | null; // e.g., "第1集"
   objectives: string[]; // Training objectives
   keyPoints: string[]; // Key training points
-  videoUrl: string | null;
-  duration: number | null; // Expected duration in minutes
+  practiceRequirements: any; // JSONB field
+  primarySkill: string | null; // 'accuracy', 'spin', 'positioning', 'power', 'strategy'
+  scoringMethod: string | null; // 'success_rate' or 'completion'
+  maxAttempts: number | null; // For success_rate scoring
+  estimatedDuration: number | null; // Expected duration in minutes
   difficulty: string | null; // '初级', '中级', '高级'
-  orderIndex: number;
+  videoUrl: string | null;
+  notes: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -328,4 +331,242 @@ export function isDayCompleted(progress: UserNinetyDayProgress | undefined, dayN
 export function getSkillProgress(progress: UserNinetyDayProgress | undefined, skillNumber: number): number {
   if (!progress?.tencoreProgress) return 0;
   return progress.tencoreProgress[skillNumber.toString()] || 0;
+}
+
+// ============================================================================
+// Ability Score System (能力分系统)
+// ============================================================================
+
+/**
+ * Ability Scores (5-dimensional scoring system)
+ */
+export interface AbilityScores {
+  accuracy_score: number;      // 准度分 (0-100)
+  spin_score: number;           // 杆法分 (0-100)
+  positioning_score: number;    // 走位分 (0-100)
+  power_score: number;          // 发力分 (0-100)
+  strategy_score: number;       // 策略分 (0-100)
+  clearance_score: number;      // 清台能力总分 (0-100)
+}
+
+/**
+ * Score changes after training
+ */
+export interface ScoreChanges {
+  accuracy?: number;
+  spin?: number;
+  positioning?: number;
+  power?: number;
+  strategy?: number;
+  clearance?: number;
+}
+
+/**
+ * Training submission payload
+ */
+export interface TrainingSubmissionPayload {
+  day_number: number;
+  training_stats: {
+    total_attempts?: number;      // For success_rate scoring
+    successful_shots?: number;    // For success_rate scoring
+    completed_count?: number;     // For completion scoring
+    target_count?: number;        // For completion scoring
+    duration_minutes?: number;
+  };
+  duration_minutes: number;
+  notes?: string;
+}
+
+/**
+ * Training submission response
+ */
+export interface TrainingSubmissionResponse {
+  success: boolean;
+  message: string;
+  score_changes: ScoreChanges;
+  new_scores: AbilityScores;
+}
+
+/**
+ * Training history entry with score changes
+ */
+export interface TrainingHistoryEntry {
+  id: string;
+  day_number: number;
+  started_at: string;
+  completed_at: string;
+  duration_minutes: number;
+  training_stats: Record<string, any>;
+  success_rate: number | null;
+  achieved_target: boolean | null;
+  score_changes: ScoreChanges;
+  notes: string | null;
+  title: string;           // From curriculum
+  difficulty: string;      // From curriculum
+  primary_skill: string;   // From curriculum
+}
+
+/**
+ * Helper function to get JWT auth headers
+ */
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  const accessToken = localStorage.getItem('supabase_access_token');
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  return headers;
+}
+
+/**
+ * Fetch user's current ability scores
+ * @param userId - User ID
+ * @returns Query result with ability scores
+ */
+export function useAbilityScores(userId: string) {
+  return useQuery<AbilityScores>({
+    queryKey: ['/api/users/ability-scores', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}/ability-scores`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch ability scores');
+      }
+
+      return response.json();
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes - refresh frequently for real-time updates
+  });
+}
+
+/**
+ * Submit training record and calculate ability scores
+ * @returns Mutation hook for training submission
+ */
+export function useTrainingSubmission() {
+  const queryClient = useQueryClient();
+
+  return useMutation<TrainingSubmissionResponse, Error, TrainingSubmissionPayload>({
+    mutationFn: async (data: TrainingSubmissionPayload) => {
+      const response = await fetch('/api/ninety-day-training', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to submit training');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Invalidate ability scores to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['/api/users/ability-scores'] });
+
+      // Invalidate training history
+      queryClient.invalidateQueries({ queryKey: ['/api/ninety-day-training'] });
+
+      // Invalidate progress
+      queryClient.invalidateQueries({ queryKey: ['/api/ninety-day/progress'] });
+
+      // Invalidate user data (might have exp/level changes)
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    },
+  });
+}
+
+/**
+ * Fetch user's training history with score changes
+ * @param userId - User ID
+ * @param limit - Number of records to fetch (default: 30)
+ * @returns Query result with training history
+ */
+export function useTrainingHistory(userId: string, limit: number = 30) {
+  return useQuery<TrainingHistoryEntry[]>({
+    queryKey: ['/api/ninety-day-training', userId, limit],
+    queryFn: async () => {
+      const response = await fetch(`/api/ninety-day-training/${userId}?limit=${limit}`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch training history');
+      }
+
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Fetch curriculum for a specific day (for ability score context)
+ * @param dayNumber - Day number (1-90)
+ * @returns Query result with curriculum details
+ */
+export function useDayCurriculum(dayNumber: number) {
+  return useQuery<{ curriculum: NinetyDayCurriculum }>({
+    queryKey: ['/api/ninety-day-curriculum', dayNumber],
+    queryFn: async () => {
+      const response = await fetch(`/api/ninety-day-curriculum/${dayNumber}`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch curriculum');
+      }
+
+      return response.json();
+    },
+    staleTime: 30 * 60 * 1000, // 30 minutes - curriculum data rarely changes
+  });
+}
+
+/**
+ * Fetch user's 90-day challenge progress (with ability scores)
+ * @param userId - User ID
+ * @returns Query result with challenge progress and ability scores
+ */
+export function useNinetyDayChallengeProgress(userId: string) {
+  return useQuery<{
+    challenge_start_date: string | null;
+    challenge_current_day: number;
+    challenge_completed_days: number;
+    accuracy_score: number;
+    spin_score: number;
+    positioning_score: number;
+    power_score: number;
+    strategy_score: number;
+    clearance_score: number;
+    total_trained_days: number;
+    successful_days: number;
+    days_since_start: number | null;
+  }>({
+    queryKey: ['/api/users/ninety-day-progress', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}/ninety-day-progress`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch challenge progress');
+      }
+
+      return response.json();
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 }

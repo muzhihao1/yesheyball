@@ -7,6 +7,7 @@ export default function Navigation() {
   const navItems = [
     { path: "/levels", label: "关卡地图", icon: Target },
     { path: "/tasks", label: "训练计划", icon: Calendar },
+    { path: "/ninety-day-challenge", label: "90天挑战", icon: Trophy },
     { path: "/profile", label: "个人档案", icon: User },
   ];
 

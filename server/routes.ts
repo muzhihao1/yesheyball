@@ -1,5 +1,6 @@
 import express, { type Express, type Request } from "express";
 import { storage } from "./storage.js";
+import { db } from "./db.js";
 import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse, demoUserProfile } from "./auth.js";
 import { generateCoachingFeedback, generateDiaryInsights } from "./openai.js";
 import { upload, persistUploadedImage } from "./upload.js";
@@ -22,6 +23,12 @@ import OpenAI from "openai";
 import path from "path";
 import fs from "fs";
 import { eq, sql } from "drizzle-orm";
+import {
+  processTrainingRecord,
+  getUserAbilityScores,
+  getUserTrainingHistory,
+  type TrainingSubmission
+} from "./abilityScoreEngine.js";
 
 function getSessionUserId(req: Request): string | undefined {
   const sessionUser = getSessionUser(req);
@@ -2182,9 +2189,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.json({ plans: [] });
       }
 
-      // Validate trainingId is a valid UUID
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(trainingId)) {
+      // Validate trainingId is a valid VARCHAR format (st_*)
+      const validIdRegex = /^st_[a-z_]+$/;
+      if (!validIdRegex.test(trainingId)) {
         return res.status(400).json({ message: "Invalid training ID format" });
       }
 
@@ -2688,6 +2695,233 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Error fetching curriculum units:", error);
       res.status(500).json({ message: "Failed to fetch curriculum units" });
+    }
+  });
+
+  // ============================================================================
+  // 90-Day Challenge & Ability Score API Endpoints
+  // ============================================================================
+
+  /**
+   * Start 90-day challenge for the user
+   * POST /api/ninety-day/start-challenge
+   *
+   * Initializes the challenge by setting challenge_start_date
+   * Can only be called once per user (unless challenge_start_date is null)
+   */
+  app.post("/api/ninety-day/start-challenge", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.status(200).json({
+          success: true,
+          message: "Demo mode: Challenge started"
+        });
+      }
+
+      // Get current user data
+      const [user] = await db!.select().from(users).where(eq(users.id, userId));
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if challenge already started
+      if (user.challengeStartDate) {
+        return res.status(400).json({
+          message: "Challenge already started",
+          startDate: user.challengeStartDate
+        });
+      }
+
+      // Initialize challenge with current date
+      await db!.update(users)
+        .set({
+          challengeStartDate: new Date(),
+          challengeCurrentDay: 1,
+          challengeCompletedDays: 0,
+        })
+        .where(eq(users.id, userId));
+
+      console.log(`✅ Started 90-day challenge for user ${userId}`);
+
+      res.json({
+        success: true,
+        message: "90天挑战已开始！",
+        startDate: new Date(),
+      });
+    } catch (error) {
+      console.error("Error starting 90-day challenge:", error);
+      res.status(500).json({
+        message: "Failed to start challenge"
+      });
+    }
+  });
+
+  /**
+   * Submit a training record for the 90-day challenge
+   * POST /api/ninety-day-training
+   *
+   * Body: {
+   *   day_number: number,
+   *   training_stats: {
+   *     total_attempts?: number,
+   *     successful_shots?: number,
+   *     completed_count?: number,
+   *     target_count?: number,
+   *     duration_minutes?: number
+   *   },
+   *   duration_minutes: number,
+   *   notes?: string
+   * }
+   */
+  app.post("/api/ninety-day-training", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      // Validate request body
+      const submissionSchema = z.object({
+        day_number: z.number().int().min(1).max(90),
+        training_stats: z.object({
+          total_attempts: z.number().int().optional(),
+          successful_shots: z.number().int().optional(),
+          completed_count: z.number().int().optional(),
+          target_count: z.number().int().optional(),
+          duration_minutes: z.number().optional(),
+        }),
+        duration_minutes: z.number().min(1),
+        notes: z.string().optional(),
+      });
+
+      const validatedData = submissionSchema.parse(req.body);
+
+      const submission: TrainingSubmission = {
+        user_id: userId,
+        ...validatedData,
+      };
+
+      // Process training and update ability scores
+      const result = await processTrainingRecord(submission);
+
+      res.json({
+        success: true,
+        message: "训练记录已提交，能力分已更新",
+        score_changes: result.scoreChanges,
+        new_scores: result.newScores,
+      });
+    } catch (error: any) {
+      console.error("Error submitting training record:", error);
+
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          message: "Invalid request data",
+          errors: error.errors
+        });
+      }
+
+      res.status(500).json({
+        message: error.message || "Failed to submit training record"
+      });
+    }
+  });
+
+  /**
+   * Get user's current ability scores
+   * GET /api/users/:userId/ability-scores
+   */
+  app.get("/api/users/:userId/ability-scores", isAuthenticated, async (req, res) => {
+    try {
+      const requestingUserId = requireSessionUserId(req);
+      const targetUserId = req.params.userId;
+
+      // Users can only view their own scores (for now)
+      if (requestingUserId !== targetUserId && requestingUserId !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const scores = await getUserAbilityScores(targetUserId);
+
+      if (!scores) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ scores });
+    } catch (error) {
+      console.error("Error fetching ability scores:", error);
+      res.status(500).json({ message: "Failed to fetch ability scores" });
+    }
+  });
+
+  /**
+   * Get user's training history for 90-day challenge
+   * GET /api/ninety-day-training/:userId?limit=30
+   */
+  app.get("/api/ninety-day-training/:userId", isAuthenticated, async (req, res) => {
+    try {
+      const requestingUserId = requireSessionUserId(req);
+      const targetUserId = req.params.userId;
+
+      // Users can only view their own history (for now)
+      if (requestingUserId !== targetUserId && requestingUserId !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 30;
+      const history = await getUserTrainingHistory(targetUserId, limit);
+
+      res.json({ history });
+    } catch (error) {
+      console.error("Error fetching training history:", error);
+      res.status(500).json({ message: "Failed to fetch training history" });
+    }
+  });
+
+  /**
+   * Get 90-day curriculum for a specific day
+   * GET /api/ninety-day-curriculum/:dayNumber
+   */
+  app.get("/api/ninety-day-curriculum/:dayNumber", isAuthenticated, async (req, res) => {
+    try {
+      const dayNumber = parseInt(req.params.dayNumber);
+
+      if (isNaN(dayNumber) || dayNumber < 1 || dayNumber > 90) {
+        return res.status(400).json({ message: "Day number must be between 1 and 90" });
+      }
+
+      const curriculum = await storage.getNinetyDayCurriculumByDay(dayNumber);
+
+      if (!curriculum) {
+        return res.status(404).json({ message: "Curriculum not found for this day" });
+      }
+
+      res.json({ curriculum });
+    } catch (error) {
+      console.error("Error fetching curriculum:", error);
+      res.status(500).json({ message: "Failed to fetch curriculum" });
+    }
+  });
+
+  /**
+   * Get user's 90-day challenge progress
+   * GET /api/users/:userId/ninety-day-progress
+   */
+  app.get("/api/users/:userId/ninety-day-progress", isAuthenticated, async (req, res) => {
+    try {
+      const requestingUserId = requireSessionUserId(req);
+      const targetUserId = req.params.userId;
+
+      // Users can only view their own progress (for now)
+      if (requestingUserId !== targetUserId && requestingUserId !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const progress = await storage.getUserNinetyDayProgress(targetUserId);
+
+      res.json({ progress });
+    } catch (error) {
+      console.error("Error fetching 90-day progress:", error);
+      res.status(500).json({ message: "Failed to fetch progress" });
     }
   });
 

@@ -41,6 +41,32 @@ export const users = pgTable("users", {
   completedExercises: jsonb("completed_exercises").default({}), // { "1": 3, "2": 0 } = level 1 has 3 completed, level 2 has 0
   // System training progression tracking (耶氏台球学院系统教学)
   currentDay: integer("current_day").notNull().default(1), // Current training day in the system program (1-30)
+
+  // Ability Score System (5-dimension scoring for 90-day challenge)
+  accuracyScore: integer("accuracy_score").notNull().default(0), // 准度分 (0-100)
+  spinScore: integer("spin_score").notNull().default(0), // 杆法分 (0-100)
+  positioningScore: integer("positioning_score").notNull().default(0), // 走位分 (0-100)
+  powerScore: integer("power_score").notNull().default(0), // 发力分 (0-100)
+  strategyScore: integer("strategy_score").notNull().default(0), // 策略分 (0-100)
+  clearanceScore: integer("clearance_score").notNull().default(0), // 清台能力总分 (0-100)
+
+  // Raw data for ability score calculation
+  accuracyTotalShots: integer("accuracy_total_shots").notNull().default(0),
+  accuracySuccessfulShots: integer("accuracy_successful_shots").notNull().default(0),
+  spinTotalDifficultyPoints: integer("spin_total_difficulty_points").notNull().default(0),
+  spinCompletedDifficultyPoints: integer("spin_completed_difficulty_points").notNull().default(0),
+  positioningTotalDifficultyPoints: integer("positioning_total_difficulty_points").notNull().default(0),
+  positioningCompletedDifficultyPoints: integer("positioning_completed_difficulty_points").notNull().default(0),
+  powerTotalDifficultyPoints: integer("power_total_difficulty_points").notNull().default(0),
+  powerCompletedDifficultyPoints: integer("power_completed_difficulty_points").notNull().default(0),
+  strategyTotalDifficultyPoints: integer("strategy_total_difficulty_points").notNull().default(0),
+  strategyCompletedDifficultyPoints: integer("strategy_completed_difficulty_points").notNull().default(0),
+
+  // 90-day challenge progress tracking
+  challengeStartDate: timestamp("challenge_start_date"), // When user started 90-day challenge
+  challengeCurrentDay: integer("challenge_current_day").default(1), // Current day in 90-day challenge (1-90)
+  challengeCompletedDays: integer("challenge_completed_days").default(0), // Total days completed successfully
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastActiveAt: timestamp("last_active_at").notNull().defaultNow(),
 });
@@ -300,16 +326,20 @@ export const tencoreSkills = pgTable("tencore_skills", {
  * Daily training curriculum mapped to the ten core skills
  */
 export const ninetyDayCurriculum = pgTable("ninety_day_curriculum", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  dayNumber: integer("day_number").notNull().unique(), // 1-90
-  tencoreSkillId: uuid("tencore_skill_id").notNull().references(() => tencoreSkills.id, { onDelete: 'cascade' }),
+  dayNumber: integer("day_number").primaryKey(), // 1-90, PRIMARY KEY
+  tencoreSkillId: varchar("tencore_skill_id", { length: 50 }),  // References skills.id (VARCHAR)
   trainingType: varchar("training_type", { length: 20 }).notNull(), // '系统', '专项', '测试', '理论', '考核'
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   originalCourseRef: varchar("original_course_ref", { length: 50 }), // e.g., "第1集"
-  objectives: jsonb("objectives").default([]), // ["目标1", "目标2"]
-  keyPoints: jsonb("key_points").default([]), // ["要点1", "要点2"]
+  objectives: text("objectives").array().notNull().default([]), // ["目标1", "目标2"]
+  keyPoints: text("key_points").array().notNull().default([]), // ["要点1", "要点2"]
   practiceRequirements: jsonb("practice_requirements").default({}),
+
+  // Ability dimension mapping for scoring
+  primarySkill: varchar("primary_skill", { length: 20 }), // 'accuracy', 'spin', 'positioning', 'power', 'strategy'
+  scoringMethod: varchar("scoring_method", { length: 20 }).default('completion'), // 'success_rate' or 'completion'
+  maxAttempts: integer("max_attempts"), // For success_rate scoring
   estimatedDuration: integer("estimated_duration").default(60), // minutes
   difficulty: varchar("difficulty", { length: 10 }), // '初级', '中级', '高级'
   orderIndex: integer("order_index").notNull(),
@@ -366,13 +396,19 @@ export const userNinetyDayProgress = pgTable("user_ninety_day_progress", {
 export const ninetyDayTrainingRecords = pgTable("ninety_day_training_records", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  dayNumber: integer("day_number").notNull(), // 1-90
-  curriculumId: uuid("curriculum_id").references(() => ninetyDayCurriculum.id, { onDelete: 'cascade' }),
+  dayNumber: integer("day_number").notNull(), // 1-90, references ninety_day_curriculum.day_number
   trainingType: varchar("training_type", { length: 20 }).notNull(), // '系统', '专项', '测试'
   duration: integer("duration").notNull(), // minutes
   rating: integer("rating"), // 1-5
   notes: text("notes"),
   aiFeedback: text("ai_feedback"),
+
+  // Training statistics and ability score tracking
+  trainingStats: jsonb("training_stats").default({}), // Flexible stats: { total_attempts: 10, successful_shots: 7, angle: 30, etc. }
+  successRate: integer("success_rate"), // Success rate stored as integer (0-100) for percentage
+  achievedTarget: boolean("achieved_target"), // Whether training target was met
+  scoreChanges: jsonb("score_changes").default({}), // Ability score changes: { accuracy: +5, clearance: +3 }
+
   completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -505,7 +541,6 @@ export const insertTencoreSkillSchema = createInsertSchema(tencoreSkills).omit({
 });
 
 export const insertNinetyDayCurriculumSchema = createInsertSchema(ninetyDayCurriculum).omit({
-  id: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -863,8 +898,8 @@ export const ninetyDayTrainingRecordsRelations = relations(ninetyDayTrainingReco
     references: [users.id],
   }),
   curriculum: one(ninetyDayCurriculum, {
-    fields: [ninetyDayTrainingRecords.curriculumId],
-    references: [ninetyDayCurriculum.id],
+    fields: [ninetyDayTrainingRecords.dayNumber],
+    references: [ninetyDayCurriculum.dayNumber],
   }),
 }));
 
@@ -1031,11 +1066,12 @@ export const trainingUnitsV3 = pgTable("training_units", {
  * 8 specialized training categories
  */
 export const specializedTrainingsV3 = pgTable("specialized_trainings", {
-  id: varchar("id", { length: 50 }).primaryKey(), // 'spec_training_1'
+  id: varchar("id", { length: 50 }).primaryKey(), // 'st_accuracy'
   title: varchar("title", { length: 100 }).notNull(),
   description: text("description"),
   iconName: varchar("icon_name", { length: 50 }),
   category: varchar("category", { length: 50 }),
+  sortOrder: integer("sort_order"), // Display order (1-8)
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -1054,6 +1090,10 @@ export const specializedTrainingPlansV3 = pgTable("specialized_training_plans", 
   estimatedTimeMinutes: integer("estimated_time_minutes"),
   content: jsonb("content"),
   xpReward: integer("xp_reward").default(20),
+
+  // Training record configuration metadata
+  metadata: jsonb("metadata").default({}), // { trainingType, primarySkill, recordConfig: { metrics: [...], scoringMethod, targetSuccessRate } }
+
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -1118,6 +1158,44 @@ export const userUnitCompletions = pgTable("user_unit_completions", {
   uniqueIndex("user_unit_completions_unique").on(table.userId, table.unitId),
 ]);
 
+/**
+ * Specialized Training Sessions Table - 专项训练会话记录
+ * Tracks individual training sessions for specialized training plans
+ */
+export const specializedTrainingSessions = pgTable("specialized_training_sessions", {
+  id: varchar("id", { length: 50 }).primaryKey(), // e.g., 'session_xxxxx'
+  userId: varchar("user_id", { length: 255 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  trainingPlanId: varchar("training_plan_id", { length: 50 }).notNull().references(() => specializedTrainingPlansV3.id, { onDelete: 'cascade' }),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  duration: integer("duration"), // Duration in minutes
+  rating: integer("rating"), // 1-5 star rating
+  notes: text("notes"),
+  xpEarned: integer("xp_earned"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * User Specialized Progress Table - 用户专项训练进度
+ * Tracks user progress across all specialized training categories
+ */
+export const userSpecializedProgress = pgTable("user_specialized_progress", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  trainingId: varchar("training_id", { length: 50 }).notNull().references(() => specializedTrainingsV3.id, { onDelete: 'cascade' }),
+  completedPlans: jsonb("completed_plans").$type<Record<string, boolean>>().default({}), // { "plan_basic_1": true, ... }
+  totalSessions: integer("total_sessions").default(0),
+  totalMinutes: integer("total_minutes").default(0),
+  totalXpEarned: integer("total_xp_earned").default(0),
+  averageRating: integer("average_rating"), // Average rating * 10 to store as integer
+  lastTrainingAt: timestamp("last_training_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("user_specialized_progress_unique").on(table.userId, table.trainingId),
+]);
+
 // ============================================================================
 // Insert Schemas - Ten Core Skills V3
 // ============================================================================
@@ -1168,6 +1246,17 @@ export const insertUserUnitCompletionSchema = createInsertSchema(userUnitComplet
   completedAt: true,
 });
 
+export const insertSpecializedTrainingSessionSchema = createInsertSchema(specializedTrainingSessions).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserSpecializedProgressSchema = createInsertSchema(userSpecializedProgress).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // ============================================================================
 // TypeScript Types - Ten Core Skills V3
 // ============================================================================
@@ -1198,6 +1287,12 @@ export type InsertUserSkillProgressV3 = z.infer<typeof insertUserSkillProgressV3
 
 export type UserUnitCompletion = typeof userUnitCompletions.$inferSelect;
 export type InsertUserUnitCompletion = z.infer<typeof insertUserUnitCompletionSchema>;
+
+export type SpecializedTrainingSession = typeof specializedTrainingSessions.$inferSelect;
+export type InsertSpecializedTrainingSession = z.infer<typeof insertSpecializedTrainingSessionSchema>;
+
+export type UserSpecializedProgress = typeof userSpecializedProgress.$inferSelect;
+export type InsertUserSpecializedProgress = z.infer<typeof insertUserSpecializedProgressSchema>;
 
 // ============================================================================
 // Relations - Ten Core Skills V3
@@ -1275,5 +1370,27 @@ export const userUnitCompletionsRelations = relations(userUnitCompletions, ({ on
   unit: one(trainingUnitsV3, {
     fields: [userUnitCompletions.unitId],
     references: [trainingUnitsV3.id],
+  }),
+}));
+
+export const specializedTrainingSessionsRelations = relations(specializedTrainingSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [specializedTrainingSessions.userId],
+    references: [users.id],
+  }),
+  trainingPlan: one(specializedTrainingPlansV3, {
+    fields: [specializedTrainingSessions.trainingPlanId],
+    references: [specializedTrainingPlansV3.id],
+  }),
+}));
+
+export const userSpecializedProgressRelations = relations(userSpecializedProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [userSpecializedProgress.userId],
+    references: [users.id],
+  }),
+  training: one(specializedTrainingsV3, {
+    fields: [userSpecializedProgress.trainingId],
+    references: [specializedTrainingsV3.id],
   }),
 }));

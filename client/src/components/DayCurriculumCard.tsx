@@ -106,10 +106,10 @@ export function DayCurriculumCard({
       <CardContent className="space-y-4">
         {/* Training Info */}
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          {curriculum.duration && (
+          {curriculum.estimatedDuration && (
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              <span>{curriculum.duration} 分钟</span>
+              <span>{curriculum.estimatedDuration} 分钟</span>
             </div>
           )}
           {curriculum.videoUrl && (

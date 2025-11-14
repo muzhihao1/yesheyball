@@ -19,7 +19,10 @@ import { AiFeedbackModal } from "@/components/AiFeedbackModal";
 import { AchievementUnlockModal } from "@/components/AchievementUnlockModal";
 import { DailyGoalsPanel } from "@/components/DailyGoalsPanel";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Clock, Play, Pause, Square, Target, Star, TrendingUp, ChevronRight } from "lucide-react";
+import {
+  Clock, Play, Pause, Square, Target, Star, TrendingUp, ChevronRight,
+  Layers, Zap, Target as TargetIcon, Rotate3D, Compass, Route, Trophy, Grid3x3
+} from "lucide-react";
 import {
   useSkillsV3,
   useSubSkillsV3,
@@ -30,6 +33,79 @@ import {
   type SubSkillV3,
   type TrainingUnitV3,
 } from "@/hooks/useSkillsV3";
+
+// Specialized Training Types
+interface SpecializedTraining {
+  id: string;
+  title: string;
+  description: string | null;
+  iconName: string | null;
+  category: string | null;
+  sortOrder: number | null;
+  isActive: boolean | null;
+}
+
+interface TrainingPlan {
+  id: string;
+  trainingId: string;
+  title: string;
+  description: string | null;
+  difficulty: string | null;
+  estimatedTimeMinutes: number | null;
+  content: {
+    objectives?: string[];
+    steps?: string[];
+    successCriteria?: string[];
+    commonMistakes?: string[];
+    tips?: string;
+  } | null;
+  xpReward: number | null;
+  isActive: boolean | null;
+}
+
+// Custom hook for specialized trainings
+function useSpecializedTrainings() {
+  return useQuery({
+    queryKey: ['/api/specialized-trainings'],
+    queryFn: async () => {
+      const response = await fetch('/api/specialized-trainings', {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch specialized trainings');
+      const data = await response.json();
+      return (data.trainings || []) as SpecializedTraining[];
+    },
+  });
+}
+
+// Custom hook for training plans of a specific training
+function useTrainingPlans(trainingId: string) {
+  return useQuery({
+    queryKey: [`/api/specialized-trainings/${trainingId}/plans`],
+    queryFn: async () => {
+      if (!trainingId) return [];
+      const response = await fetch(`/api/specialized-trainings/${trainingId}/plans`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch training plans');
+      const data = await response.json();
+      return (data.plans || []) as TrainingPlan[];
+    },
+    enabled: !!trainingId,
+  });
+}
+
+// Icon mapping for specialized trainings
+const iconMap: Record<string, React.ReactNode> = {
+  Layers: <Layers className="w-8 h-8" />,
+  Zap: <Zap className="w-8 h-8" />,
+  Target: <TargetIcon className="w-8 h-8" />,
+  Rotate3D: <Rotate3D className="w-8 h-8" />,
+  Compass: <Compass className="w-8 h-8" />,
+  Route: <Route className="w-8 h-8" />,
+  Trophy: <Trophy className="w-8 h-8" />,
+  Grid3x3: <Grid3x3 className="w-8 h-8" />,
+};
 
 // Helper function to format time
 function formatTime(seconds: number): string {
@@ -48,6 +124,10 @@ export default function TasksPage() {
   // Navigation state - which skill/subskill is currently selected
   const [selectedSkill, setSelectedSkill] = useState<SkillV3 | null>(null);
   const [selectedSubSkill, setSelectedSubSkill] = useState<SubSkillV3 | null>(null);
+
+  // Specialized training navigation state
+  const [selectedTraining, setSelectedTraining] = useState<SpecializedTraining | null>(null);
+  const [selectedTrainingPlan, setSelectedTrainingPlan] = useState<TrainingPlan | null>(null);
 
   // Training states
   const [isTrainingActive, setIsTrainingActive] = useState(false);
@@ -75,6 +155,14 @@ export default function TasksPage() {
   const { data: skills = [], isLoading: skillsLoading } = useSkillsV3();
   const { data: userProgress = [], isLoading: progressLoading } = useUserSkillProgressV3();
   const { data: allCompletions = [] } = useUserUnitCompletions();
+
+  // Fetch specialized trainings
+  const { data: specializedTrainings = [] } = useSpecializedTrainings();
+
+  // Fetch training plans for selected specialized training
+  const { data: trainingPlans = [], isLoading: plansLoading } = useTrainingPlans(
+    selectedTraining?.id || ""
+  );
 
   // Fetch sub-skills for selected skill
   const { data: subSkills = [], isLoading: subSkillsLoading } = useSubSkillsV3(
@@ -189,6 +277,242 @@ export default function TasksPage() {
     );
   }
 
+  // Training plan detail view
+  if (selectedTrainingPlan && selectedTraining) {
+    const difficultyColors = {
+      easy: "bg-green-100 text-green-700",
+      medium: "bg-yellow-100 text-yellow-700",
+      hard: "bg-red-100 text-red-700",
+    };
+
+    return (
+      <div className="p-4 space-y-6 pb-24">
+        {/* Back button */}
+        <Button
+          variant="ghost"
+          onClick={() => setSelectedTrainingPlan(null)}
+          className="mb-4"
+        >
+          ← 返回训练计划列表
+        </Button>
+
+        {/* Plan Header */}
+        <Card className="border-2 border-purple-200">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-xl">{selectedTrainingPlan.title}</CardTitle>
+                {selectedTrainingPlan.description && (
+                  <p className="text-sm text-gray-600 mt-2">{selectedTrainingPlan.description}</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {selectedTrainingPlan.difficulty && (
+                  <Badge className={difficultyColors[selectedTrainingPlan.difficulty as keyof typeof difficultyColors]}>
+                    {selectedTrainingPlan.difficulty === 'easy' ? '入门' :
+                     selectedTrainingPlan.difficulty === 'medium' ? '中级' : '高级'}
+                  </Badge>
+                )}
+                {selectedTrainingPlan.estimatedTimeMinutes && (
+                  <Badge className="bg-blue-100 text-blue-700">
+                    ⏱️ {selectedTrainingPlan.estimatedTimeMinutes} 分钟
+                  </Badge>
+                )}
+                {selectedTrainingPlan.xpReward && (
+                  <Badge className="bg-purple-100 text-purple-700">
+                    ⭐ +{selectedTrainingPlan.xpReward} XP
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Plan Content */}
+        {selectedTrainingPlan.content && (
+          <div className="space-y-4">
+            {/* Objectives */}
+            {selectedTrainingPlan.content.objectives && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">🎯 训练目标</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc list-inside space-y-2">
+                    {selectedTrainingPlan.content.objectives.map((obj, idx) => (
+                      <li key={idx} className="text-sm text-gray-700">{obj}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Steps */}
+            {selectedTrainingPlan.content.steps && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">📝 训练步骤</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ol className="list-decimal list-inside space-y-3">
+                    {selectedTrainingPlan.content.steps.map((step, idx) => (
+                      <li key={idx} className="text-sm text-gray-700">{step}</li>
+                    ))}
+                  </ol>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Success Criteria */}
+            {selectedTrainingPlan.content.successCriteria && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">✅ 成功标准</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc list-inside space-y-2">
+                    {selectedTrainingPlan.content.successCriteria.map((criteria, idx) => (
+                      <li key={idx} className="text-sm text-gray-700">{criteria}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Common Mistakes */}
+            {selectedTrainingPlan.content.commonMistakes && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">⚠️ 常见错误</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc list-inside space-y-2">
+                    {selectedTrainingPlan.content.commonMistakes.map((mistake, idx) => (
+                      <li key={idx} className="text-sm text-red-600">{mistake}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tips */}
+            {selectedTrainingPlan.content.tips && (
+              <Card className="bg-yellow-50">
+                <CardHeader>
+                  <CardTitle className="text-base">💡 训练提示</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-700">{selectedTrainingPlan.content.tips}</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Start Training Button */}
+        <Button
+          size="lg"
+          className="w-full bg-purple-600 hover:bg-purple-700"
+          onClick={() => {
+            toast({
+              title: "开始训练",
+              description: `开始「${selectedTrainingPlan.title}」训练`,
+            });
+            // TODO: Start training session
+          }}
+        >
+          开始训练
+        </Button>
+      </div>
+    );
+  }
+
+  // Training plans list view
+  if (selectedTraining) {
+    return (
+      <div className="p-4 space-y-6 pb-24">
+        {/* Back button */}
+        <Button
+          variant="ghost"
+          onClick={() => setSelectedTraining(null)}
+          className="mb-4"
+        >
+          ← 返回道场列表
+        </Button>
+
+        {/* Selected Training Header */}
+        <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+          <CardHeader>
+            <div className="flex items-center space-x-3">
+              <div className="text-purple-600">
+                {selectedTraining.iconName && iconMap[selectedTraining.iconName] || <Target className="w-8 h-8" />}
+              </div>
+              <div>
+                <CardTitle className="text-lg text-purple-800">{selectedTraining.title}</CardTitle>
+                {selectedTraining.description && (
+                  <p className="text-sm text-purple-700 mt-1">{selectedTraining.description}</p>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Training Plans List */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-800">训练计划列表</h3>
+          {plansLoading ? (
+            <div className="text-center py-8 text-gray-500">加载中...</div>
+          ) : trainingPlans.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">暂无训练计划</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {trainingPlans.map((plan) => {
+                const difficultyColors = {
+                  easy: "bg-green-100 text-green-700",
+                  medium: "bg-yellow-100 text-yellow-700",
+                  hard: "bg-red-100 text-red-700",
+                };
+
+                return (
+                  <Card
+                    key={plan.id}
+                    className="cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all border-purple-200"
+                    onClick={() => setSelectedTrainingPlan(plan)}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-base">{plan.title}</CardTitle>
+                        {plan.difficulty && (
+                          <Badge className={difficultyColors[plan.difficulty as keyof typeof difficultyColors]}>
+                            {plan.difficulty === 'easy' ? '入门' :
+                             plan.difficulty === 'medium' ? '中级' : '高级'}
+                          </Badge>
+                        )}
+                      </div>
+                      {plan.description && (
+                        <p className="text-sm text-gray-600 mt-2">{plan.description}</p>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        {plan.estimatedTimeMinutes && (
+                          <span>⏱️ {plan.estimatedTimeMinutes} 分钟</span>
+                        )}
+                        {plan.xpReward && (
+                          <span>⭐ +{plan.xpReward} XP</span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // No navigation selection - show skills overview
   if (!selectedSkill) {
     return (
@@ -238,6 +562,49 @@ export default function TasksPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Specialized Training Arena */}
+        {specializedTrainings.length > 0 && (
+          <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <Trophy className="h-6 w-6 text-purple-600" />
+                <div>
+                  <CardTitle className="text-lg text-purple-800">专项训练道场</CardTitle>
+                  <p className="text-sm text-purple-700 mt-1">针对性提升，突破技术瓶颈</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {specializedTrainings
+                  .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                  .map((training) => (
+                    <Card
+                      key={training.id}
+                      className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.05] border-purple-200 bg-white"
+                      onClick={() => setSelectedTraining(training)}
+                    >
+                      <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                        <div className="text-purple-600">
+                          {training.iconName && iconMap[training.iconName] || <Target className="w-8 h-8" />}
+                        </div>
+                        <h4 className="font-semibold text-sm text-gray-800">{training.title}</h4>
+                        {training.description && (
+                          <p className="text-xs text-gray-600 line-clamp-2">{training.description}</p>
+                        )}
+                        {training.category && (
+                          <Badge className="bg-purple-100 text-purple-700 text-xs">
+                            {training.category}
+                          </Badge>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Skills Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

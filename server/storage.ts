@@ -1,4 +1,4 @@
-import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, achievements, userAchievements, type User, type InsertUser, type UpsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote, type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement, trainingLevels, trainingSkills, subSkills, trainingUnits, userTrainingProgress, specializedTrainings, specializedTrainingPlans, type TrainingLevel, type TrainingSkill, type SubSkill, type TrainingUnit, type UserTrainingProgress as UserTrainingProgressType, type SpecializedTraining, type SpecializedTrainingPlan, tencoreSkills, ninetyDayCurriculum, specializedTraining, userNinetyDayProgress, ninetyDayTrainingRecords, type TencoreSkill, type NinetyDayCurriculum, type NinetyDaySpecializedTraining, type UserNinetyDayProgress, type NinetyDayTrainingRecord, type InsertNinetyDayTrainingRecord, type InsertUserNinetyDayProgress, skillsV3, subSkillsV3, trainingUnitsV3, specializedTrainingsV3, specializedTrainingPlansV3, curriculumDayUnits, userSkillProgressV3, userUnitCompletions, type SkillV3, type SubSkillV3, type TrainingUnitV3, type UserSkillProgressV3, type UserUnitCompletion, type CurriculumDayUnit } from "../shared/schema.js";
+import { users, tasks, userTasks, diaryEntries, feedbacks, trainingPrograms, trainingDays, trainingSessions, trainingNotes, achievements, userAchievements, type User, type InsertUser, type UpsertUser, type Task, type InsertTask, type UserTask, type InsertUserTask, type DiaryEntry, type InsertDiaryEntry, type Feedback, type InsertFeedback, type TrainingProgram, type InsertTrainingProgram, type TrainingDay, type InsertTrainingDay, type TrainingSession, type InsertTrainingSession, type TrainingNote, type InsertTrainingNote, type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement, trainingLevels, trainingSkills, subSkills, trainingUnits, userTrainingProgress, specializedTrainings, specializedTrainingPlans, type TrainingLevel, type TrainingSkill, type SubSkill, type TrainingUnit, type UserTrainingProgress as UserTrainingProgressType, type SpecializedTraining, type SpecializedTrainingPlan, tencoreSkills, ninetyDayCurriculum, specializedTraining, userNinetyDayProgress, ninetyDayTrainingRecords, type TencoreSkill, type NinetyDayCurriculum, type NinetyDaySpecializedTraining, type UserNinetyDayProgress, type NinetyDayTrainingRecord, type InsertNinetyDayTrainingRecord, type InsertUserNinetyDayProgress, skillsV3, subSkillsV3, trainingUnitsV3, specializedTrainingsV3, specializedTrainingPlansV3, specializedTrainingSessions, userSpecializedProgress, curriculumDayUnits, userSkillProgressV3, userUnitCompletions, type SkillV3, type SubSkillV3, type TrainingUnitV3, type SpecializedTrainingV3, type SpecializedTrainingPlanV3, type SpecializedTrainingSession, type InsertSpecializedTrainingSession, type UserSpecializedProgress, type InsertUserSpecializedProgress, type UserSkillProgressV3, type UserUnitCompletion, type CurriculumDayUnit } from "../shared/schema.js";
 import { db } from "./db.js";
 import { eq, desc, gte, and, lte, sql, inArray } from "drizzle-orm";
 
@@ -78,8 +78,8 @@ export interface IStorage {
   completeTrainingUnit(userId: string, unitId: string, finalProgressData: any): Promise<{ progress: UserTrainingProgressType; xpAwarded: number }>;
 
   // Specialized Training
-  getAllSpecializedTrainings(): Promise<SpecializedTraining[]>;
-  getSpecializedTrainingPlans(trainingId: string): Promise<SpecializedTrainingPlan[]>;
+  getAllSpecializedTrainings(): Promise<SpecializedTrainingV3[]>;
+  getSpecializedTrainingPlans(trainingId: string): Promise<SpecializedTrainingPlanV3[]>;
 
   // === 90-Day Training System Operations ===
 
@@ -1269,13 +1269,13 @@ export class DatabaseStorage implements IStorage {
   /**
    * Get all specialized trainings
    */
-  async getAllSpecializedTrainings(): Promise<SpecializedTraining[]> {
+  async getAllSpecializedTrainings(): Promise<SpecializedTrainingV3[]> {
     const db = this.ensureDb();
 
     const trainings = await db
       .select()
-      .from(specializedTrainings)
-      .orderBy(specializedTrainings.skillCategory, specializedTrainings.difficultyLevel);
+      .from(specializedTrainingsV3)
+      .orderBy(specializedTrainingsV3.sortOrder);
 
     return trainings;
   }
@@ -1283,14 +1283,14 @@ export class DatabaseStorage implements IStorage {
   /**
    * Get training plans for a specialized training
    */
-  async getSpecializedTrainingPlans(trainingId: string): Promise<SpecializedTrainingPlan[]> {
+  async getSpecializedTrainingPlans(trainingId: string): Promise<SpecializedTrainingPlanV3[]> {
     const db = this.ensureDb();
 
     const plans = await db
       .select()
-      .from(specializedTrainingPlans)
-      .where(eq(specializedTrainingPlans.trainingId, trainingId))
-      .orderBy(specializedTrainingPlans.planOrder);
+      .from(specializedTrainingPlansV3)
+      .where(eq(specializedTrainingPlansV3.trainingId, trainingId))
+      .orderBy(specializedTrainingPlansV3.id);
 
     return plans;
   }
@@ -1571,7 +1571,6 @@ export class DatabaseStorage implements IStorage {
     const record = await this.createNinetyDayTrainingRecord({
       userId,
       dayNumber,
-      curriculumId: curriculum.id,
       trainingType: curriculum.trainingType,
       duration,
       rating,
@@ -1589,11 +1588,11 @@ export class DatabaseStorage implements IStorage {
 
     // Update ten core skill progress
     const skillNumber = curriculum.tencoreSkillId;
-    const skillProgress = (tencoreProgress as any)[skillNumber] || 0;
-    const updatedTencoreProgress = {
+    const skillProgress = skillNumber && (tencoreProgress as any)[skillNumber] ? (tencoreProgress as any)[skillNumber] : 0;
+    const updatedTencoreProgress = skillNumber ? {
       ...tencoreProgress,
       [skillNumber]: Math.min(100, skillProgress + 10), // Increment by 10%, max 100%
-    };
+    } : tencoreProgress;
 
     // Calculate next day
     const nextDay = dayNumber < 90 ? dayNumber + 1 : 90;

@@ -18,6 +18,7 @@ import Tasks from "@/pages/tasks";
 import Ranking from "@/pages/ranking";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
+import NinetyDayChallenge from "@/pages/NinetyDayChallenge";
 
 import NotFound from "@/pages/not-found";
 
@@ -43,6 +44,7 @@ function Router() {
       {/* Protected routes - require authentication */}
       <Route path="/" component={isAuthenticated ? Levels : Login} />
       <Route path="/training" component={isAuthenticated ? Tasks : Login} />
+      <Route path="/ninety-day-challenge" component={isAuthenticated ? NinetyDayChallenge : Login} />
       <Route path="/levels" component={isAuthenticated ? Levels : Login} />
       <Route path="/tasks" component={isAuthenticated ? Tasks : Login} />
       <Route path="/growth" component={isAuthenticated ? Ranking : Login} />
