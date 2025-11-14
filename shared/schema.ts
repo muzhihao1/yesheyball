@@ -381,7 +381,7 @@ export const userNinetyDayProgress = pgTable("user_ninety_day_progress", {
   specializedProgress: jsonb("specialized_progress").default({}), // {"五分点": {"1分点": 80}}
   totalTrainingTime: integer("total_training_time").default(0), // minutes
   lastTrainingDate: timestamp("last_training_date", { withTimezone: true }),
-  startDate: timestamp("start_date", { withTimezone: true }).defaultNow().notNull(),
+  startDate: timestamp("start_date", { withTimezone: true }), // NULL until user explicitly starts challenge
   estimatedCompletionDate: timestamp("estimated_completion_date", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

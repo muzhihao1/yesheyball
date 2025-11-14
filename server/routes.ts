@@ -2708,6 +2708,13 @@ export async function registerRoutes(app: Express): Promise<void> {
    *
    * Initializes the challenge by setting start_date in user_ninety_day_progress table
    * Can only be called once per user (unless start_date is null)
+   *
+   * Flow:
+   * 1. Check if progress record exists
+   * 2. If exists and has startDate → return 400 (already started)
+   * 3. If no progress record → create one (without startDate)
+   * 4. Set startDate and estimatedCompletionDate
+   * 5. Sync to users table for backward compatibility
    */
   app.post("/api/ninety-day/start-challenge", isAuthenticated, async (req, res) => {
     try {
@@ -2734,16 +2741,16 @@ export async function registerRoutes(app: Express): Promise<void> {
       const now = new Date();
       const completionDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-      // If no progress record exists, create one
+      // If no progress record exists, create one (without startDate)
       if (!progress) {
         progress = await storage.initializeUserNinetyDayProgress(userId);
-      } else {
-        // If progress exists but startDate is null, update it
-        progress = await storage.updateUserNinetyDayProgress(userId, {
-          startDate: now,
-          estimatedCompletionDate: completionDate,
-        });
       }
+
+      // Now set startDate and estimatedCompletionDate (whether newly created or existing)
+      progress = await storage.updateUserNinetyDayProgress(userId, {
+        startDate: now,
+        estimatedCompletionDate: completionDate,
+      });
 
       // Sync to users table for backward compatibility
       await db!.update(users)
@@ -2915,6 +2922,11 @@ export async function registerRoutes(app: Express): Promise<void> {
   /**
    * Get user's 90-day challenge progress
    * GET /api/users/:userId/ninety-day-progress
+   *
+   * Returns comprehensive challenge data including:
+   * - Challenge progress (startDate, currentDay, completedDays)
+   * - Ability scores (5 dimensions + clearance)
+   * - Training statistics (total days, successful days, days since start)
    */
   app.get("/api/users/:userId/ninety-day-progress", isAuthenticated, async (req, res) => {
     try {
@@ -2926,9 +2938,57 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!hasDatabase) {
+        return res.json({
+          challenge_start_date: null,
+          challenge_current_day: 1,
+          challenge_completed_days: 0,
+          accuracy_score: 0,
+          spin_score: 0,
+          positioning_score: 0,
+          power_score: 0,
+          strategy_score: 0,
+          clearance_score: 0,
+          total_trained_days: 0,
+          successful_days: 0,
+          days_since_start: null,
+        });
+      }
+
+      // Get progress data
       const progress = await storage.getUserNinetyDayProgress(targetUserId);
 
-      res.json({ progress });
+      // Get user's ability scores
+      const [user] = await db!.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+
+      // Calculate days since start
+      let daysSinceStart: number | null = null;
+      if (progress?.startDate) {
+        const start = new Date(progress.startDate);
+        const now = new Date();
+        daysSinceStart = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      }
+
+      // Count completed days
+      const completedDaysCount = Array.isArray(progress?.completedDays)
+        ? progress.completedDays.length
+        : 0;
+
+      // Return data in format expected by frontend
+      res.json({
+        challenge_start_date: progress?.startDate || null,
+        challenge_current_day: progress?.currentDay || 1,
+        challenge_completed_days: completedDaysCount,
+        accuracy_score: user?.accuracyScore || 0,
+        spin_score: user?.spinScore || 0,
+        positioning_score: user?.positioningScore || 0,
+        power_score: user?.powerScore || 0,
+        strategy_score: user?.strategyScore || 0,
+        clearance_score: user?.clearanceScore || 0,
+        total_trained_days: completedDaysCount,
+        successful_days: 0, // TODO: Calculate from training records
+        days_since_start: daysSinceStart,
+      });
     } catch (error) {
       console.error("Error fetching 90-day progress:", error);
       res.status(500).json({ message: "Failed to fetch progress" });

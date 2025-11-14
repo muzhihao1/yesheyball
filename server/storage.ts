@@ -1446,6 +1446,10 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Initialize 90-day training progress for a new user
+   *
+   * IMPORTANT: startDate is NOT set during initialization.
+   * User must explicitly click "Start Challenge" button to set startDate.
+   * This ensures proper onboarding flow with welcome modal.
    */
   async initializeUserNinetyDayProgress(userId: string): Promise<UserNinetyDayProgress> {
     const db = this.ensureDb();
@@ -1456,7 +1460,7 @@ export class DatabaseStorage implements IStorage {
       return existing;
     }
 
-    // Create new progress record
+    // Create new progress record WITHOUT startDate (user must start challenge explicitly)
     const [progress] = await db
       .insert(userNinetyDayProgress)
       .values({
@@ -1466,8 +1470,8 @@ export class DatabaseStorage implements IStorage {
         tencoreProgress: {},
         specializedProgress: {},
         totalTrainingTime: 0,
-        startDate: new Date(),
-        estimatedCompletionDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
+        // startDate: null (not set - user must click "Start Challenge" button)
+        // estimatedCompletionDate: null (will be set when challenge starts)
       })
       .returning();
 
