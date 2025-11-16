@@ -833,6 +833,15 @@ export default function TasksPage() {
         </div>
 
         {/* Active Training Interface */}
+        {(() => {
+          console.log('[DEBUG] Training interface check:', {
+            isTrainingActive,
+            activeUnit: activeUnit?.title,
+            activeTrainingPlan: activeTrainingPlan?.title,
+            condition: isTrainingActive && (activeUnit || activeTrainingPlan)
+          });
+          return null;
+        })()}
         {isTrainingActive && (activeUnit || activeTrainingPlan) && (
           <Card className="border-primary border-2">
             <CardHeader>
