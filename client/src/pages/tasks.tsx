@@ -228,6 +228,9 @@ export default function TasksPage() {
     setActiveElapsedTime(0);
     setIsTrainingPaused(false);
     setTrainingNotes("");
+    // Clear detail view states to return to main page where training interface is rendered
+    setSelectedTrainingPlan(null);
+    setSelectedTraining(null);
     toast({
       title: "开始训练",
       description: `开始「${plan.title}」训练`,
