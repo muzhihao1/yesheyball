@@ -10,6 +10,10 @@ import { SkillRadarChart } from "@/components/SkillRadarChart";
 import { useAbilityScoresForProfile } from "@/hooks/useAbilityScoresForProfile";
 import AbilityRadarChart from "@/components/ninety-day/AbilityRadarChart";
 import AbilityScoreBars from "@/components/AbilityScoreBars";
+import { useDashboardSummary } from "@/hooks/useDashboardSummary";
+import { NinetyDayChallengeCard } from "@/components/dashboard/NinetyDayChallengeCard";
+import { SkillsLibraryCard } from "@/components/dashboard/SkillsLibraryCard";
+import { PracticeFieldCard } from "@/components/dashboard/PracticeFieldCard";
 import {
   Settings,
   Trophy,
@@ -21,14 +25,28 @@ import {
   LogOut,
   ChevronRight,
   Star,
-  Flame
+  Flame,
+  LayoutDashboard
 } from "lucide-react";
 
 export default function Profile() {
   const { user, isLoading } = useAuth();
 
+  // Fetch unified dashboard summary
+  const { data: dashboardData, isLoading: isLoadingDashboard } = useDashboardSummary();
+
   const { data: abilityScores, isLoading: isLoadingAbilityScores } =
     useAbilityScoresForProfile(user?.id);
+
+  // Transform dashboard ability scores to match AbilityScores interface
+  const transformedAbilityScores = dashboardData?.abilityScores ? {
+    accuracy_score: dashboardData.abilityScores.accuracy,
+    spin_score: dashboardData.abilityScores.spin,
+    positioning_score: dashboardData.abilityScores.positioning,
+    power_score: dashboardData.abilityScores.power,
+    strategy_score: dashboardData.abilityScores.strategy,
+    clearance_score: dashboardData.abilityScores.clearance,
+  } : undefined;
 
   const { data: userStats } = useQuery({
     queryKey: ["/api/user/streak"],
@@ -116,6 +134,31 @@ export default function Profile() {
       </div>
 
       <div className="px-4 py-6">
+        {/* Dashboard Overview Section */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <LayoutDashboard className="w-6 h-6 text-purple-600" />
+            训练总览
+          </h2>
+
+          {isLoadingDashboard ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-600">加载数据中...</p>
+            </div>
+          ) : dashboardData ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <NinetyDayChallengeCard data={dashboardData.ninetyDayChallenge} />
+              <SkillsLibraryCard data={dashboardData.skillsLibrary} />
+              <PracticeFieldCard data={dashboardData.practiceField} />
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>无法加载仪表板数据</p>
+            </div>
+          )}
+        </div>
+
         {/* Training Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
@@ -171,16 +214,16 @@ export default function Profile() {
             {/* Left: Radar Chart - Hidden on mobile */}
             <div className="hidden lg:block">
               <AbilityRadarChart
-                scores={abilityScores}
-                isLoading={isLoadingAbilityScores}
+                scores={transformedAbilityScores || abilityScores}
+                isLoading={isLoadingDashboard || isLoadingAbilityScores}
               />
             </div>
 
             {/* Right: Detailed Score Bars - Full width on mobile */}
             <div className="lg:col-span-1">
               <AbilityScoreBars
-                scores={abilityScores}
-                isLoading={isLoadingAbilityScores}
+                scores={transformedAbilityScores || abilityScores}
+                isLoading={isLoadingDashboard || isLoadingAbilityScores}
               />
             </div>
           </div>

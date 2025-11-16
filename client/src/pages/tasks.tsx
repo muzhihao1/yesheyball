@@ -7,9 +7,11 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +23,7 @@ import { DailyGoalsPanel } from "@/components/DailyGoalsPanel";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Clock, Play, Pause, Square, Target, Star, TrendingUp, ChevronRight,
-  Layers, Zap, Target as TargetIcon, Rotate3D, Compass, Route, Trophy, Grid3x3
+  Layers, Zap, Target as TargetIcon, Rotate3D, Compass, Route, Trophy, Grid3x3, BookOpen
 } from "lucide-react";
 import {
   useSkillsV3,
@@ -63,12 +65,23 @@ interface TrainingPlan {
   isActive: boolean | null;
 }
 
+// Helper function to get JWT auth headers
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const accessToken = localStorage.getItem('supabase_access_token');
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  return headers;
+}
+
 // Custom hook for specialized trainings
 function useSpecializedTrainings() {
   return useQuery({
     queryKey: ['/api/specialized-trainings'],
     queryFn: async () => {
       const response = await fetch('/api/specialized-trainings', {
+        headers: getAuthHeaders(),
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch specialized trainings');
@@ -85,6 +98,7 @@ function useTrainingPlans(trainingId: string) {
     queryFn: async () => {
       if (!trainingId) return [];
       const response = await fetch(`/api/specialized-trainings/${trainingId}/plans`, {
+        headers: getAuthHeaders(),
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch training plans');
@@ -517,6 +531,33 @@ export default function TasksPage() {
   if (!selectedSkill) {
     return (
       <div className="p-4 space-y-6 pb-24">
+        {/* Guidance Alert */}
+        <Alert className="border-blue-200 bg-blue-50/50">
+          <BookOpen className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800">📚 技能库 - 系统复习</AlertTitle>
+          <AlertDescription className="text-blue-700 space-y-3">
+            <p><strong>完成【挑战】主线任务后</strong>，来这里：</p>
+            <div className="text-xs space-y-1 ml-4">
+              <p>• 查阅十大招完整理论和技术要点</p>
+              <p>• 复习巩固已学内容，加深理解</p>
+              <p>• 薄弱环节？下滑到【专项训练道场】针对性突破</p>
+              <p>• 想验证能力？前往【练习场】做题测试</p>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-blue-200">
+              <Link href="/ninety-day-challenge">
+                <Button variant="outline" size="sm" className="text-xs h-8 border-blue-300 hover:bg-blue-100">
+                  📅 90天挑战
+                </Button>
+              </Link>
+              <Link href="/levels">
+                <Button variant="outline" size="sm" className="text-xs h-8 border-purple-300 hover:bg-purple-100">
+                  🎮 练习场
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+
         {/* Daily Goals Panel */}
         <DailyGoalsPanel />
 
@@ -570,8 +611,10 @@ export default function TasksPage() {
               <div className="flex items-center space-x-3">
                 <Trophy className="h-6 w-6 text-purple-600" />
                 <div>
-                  <CardTitle className="text-lg text-purple-800">专项训练道场</CardTitle>
-                  <p className="text-sm text-purple-700 mt-1">针对性提升，突破技术瓶颈</p>
+                  <CardTitle className="text-lg text-purple-800">🎯 专项训练道场 - 针对性突破</CardTitle>
+                  <p className="text-sm text-purple-700 mt-1">
+                    从十大招中精选的<strong>重点训练内容</strong>，哪里薄弱练哪里！
+                  </p>
                 </div>
               </div>
             </CardHeader>

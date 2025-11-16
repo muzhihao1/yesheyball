@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -332,8 +333,8 @@ export default function NinetyDayChallenge() {
                 </Button>
               </div>
 
-              {/* 能力分析链接 */}
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              {/* 能力分析链接与技能库提示 */}
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
                 <Button
                   variant="outline"
                   className="w-full"
@@ -342,6 +343,27 @@ export default function NinetyDayChallenge() {
                   <Target className="w-4 h-4 mr-2" />
                   查看完整能力分析
                 </Button>
+
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p className="text-center font-medium">✅ 完成今日任务后，你可以：</p>
+                  <div className="text-xs space-y-1 bg-blue-50/50 rounded-lg p-3">
+                    <p>📚 <strong>技能库</strong> - 复习十大招理论，巩固知识</p>
+                    <p>🎯 <strong>专项训练道场</strong> - 针对薄弱环节，反复强化</p>
+                    <p>🎮 <strong>练习场</strong> - 做题测试，验证学习成果</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 justify-center pt-2">
+                    <Link href="/tasks">
+                      <Button variant="outline" size="sm" className="text-xs h-8 border-indigo-300 hover:bg-indigo-100">
+                        📚 技能库
+                      </Button>
+                    </Link>
+                    <Link href="/levels">
+                      <Button variant="outline" size="sm" className="text-xs h-8 border-purple-300 hover:bg-purple-100">
+                        🎮 练习场
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

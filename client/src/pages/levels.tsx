@@ -8,8 +8,10 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Trophy, Target, Zap, Crown, Lock, Play, Pause, RotateCcw, CheckCircle, Star } from "lucide-react";
+import { Trophy, Target, Zap, Crown, Lock, Play, Pause, RotateCcw, CheckCircle, Star, BookOpen } from "lucide-react";
 import { Onboarding, hasCompletedOnboarding } from "@/components/Onboarding";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Link } from "wouter";
 
 // Lazy load JSON data to improve initial page load
 const loadExerciseData = async () => {
@@ -1200,6 +1202,35 @@ export default function Levels() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Practice Field Guidance */}
+      <div className="max-w-lg mx-auto px-4 mb-8">
+        <Alert className="border-purple-200 bg-purple-50/50">
+          <BookOpen className="h-4 w-4 text-purple-600" />
+          <AlertTitle className="text-purple-800">🎮 练习场 - 能力测试</AlertTitle>
+          <AlertDescription className="text-purple-700 space-y-3">
+            <p><strong>通过习题验证学习成果</strong>，测试技能掌握程度：</p>
+            <div className="text-xs space-y-1 ml-4">
+              <p>• 完成【挑战】主线任务后，来这里检验能力提升</p>
+              <p>• 学完【技能库】理论，来这里做题巩固</p>
+              <p>• 强化【专项训练】后，来这里测试突破效果</p>
+              <p>• 8级进阶体系，从启明星到智子星，逐步提升</p>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-purple-200">
+              <Link href="/ninety-day-challenge">
+                <Button variant="outline" size="sm" className="text-xs h-8 border-blue-300 hover:bg-blue-100">
+                  📅 90天挑战
+                </Button>
+              </Link>
+              <Link href="/tasks">
+                <Button variant="outline" size="sm" className="text-xs h-8 border-indigo-300 hover:bg-indigo-100">
+                  📚 技能库
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
       </div>
 
       {/* Duolingo-style Level Map */}

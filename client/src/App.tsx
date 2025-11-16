@@ -42,7 +42,7 @@ function Router() {
       <Route path="/reset-password" component={ResetPassword} />
 
       {/* Protected routes - require authentication */}
-      <Route path="/" component={isAuthenticated ? Levels : Login} />
+      <Route path="/" component={isAuthenticated ? NinetyDayChallenge : Login} />
       <Route path="/training" component={isAuthenticated ? Tasks : Login} />
       <Route path="/ninety-day-challenge" component={isAuthenticated ? NinetyDayChallenge : Login} />
       <Route path="/levels" component={isAuthenticated ? Levels : Login} />
