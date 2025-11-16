@@ -45,6 +45,7 @@ logs_result.json
 .playwright-mcp/
 coverage/
 *.lcov
+.test-credentials.json
 
 # Temporary files
 *.tmp
