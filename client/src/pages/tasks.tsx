@@ -223,6 +223,7 @@ export default function TasksPage() {
 
   // Handle start specialized training
   const handleStartSpecializedTraining = (plan: TrainingPlan) => {
+    console.log('[DEBUG] Starting specialized training:', plan.title);
     setIsTrainingActive(true);
     setActiveTrainingPlan(plan);
     setActiveElapsedTime(0);
@@ -233,6 +234,7 @@ export default function TasksPage() {
     setSelectedTraining(null);
     setSelectedSkill(null);
     setSelectedSubSkill(null);
+    console.log('[DEBUG] Cleared all navigation states');
     toast({
       title: "开始训练",
       description: `开始「${plan.title}」训练`,
@@ -546,6 +548,7 @@ export default function TasksPage() {
 
   // No navigation selection - show skills overview
   if (!selectedSkill) {
+    console.log('[DEBUG] Rendering main overview. isTrainingActive:', isTrainingActive, 'activeTrainingPlan:', activeTrainingPlan?.title);
     return (
       <div className="p-4 space-y-6 pb-24">
         {/* Guidance Alert */}
