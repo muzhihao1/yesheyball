@@ -462,6 +462,7 @@ export default function TasksPage() {
 
   // Training plans list view
   if (selectedTraining) {
+    console.log('[DEBUG] Rendering training plans list for:', selectedTraining.title);
     return (
       <div className="p-4 space-y-6 pb-24">
         {/* Back button */}
@@ -688,7 +689,10 @@ export default function TasksPage() {
                     <Card
                       key={training.id}
                       className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.05] border-purple-200 bg-white"
-                      onClick={() => setSelectedTraining(training)}
+                      onClick={() => {
+                        console.log('[DEBUG] Clicked specialized training:', training.title);
+                        setSelectedTraining(training);
+                      }}
                     >
                       <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
                         <div className="text-purple-600">
