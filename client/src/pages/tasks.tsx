@@ -142,6 +142,7 @@ export default function TasksPage() {
   // Specialized training navigation state
   const [selectedTraining, setSelectedTraining] = useState<SpecializedTraining | null>(null);
   const [selectedTrainingPlan, setSelectedTrainingPlan] = useState<TrainingPlan | null>(null);
+  const [activeTrainingPlan, setActiveTrainingPlan] = useState<TrainingPlan | null>(null);
 
   // Training states
   const [isTrainingActive, setIsTrainingActive] = useState(false);
@@ -220,9 +221,22 @@ export default function TasksPage() {
     });
   };
 
+  // Handle start specialized training
+  const handleStartSpecializedTraining = (plan: TrainingPlan) => {
+    setIsTrainingActive(true);
+    setActiveTrainingPlan(plan);
+    setActiveElapsedTime(0);
+    setIsTrainingPaused(false);
+    setTrainingNotes("");
+    toast({
+      title: "开始训练",
+      description: `开始「${plan.title}」训练`,
+    });
+  };
+
   // Handle stop training
   const handleStopTraining = () => {
-    if (!activeUnit) return;
+    if (!activeUnit && !activeTrainingPlan) return;
 
     // Show rating modal
     setShowRatingModal(true);
@@ -233,10 +247,13 @@ export default function TasksPage() {
     setCurrentRating(rating);
     setShowRatingModal(false);
 
+    const sessionTitle = activeUnit?.title || activeTrainingPlan?.title || "训练";
+    const earnedExp = (activeTrainingPlan?.xpReward || 50) + rating * 10;
+
     // Show celebration first
     setCelebrationData({
-      sessionTitle: activeUnit?.title || "训练",
-      earnedExp: 50 + rating * 10,
+      sessionTitle,
+      earnedExp,
       stars: rating,
       duration: activeElapsedTime,
     });
@@ -256,7 +273,7 @@ export default function TasksPage() {
           duration: activeElapsedTime,
           notes: combinedNotes,
           rating: rating,
-          sessionType: activeUnit?.title,
+          sessionType: sessionTitle,
         }),
       });
 
@@ -273,6 +290,7 @@ export default function TasksPage() {
     // Reset training state
     setIsTrainingActive(false);
     setActiveUnit(null);
+    setActiveTrainingPlan(null);
     setActiveElapsedTime(0);
     setTrainingNotes("");
   };
@@ -427,13 +445,7 @@ export default function TasksPage() {
         <Button
           size="lg"
           className="w-full bg-purple-600 hover:bg-purple-700"
-          onClick={() => {
-            toast({
-              title: "开始训练",
-              description: `开始「${selectedTrainingPlan.title}」训练`,
-            });
-            // TODO: Start training session
-          }}
+          onClick={() => handleStartSpecializedTraining(selectedTrainingPlan)}
         >
           开始训练
         </Button>
@@ -535,25 +547,13 @@ export default function TasksPage() {
         <Alert className="border-blue-200 bg-blue-50/50">
           <BookOpen className="h-4 w-4 text-blue-600" />
           <AlertTitle className="text-blue-800">📚 技能库 - 系统复习</AlertTitle>
-          <AlertDescription className="text-blue-700 space-y-3">
+          <AlertDescription className="text-blue-700 space-y-2">
             <p><strong>完成【挑战】主线任务后</strong>，来这里：</p>
             <div className="text-xs space-y-1 ml-4">
               <p>• 查阅十大招完整理论和技术要点</p>
               <p>• 复习巩固已学内容，加深理解</p>
               <p>• 薄弱环节？下滑到【专项训练道场】针对性突破</p>
-              <p>• 想验证能力？前往【练习场】做题测试</p>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-blue-200">
-              <Link href="/ninety-day-challenge">
-                <Button variant="outline" size="sm" className="text-xs h-8 border-blue-300 hover:bg-blue-100">
-                  📅 90天挑战
-                </Button>
-              </Link>
-              <Link href="/levels">
-                <Button variant="outline" size="sm" className="text-xs h-8 border-purple-300 hover:bg-purple-100">
-                  🎮 练习场
-                </Button>
-              </Link>
+              <p>• 想验证能力？前往练习场做题测试</p>
             </div>
           </AlertDescription>
         </Alert>
@@ -603,51 +603,6 @@ export default function TasksPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Specialized Training Arena */}
-        {specializedTrainings.length > 0 && (
-          <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <Trophy className="h-6 w-6 text-purple-600" />
-                <div>
-                  <CardTitle className="text-lg text-purple-800">🎯 专项训练道场 - 针对性突破</CardTitle>
-                  <p className="text-sm text-purple-700 mt-1">
-                    从十大招中精选的<strong>重点训练内容</strong>，哪里薄弱练哪里！
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {specializedTrainings
-                  .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-                  .map((training) => (
-                    <Card
-                      key={training.id}
-                      className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.05] border-purple-200 bg-white"
-                      onClick={() => setSelectedTraining(training)}
-                    >
-                      <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-                        <div className="text-purple-600">
-                          {training.iconName && iconMap[training.iconName] || <Target className="w-8 h-8" />}
-                        </div>
-                        <h4 className="font-semibold text-sm text-gray-800">{training.title}</h4>
-                        {training.description && (
-                          <p className="text-xs text-gray-600 line-clamp-2">{training.description}</p>
-                        )}
-                        {training.category && (
-                          <Badge className="bg-purple-100 text-purple-700 text-xs">
-                            {training.category}
-                          </Badge>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Skills Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -702,6 +657,51 @@ export default function TasksPage() {
             );
           })}
         </div>
+
+        {/* Specialized Training Arena */}
+        {specializedTrainings.length > 0 && (
+          <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <Trophy className="h-6 w-6 text-purple-600" />
+                <div>
+                  <CardTitle className="text-lg text-purple-800">🎯 专项训练道场 - 针对性突破</CardTitle>
+                  <p className="text-sm text-purple-700 mt-1">
+                    从十大招中精选的<strong>重点训练内容</strong>，哪里薄弱练哪里！
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {specializedTrainings
+                  .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                  .map((training) => (
+                    <Card
+                      key={training.id}
+                      className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.05] border-purple-200 bg-white"
+                      onClick={() => setSelectedTraining(training)}
+                    >
+                      <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                        <div className="text-purple-600">
+                          {training.iconName && iconMap[training.iconName] || <Target className="w-8 h-8" />}
+                        </div>
+                        <h4 className="font-semibold text-sm text-gray-800">{training.title}</h4>
+                        {training.description && (
+                          <p className="text-xs text-gray-600 line-clamp-2">{training.description}</p>
+                        )}
+                        {training.category && (
+                          <Badge className="bg-purple-100 text-purple-700 text-xs">
+                            {training.category}
+                          </Badge>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Modals */}
         <TrainingCompleteModal
@@ -821,11 +821,11 @@ export default function TasksPage() {
         </div>
 
         {/* Active Training Interface */}
-        {isTrainingActive && activeUnit && (
+        {isTrainingActive && (activeUnit || activeTrainingPlan) && (
           <Card className="border-primary border-2">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>{activeUnit.title}</span>
+                <span>{activeUnit?.title || activeTrainingPlan?.title}</span>
                 <Badge variant="outline" className="text-lg">
                   {formatTime(activeElapsedTime)}
                 </Badge>
@@ -833,13 +833,18 @@ export default function TasksPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Unit content */}
-              {activeUnit.content && (
+              {activeUnit?.content && (
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-sm whitespace-pre-wrap">
                     {typeof activeUnit.content === "string"
                       ? activeUnit.content
                       : activeUnit.content.text || ""}
                   </p>
+                </div>
+              )}
+              {activeTrainingPlan?.description && (
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <p className="text-sm whitespace-pre-wrap">{activeTrainingPlan.description}</p>
                 </div>
               )}
 
@@ -891,9 +896,9 @@ export default function TasksPage() {
         )}
 
         {/* Modals */}
-        {showRatingModal && activeUnit && (
+        {showRatingModal && (activeUnit || activeTrainingPlan) && (
           <RatingModal
-            sessionType={activeUnit.title}
+            sessionType={activeUnit?.title || activeTrainingPlan?.title || "训练"}
             duration={activeElapsedTime}
             notes={trainingNotes}
             onCancel={() => setShowRatingModal(false)}
