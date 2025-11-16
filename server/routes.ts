@@ -4,7 +4,7 @@ import { db } from "./db.js";
 import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse, demoUserProfile } from "./auth.js";
 import { generateCoachingFeedback, generateDiaryInsights } from "./openai.js";
 import { upload, persistUploadedImage } from "./upload.js";
-import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema, trainingSkills, subSkills, trainingUnits, trainingLevels, userTrainingProgress, users } from "../shared/schema.js";
+import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema, trainingSkills, subSkills, trainingUnits, trainingLevels, userTrainingProgress, users, userSkillProgressV3, userNinetyDayProgress } from "../shared/schema.js";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses.js";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer.js";
 import { adaptiveLearning } from "./adaptiveLearning.js";
@@ -2992,6 +2992,867 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Error fetching 90-day progress:", error);
       res.status(500).json({ message: "Failed to fetch progress" });
+    }
+  });
+
+  /**
+   * Unified Dashboard Summary API
+   * Returns aggregated data from all training modules for the profile dashboard
+   * GET /api/v1/dashboard/summary
+   */
+  app.get("/api/v1/dashboard/summary", isAuthenticated, async (req, res) => {
+    try {
+      const targetUserId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.json({
+          ninetyDayChallenge: {
+            currentDay: 1,
+            totalDays: 90,
+            completedDays: 0,
+            startDate: null,
+            daysSinceStart: null
+          },
+          skillsLibrary: {
+            totalSkills: 10,
+            masteredSkills: 0,
+            inProgressSkills: 0,
+            overallProgress: 0
+          },
+          practiceField: {
+            currentLevel: 1,
+            currentXP: 0,
+            nextLevelXP: 1000
+          },
+          abilityScores: {
+            accuracy: 0,
+            spin: 0,
+            positioning: 0,
+            power: 0,
+            strategy: 0,
+            clearance: 0
+          }
+        });
+      }
+
+      // Fetch user data for practice field and ability scores
+      const [user] = await db!.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // === 1. 90-Day Challenge Data ===
+      const ninetyDayProgress = await storage.getUserNinetyDayProgress(targetUserId);
+
+      let daysSinceStart: number | null = null;
+      if (ninetyDayProgress?.startDate) {
+        const start = new Date(ninetyDayProgress.startDate);
+        const now = new Date();
+        daysSinceStart = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      }
+
+      const completedDaysCount = Array.isArray(ninetyDayProgress?.completedDays)
+        ? ninetyDayProgress.completedDays.length
+        : 0;
+
+      // === 2. Skills Library Data (Ten Core Skills V3) ===
+      const skillsProgress = await db!
+        .select()
+        .from(userSkillProgressV3)
+        .where(eq(userSkillProgressV3.userId, targetUserId));
+
+      const totalSkills = 10; // Ten Core Skills system
+      const masteredSkills = skillsProgress.filter(sp => (sp.progressPercentage ?? 0) === 100).length;
+      const inProgressSkills = skillsProgress.filter(sp => {
+        const progress = sp.progressPercentage ?? 0;
+        return progress > 0 && progress < 100;
+      }).length;
+      const overallProgress = skillsProgress.length > 0
+        ? Math.round(skillsProgress.reduce((sum, sp) => sum + (sp.progressPercentage ?? 0), 0) / totalSkills)
+        : 0;
+
+      // === 3. Practice Field Data (Level System) ===
+      const currentLevel = user.level || 1;
+      const currentXP = user.exp || 0;
+
+      // Calculate next level XP requirement (same logic as experienceSystem.ts)
+      const baseExp = 1000;
+      const expMultiplier = 1.5;
+      const nextLevelXP = Math.floor(baseExp * Math.pow(expMultiplier, currentLevel));
+
+      // === 4. Ability Scores ===
+      const abilityScores = {
+        accuracy: user.accuracyScore || 0,
+        spin: user.spinScore || 0,
+        positioning: user.positioningScore || 0,
+        power: user.powerScore || 0,
+        strategy: user.strategyScore || 0,
+        clearance: user.clearanceScore || 0
+      };
+
+      // Return unified dashboard data
+      res.json({
+        ninetyDayChallenge: {
+          currentDay: ninetyDayProgress?.currentDay || 1,
+          totalDays: 90,
+          completedDays: completedDaysCount,
+          startDate: ninetyDayProgress?.startDate || null,
+          daysSinceStart
+        },
+        skillsLibrary: {
+          totalSkills,
+          masteredSkills,
+          inProgressSkills,
+          overallProgress
+        },
+        practiceField: {
+          currentLevel,
+          currentXP,
+          nextLevelXP
+        },
+        abilityScores
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard summary:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard summary" });
+    }
+  });
+
+  /**
+   * Admin Endpoint: Seed Specialized Training Plans
+   * POST /api/admin/seed-training-plans
+   *
+   * Seeds 24 training plans (3 per dojo × 8 dojos) into the database
+   * This should be called once to populate the specialized training plans
+   */
+  app.post("/api/admin/seed-training-plans", async (req, res) => {
+    try {
+      if (!hasDatabase) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      console.log('🌱 Starting to seed specialized training plans...');
+
+      // First, ensure the metadata column exists
+      console.log('Checking if metadata column exists...');
+      try {
+        await db!.execute(sql`
+          ALTER TABLE specialized_training_plans
+          ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb
+        `);
+        console.log('✅ Metadata column ensured');
+      } catch (metadataError) {
+        console.log('⚠️  Metadata column might already exist:', metadataError);
+      }
+
+      // Import the specialized training plans schema
+      const { specializedTrainingPlansV3 } = await import("../shared/schema.js");
+
+      // Define all 24 training plans
+      const allTrainingPlans = [
+        // 1. 基本功训练道场 (st_basic)
+        {
+          id: 'plan_basic_beginner',
+          trainingId: 'st_basic',
+          title: '站位与姿势练习',
+          description: '入门级基本功训练：反复练习标准的站位和姿势，做到稳定、舒适。形成标准的击球姿势。',
+          difficulty: 'easy',
+          estimatedTimeMinutes: 30,
+          xpReward: 20,
+          metadata: {
+            trainingType: 'fundamentals',
+            primarySkill: '基本功',
+            level: '入门',
+            recordConfig: {
+              metrics: ['stability', 'consistency'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 85
+            }
+          },
+          content: {
+            duration: 30,
+            goal: '形成标准的击球姿势',
+            evaluation: '每次击球都能保持稳定的姿势',
+            keyPoints: ['站位稳定', '重心平衡', '姿势舒适', '视线正确'],
+            practice: ['镜前练习站位', '空杆练习', '观察专业选手姿势']
+          }
+        },
+        {
+          id: 'plan_basic_intermediate',
+          trainingId: 'st_basic',
+          title: '握杆与手架练习',
+          description: '进阶级基本功训练：练习正确的握杆方法和稳固的手架，能够根据不同球形变换手架。',
+          difficulty: 'medium',
+          estimatedTimeMinutes: 45,
+          xpReward: 30,
+          metadata: {
+            trainingType: 'fundamentals',
+            primarySkill: '基本功',
+            level: '进阶',
+            recordConfig: {
+              metrics: ['gripControl', 'bridgeStability'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 80
+            }
+          },
+          content: {
+            duration: 45,
+            goal: '掌握稳固的握杆和手架',
+            evaluation: '能够根据不同球形变换手架',
+            keyPoints: ['握杆松紧适度', '手架稳固', '能变换不同手架', '远台手架'],
+            practice: ['标准握杆练习', '凤眼手架', 'V形手架', '远台手架']
+          }
+        },
+        {
+          id: 'plan_basic_master',
+          trainingId: 'st_basic',
+          title: '出杆精准度练习',
+          description: '大师级基本功训练：做到出杆笔直、平顺，能够长时间保持出杆的稳定性。',
+          difficulty: 'hard',
+          estimatedTimeMinutes: 60,
+          xpReward: 40,
+          metadata: {
+            trainingType: 'fundamentals',
+            primarySkill: '基本功',
+            level: '大师',
+            recordConfig: {
+              metrics: ['strokeAccuracy', 'consistency'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 90
+            }
+          },
+          content: {
+            duration: 60,
+            goal: '做到出杆笔直、平顺',
+            evaluation: '能够长时间保持出杆的稳定性',
+            keyPoints: ['出杆笔直', '运杆平顺', '延伸完整', '回杆稳定'],
+            practice: ['空杆练习200次', '瓶颈练习', '摆球练习', '长时间练习']
+          }
+        },
+        // 2. 准度训练道场 (st_accuracy)
+        {
+          id: 'plan_accuracy_beginner',
+          trainingId: 'st_accuracy',
+          title: '直线球练习（短、中距离）',
+          description: '入门级准度训练：练习不同距离下的直线球击打，掌握直线球的稳定击打。',
+          difficulty: 'easy',
+          estimatedTimeMinutes: 30,
+          xpReward: 20,
+          metadata: {
+            trainingType: 'accuracy',
+            primarySkill: '准度',
+            level: '入门',
+            recordConfig: {
+              metrics: ['successRate'],
+              scoringMethod: 'percentage',
+              targetSuccessRate: 80
+            }
+          },
+          content: {
+            duration: 30,
+            goal: '掌握直线球的稳定击打',
+            evaluation: '10颗球进8颗为合格',
+            sets: 5,
+            repsPerSet: 10,
+            keyPoints: ['瞄准球心', '出杆稳定', '力度均匀', '延伸完整'],
+            distances: ['近台(1球台)', '中台(2球台)', '远台(3球台)']
+          }
+        },
+        {
+          id: 'plan_accuracy_intermediate',
+          trainingId: 'st_accuracy',
+          title: '角度球练习（15、30度）',
+          description: '进阶级准度训练：练习15、30度等常见角度的击打，建立角度球的初步感觉。',
+          difficulty: 'medium',
+          estimatedTimeMinutes: 45,
+          xpReward: 30,
+          metadata: {
+            trainingType: 'accuracy',
+            primarySkill: '准度',
+            level: '进阶',
+            recordConfig: {
+              metrics: ['angleAccuracy'],
+              scoringMethod: 'percentage',
+              targetSuccessRate: 60
+            }
+          },
+          content: {
+            duration: 45,
+            goal: '建立角度球的初步感觉',
+            evaluation: '10颗球进6颗为合格',
+            sets: 5,
+            repsPerSet: 10,
+            angles: ['15度', '30度', '45度'],
+            keyPoints: ['找准切点', '瞄准修正', '力度控制', '杆法配合']
+          }
+        },
+        {
+          id: 'plan_accuracy_master',
+          trainingId: 'st_accuracy',
+          title: '贴库球与翻袋练习',
+          description: '大师级准度训练：克服特殊球形的心理障碍，掌握贴库球和翻袋技巧。',
+          difficulty: 'hard',
+          estimatedTimeMinutes: 60,
+          xpReward: 50,
+          metadata: {
+            trainingType: 'accuracy',
+            primarySkill: '准度',
+            level: '大师',
+            recordConfig: {
+              metrics: ['specialShotAccuracy'],
+              scoringMethod: 'percentage',
+              targetSuccessRate: 50
+            }
+          },
+          content: {
+            duration: 60,
+            goal: '克服特殊球形的心理障碍',
+            evaluation: '10颗球进5颗为合格',
+            sets: 5,
+            repsPerSet: 10,
+            shotTypes: ['贴库球', '中袋翻袋', '底袋翻袋'],
+            keyPoints: ['克服心理压力', '精确瞄准', '力度把控', '杆法运用']
+          }
+        },
+        // 3. 杆法训练道场 (st_spin)
+        {
+          id: 'plan_spin_beginner',
+          trainingId: 'st_spin',
+          title: '基础杆法练习（高、中、低）',
+          description: '入门级杆法训练：掌握不同杆法的击球点和效果，能够稳定打出三种基础杆法。',
+          difficulty: 'easy',
+          estimatedTimeMinutes: 30,
+          xpReward: 20,
+          metadata: {
+            trainingType: 'technique',
+            primarySkill: '杆法',
+            level: '入门',
+            recordConfig: {
+              metrics: ['techniqueControl'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 85
+            }
+          },
+          content: {
+            duration: 30,
+            goal: '掌握不同杆法的击球点和效果',
+            evaluation: '能够稳定打出三种杆法',
+            sets: 4,
+            repsPerSet: 10,
+            techniques: ['高杆(推杆)', '中杆(定杆)', '低杆(拉杆)'],
+            keyPoints: ['击球点准确', '力度适当', '观察效果', '分离角理解']
+          }
+        },
+        {
+          id: 'plan_spin_intermediate',
+          trainingId: 'st_spin',
+          title: '加塞练习（左、右塞）',
+          description: '进阶级杆法训练：掌握加塞的瞄准修正和走位控制，能够控制母球的横向走位。',
+          difficulty: 'medium',
+          estimatedTimeMinutes: 45,
+          xpReward: 35,
+          metadata: {
+            trainingType: 'technique',
+            primarySkill: '杆法',
+            level: '进阶',
+            recordConfig: {
+              metrics: ['sideSpinControl'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 75
+            }
+          },
+          content: {
+            duration: 45,
+            goal: '掌握加塞的瞄准修正',
+            evaluation: '能够控制母球的横向走位',
+            sets: 4,
+            repsPerSet: 10,
+            techniques: ['左塞', '右塞', '不同力度的塞'],
+            keyPoints: ['瞄准修正', '塞量控制', '反弹线路', '实战应用']
+          }
+        },
+        {
+          id: 'plan_spin_master',
+          trainingId: 'st_spin',
+          title: '高级杆法练习（推、拉、顿）',
+          description: '大师级杆法训练：应对复杂球形，能够根据需要使用高级杆法。',
+          difficulty: 'hard',
+          estimatedTimeMinutes: 60,
+          xpReward: 50,
+          metadata: {
+            trainingType: 'technique',
+            primarySkill: '杆法',
+            level: '大师',
+            recordConfig: {
+              metrics: ['advancedTechnique'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 70
+            }
+          },
+          content: {
+            duration: 60,
+            goal: '应对复杂球形',
+            evaluation: '能够根据需要使用高级杆法',
+            sets: 3,
+            repsPerSet: 10,
+            techniques: ['推杆', '拉杆', '顿杆', '混合杆法'],
+            keyPoints: ['杆法组合', '精确控制', '效果预判', '实战运用']
+          }
+        },
+        // 4. 走位训练道场 (st_positioning)
+        {
+          id: 'plan_positioning_beginner',
+          trainingId: 'st_positioning',
+          title: '分离角练习',
+          description: '入门级走位训练：理解母球与目标球的分离规律，能够预测母球的大致走向。',
+          difficulty: 'easy',
+          estimatedTimeMinutes: 30,
+          xpReward: 20,
+          metadata: {
+            trainingType: 'positioning',
+            primarySkill: '走位',
+            level: '入门',
+            recordConfig: {
+              metrics: ['angleUnderstanding'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 80
+            }
+          },
+          content: {
+            duration: 30,
+            goal: '理解母球与目标球的分离规律',
+            evaluation: '能够预测母球的大致走向',
+            sets: 5,
+            repsPerSet: 10,
+            angles: ['90度分离(定杆)', '<90度分离(推杆)', '>90度分离(拉杆)'],
+            keyPoints: ['观察分离角', '理解分离规律', '杆法影响', '力度影响']
+          }
+        },
+        {
+          id: 'plan_positioning_intermediate',
+          trainingId: 'st_positioning',
+          title: '叫位练习',
+          description: '进阶级走位训练：练习将母球走到指定区域，能够将母球控制在目标区域内。',
+          difficulty: 'medium',
+          estimatedTimeMinutes: 45,
+          xpReward: 35,
+          metadata: {
+            trainingType: 'positioning',
+            primarySkill: '走位',
+            level: '进阶',
+            recordConfig: {
+              metrics: ['positioningAccuracy'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 70
+            }
+          },
+          content: {
+            duration: 45,
+            goal: '练习将母球走到指定区域',
+            evaluation: '能够将母球控制在目标区域内',
+            sets: 4,
+            repsPerSet: 10,
+            targets: ['近台区域', '中台区域', '远台区域'],
+            keyPoints: ['规划走位路线', '力度控制', '杆法选择', '分离角运用']
+          }
+        },
+        {
+          id: 'plan_positioning_master',
+          trainingId: 'st_positioning',
+          title: 'K球与蛇彩练习',
+          description: '大师级走位训练：综合运用走位技巧，能够完成一次完整的蛇彩练习。',
+          difficulty: 'hard',
+          estimatedTimeMinutes: 60,
+          xpReward: 50,
+          metadata: {
+            trainingType: 'positioning',
+            primarySkill: '走位',
+            level: '大师',
+            recordConfig: {
+              metrics: ['advancedPositioning'],
+              scoringMethod: 'success',
+              targetSuccessRate: 60
+            }
+          },
+          content: {
+            duration: 60,
+            goal: '综合运用走位技巧',
+            evaluation: '能够完成一次完整的蛇彩练习',
+            sets: 3,
+            repsPerSet: 5,
+            scenarios: ['K球练习', '蛇彩练习', '组合球练习'],
+            keyPoints: ['K球时机', 'K球力度', '连续走位', '整体规划']
+          }
+        },
+        // 5. 发力训练道场 (st_power)
+        {
+          id: 'plan_power_beginner',
+          trainingId: 'st_power',
+          title: '空杆与力量控制练习',
+          description: '入门级发力训练：掌握正确的发力动作，出杆平顺、稳定。',
+          difficulty: 'easy',
+          estimatedTimeMinutes: 30,
+          xpReward: 20,
+          metadata: {
+            trainingType: 'power',
+            primarySkill: '发力',
+            level: '入门',
+            recordConfig: {
+              metrics: ['strokeSmooth'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 85
+            }
+          },
+          content: {
+            duration: 30,
+            goal: '掌握正确的发力动作',
+            evaluation: '出杆平顺、稳定',
+            sets: 5,
+            repsPerSet: 20,
+            powerLevels: ['小力', '中力', '大力'],
+            keyPoints: ['发力通透', '出杆稳定', '力量传导', '身体协调']
+          }
+        },
+        {
+          id: 'plan_power_intermediate',
+          trainingId: 'st_power',
+          title: '发力节奏练习',
+          description: '进阶级发力训练：培养稳定的发力节奏，能够在大力和小力之间自如切换。',
+          difficulty: 'medium',
+          estimatedTimeMinutes: 45,
+          xpReward: 35,
+          metadata: {
+            trainingType: 'power',
+            primarySkill: '发力',
+            level: '进阶',
+            recordConfig: {
+              metrics: ['powerControl'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 80
+            }
+          },
+          content: {
+            duration: 45,
+            goal: '培养稳定的发力节奏',
+            evaluation: '能够在大力和小力之间自如切换',
+            sets: 4,
+            repsPerSet: 15,
+            rhythms: ['慢节奏', '快节奏', '节奏变换'],
+            keyPoints: ['稳定节奏', '力度控制', '心态平稳', '避免变形']
+          }
+        },
+        {
+          id: 'plan_power_master',
+          trainingId: 'st_power',
+          title: '实战发力应用',
+          description: '大师级发力训练：在实战中运用不同的发力技巧，能够根据球形需要选择合适的发力。',
+          difficulty: 'hard',
+          estimatedTimeMinutes: 60,
+          xpReward: 50,
+          metadata: {
+            trainingType: 'power',
+            primarySkill: '发力',
+            level: '大师',
+            recordConfig: {
+              metrics: ['practicalApplication'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 75
+            }
+          },
+          content: {
+            duration: 60,
+            goal: '在实战中运用不同的发力技巧',
+            evaluation: '能够根据球形需要选择合适的发力',
+            sets: 3,
+            repsPerSet: 10,
+            scenarios: ['轻柔球', '中力球', '爆发球', '连续变化'],
+            keyPoints: ['因球制宜', '发力精确', '效果预判', '实战应用']
+          }
+        },
+        // 6. 策略训练道场 (st_angle)
+        {
+          id: 'plan_angle_beginner',
+          trainingId: 'st_angle',
+          title: '清台思路练习',
+          description: '入门级策略训练：培养基本的清台规划能力，能够规划出2-3颗球的清台路线。',
+          difficulty: 'easy',
+          estimatedTimeMinutes: 30,
+          xpReward: 25,
+          metadata: {
+            trainingType: 'strategy',
+            primarySkill: '策略',
+            level: '入门',
+            recordConfig: {
+              metrics: ['planningAbility'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 75
+            }
+          },
+          content: {
+            duration: 30,
+            goal: '培养基本的清台规划能力',
+            evaluation: '能够规划出2-3颗球的清台路线',
+            sets: 5,
+            repsPerSet: 5,
+            ballCounts: [2, 3],
+            keyPoints: ['观察球形', '规划路线', '先难后易', '确保成功']
+          }
+        },
+        {
+          id: 'plan_angle_intermediate',
+          trainingId: 'st_angle',
+          title: '防守练习',
+          description: '进阶级策略训练：学习制作斯诺克和安全球，能够做出有效的防守。',
+          difficulty: 'medium',
+          estimatedTimeMinutes: 45,
+          xpReward: 35,
+          metadata: {
+            trainingType: 'strategy',
+            primarySkill: '策略',
+            level: '进阶',
+            recordConfig: {
+              metrics: ['defensiveSkill'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 70
+            }
+          },
+          content: {
+            duration: 45,
+            goal: '学习制作斯诺克和安全球',
+            evaluation: '能够做出有效的防守',
+            sets: 4,
+            repsPerSet: 10,
+            techniques: ['制造斯诺克', '做安全球', '交换球权'],
+            keyPoints: ['防守意识', '障碍制造', '降低对手机会', '战术运用']
+          }
+        },
+        {
+          id: 'plan_angle_master',
+          trainingId: 'st_angle',
+          title: '特殊球形处理',
+          description: '大师级策略训练：练习处理贴库球、组合球等复杂球形，能够应对各种复杂球形。',
+          difficulty: 'hard',
+          estimatedTimeMinutes: 60,
+          xpReward: 50,
+          metadata: {
+            trainingType: 'strategy',
+            primarySkill: '策略',
+            level: '大师',
+            recordConfig: {
+              metrics: ['complexHandling'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 65
+            }
+          },
+          content: {
+            duration: 60,
+            goal: '练习处理贴库球、组合球等',
+            evaluation: '能够应对各种复杂球形',
+            sets: 3,
+            repsPerSet: 10,
+            scenarios: ['贴库球', '组合球', '借球', '连击球'],
+            keyPoints: ['球形分析', '解决方案', '技术运用', '随机应变']
+          }
+        },
+        // 7. 清台挑战道场 (st_clearance)
+        {
+          id: 'plan_clearance_beginner',
+          trainingId: 'st_clearance',
+          title: '顺序清彩',
+          description: '入门级清台训练：掌握基本的清彩流程，能够完成一次完整的顺序清彩。',
+          difficulty: 'easy',
+          estimatedTimeMinutes: 30,
+          xpReward: 25,
+          metadata: {
+            trainingType: 'comprehensive',
+            primarySkill: '清台',
+            level: '入门',
+            recordConfig: {
+              metrics: ['clearanceSuccess'],
+              scoringMethod: 'success',
+              targetSuccessRate: 70
+            }
+          },
+          content: {
+            duration: 30,
+            goal: '掌握基本的清彩流程',
+            evaluation: '能够完成一次完整的顺序清彩',
+            sets: 5,
+            repsPerSet: 1,
+            ballCounts: [3, 4, 5],
+            keyPoints: ['按序清彩', '走位规划', '稳定心态', '完成清台']
+          }
+        },
+        {
+          id: 'plan_clearance_intermediate',
+          trainingId: 'st_clearance',
+          title: '乱序清彩',
+          description: '进阶级清台训练：培养根据球形规划路线的能力，能够根据球形选择最优清彩路线。',
+          difficulty: 'medium',
+          estimatedTimeMinutes: 45,
+          xpReward: 40,
+          metadata: {
+            trainingType: 'comprehensive',
+            primarySkill: '清台',
+            level: '进阶',
+            recordConfig: {
+              metrics: ['routeOptimization'],
+              scoringMethod: 'success',
+              targetSuccessRate: 60
+            }
+          },
+          content: {
+            duration: 45,
+            goal: '培养根据球形规划路线的能力',
+            evaluation: '能够根据球形选择最优清彩路线',
+            sets: 4,
+            repsPerSet: 1,
+            ballCounts: [5, 6],
+            keyPoints: ['整体规划', '灵活调整', '优化路线', '完成清台']
+          }
+        },
+        {
+          id: 'plan_clearance_master',
+          trainingId: 'st_clearance',
+          title: '计时清彩',
+          description: '大师级清台训练：提升压力下的清台能力，在规定时间内完成清彩。',
+          difficulty: 'hard',
+          estimatedTimeMinutes: 60,
+          xpReward: 60,
+          metadata: {
+            trainingType: 'comprehensive',
+            primarySkill: '清台',
+            level: '大师',
+            recordConfig: {
+              metrics: ['speedClearance'],
+              scoringMethod: 'time',
+              targetSuccessRate: 50
+            }
+          },
+          content: {
+            duration: 60,
+            goal: '提升压力下的清台能力',
+            evaluation: '在规定时间内完成清彩',
+            sets: 3,
+            repsPerSet: 1,
+            ballCounts: [6, 7, 8],
+            timeLimits: [180, 240, 300],
+            keyPoints: ['速度与准度', '时间管理', '抗压能力', '稳定发挥']
+          }
+        },
+        // 8. 五分点速成道场 (st_five_points)
+        {
+          id: 'plan_five_points_beginner',
+          trainingId: 'st_five_points',
+          title: '五分点叫位',
+          description: '入门级五分点训练：熟悉五分点区域，能够将母球走到五分点附近。',
+          difficulty: 'easy',
+          estimatedTimeMinutes: 30,
+          xpReward: 20,
+          metadata: {
+            trainingType: 'positioning',
+            primarySkill: '五分点',
+            level: '入门',
+            recordConfig: {
+              metrics: ['fivePointAccuracy'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 75
+            }
+          },
+          content: {
+            duration: 30,
+            goal: '熟悉五分点区域',
+            evaluation: '能够将母球走到五分点附近',
+            sets: 5,
+            repsPerSet: 10,
+            positions: ['不同起点到五分点'],
+            keyPoints: ['五分点位置', '走位路线', '力度控制', '杆法运用']
+          }
+        },
+        {
+          id: 'plan_five_points_intermediate',
+          trainingId: 'st_five_points',
+          title: '五分点发散',
+          description: '进阶级五分点训练：掌握从五分点到全台的走位，能够从五分点精确叫位到目标球。',
+          difficulty: 'medium',
+          estimatedTimeMinutes: 45,
+          xpReward: 35,
+          metadata: {
+            trainingType: 'positioning',
+            primarySkill: '五分点',
+            level: '进阶',
+            recordConfig: {
+              metrics: ['positioningPrecision'],
+              scoringMethod: 'performance',
+              targetSuccessRate: 70
+            }
+          },
+          content: {
+            duration: 45,
+            goal: '掌握从五分点到全台的走位',
+            evaluation: '能够从五分点精确叫位到目标球',
+            sets: 4,
+            repsPerSet: 10,
+            targets: ['全台各位置'],
+            keyPoints: ['精确控制', '分离角运用', '力度把握', '实战应用']
+          }
+        },
+        {
+          id: 'plan_five_points_master',
+          trainingId: 'st_five_points',
+          title: '五分点实战应用',
+          description: '大师级五分点训练：在实战中灵活运用五分点，能够利用五分点完成连续进攻。',
+          difficulty: 'hard',
+          estimatedTimeMinutes: 60,
+          xpReward: 50,
+          metadata: {
+            trainingType: 'positioning',
+            primarySkill: '五分点',
+            level: '大师',
+            recordConfig: {
+              metrics: ['practicalMastery'],
+              scoringMethod: 'success',
+              targetSuccessRate: 65
+            }
+          },
+          content: {
+            duration: 60,
+            goal: '在实战中灵活运用五分点',
+            evaluation: '能够利用五分点完成连续进攻',
+            sets: 3,
+            repsPerSet: 5,
+            scenarios: ['连续进攻', '复杂球形', '清台实战'],
+            keyPoints: ['灵活运用', '整体规划', '连续走位', '清台完成']
+          }
+        }
+      ];
+
+      console.log(`📊 Total: ${allTrainingPlans.length} training plans to seed`);
+
+      // Insert all plans using onConflictDoNothing() to avoid duplicates
+      await db!.insert(specializedTrainingPlansV3).values(allTrainingPlans).onConflictDoNothing();
+
+      console.log('✅ Successfully seeded all training plans!');
+
+      // Group by dojo for response
+      const dojoGroups: Record<string, string[]> = {};
+      allTrainingPlans.forEach(plan => {
+        if (!dojoGroups[plan.trainingId]) {
+          dojoGroups[plan.trainingId] = [];
+        }
+        dojoGroups[plan.trainingId].push(plan.title);
+      });
+
+      res.json({
+        message: "Successfully seeded specialized training plans",
+        count: allTrainingPlans.length,
+        dojos: dojoGroups
+      });
+
+    } catch (error) {
+      console.error('❌ Error seeding training plans:', error);
+      res.status(500).json({ message: "Failed to seed training plans", error: String(error) });
     }
   });
 
