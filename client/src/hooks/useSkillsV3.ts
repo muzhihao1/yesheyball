@@ -294,7 +294,10 @@ export function useUserSkillProgressV3(skillId?: string) {
       const url = skillId
         ? `/api/user/skills-v3/progress?skillId=${skillId}`
         : '/api/user/skills-v3/progress';
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch user progress');
       }
