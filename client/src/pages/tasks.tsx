@@ -715,7 +715,101 @@ export default function TasksPage() {
           </Card>
         )}
 
+        {/* Active Training Interface */}
+        {(() => {
+          console.log('[DEBUG] Training interface check:', {
+            isTrainingActive,
+            activeUnit: activeUnit?.title,
+            activeTrainingPlan: activeTrainingPlan?.title,
+            condition: isTrainingActive && (activeUnit || activeTrainingPlan)
+          });
+          return null;
+        })()}
+        {isTrainingActive && (activeUnit || activeTrainingPlan) && (
+          <Card className="border-primary border-2">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>{activeUnit?.title || activeTrainingPlan?.title}</span>
+                <Badge variant="outline" className="text-lg">
+                  {formatTime(activeElapsedTime)}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Unit content */}
+              {activeUnit?.content && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm whitespace-pre-wrap">
+                    {typeof activeUnit.content === "string"
+                      ? activeUnit.content
+                      : activeUnit.content.text || ""}
+                  </p>
+                </div>
+              )}
+              {activeTrainingPlan?.description && (
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <p className="text-sm whitespace-pre-wrap">{activeTrainingPlan.description}</p>
+                </div>
+              )}
+
+              {/* Training controls */}
+              <div className="flex gap-2">
+                {!isTrainingPaused ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsTrainingPaused(true)}
+                    className="flex-1"
+                  >
+                    <Pause className="w-4 h-4 mr-2" />
+                    暂停
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsTrainingPaused(false)}
+                    className="flex-1"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    继续
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  onClick={handleStopTraining}
+                  className="flex-1"
+                >
+                  <Square className="w-4 h-4 mr-2" />
+                  结束训练
+                </Button>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  训练笔记（可选）
+                </label>
+                <Textarea
+                  value={trainingNotes}
+                  onChange={(e) => setTrainingNotes(e.target.value)}
+                  placeholder="记录训练中的感受、发现或问题..."
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Modals */}
+        {showRatingModal && (activeUnit || activeTrainingPlan) && (
+          <RatingModal
+            sessionType={activeUnit?.title || activeTrainingPlan?.title || "训练"}
+            duration={activeElapsedTime}
+            notes={trainingNotes}
+            onCancel={() => setShowRatingModal(false)}
+            onSubmit={handleRatingSubmit}
+          />
+        )}
+
         <TrainingCompleteModal
           isOpen={showCelebration}
           onClose={() => {
