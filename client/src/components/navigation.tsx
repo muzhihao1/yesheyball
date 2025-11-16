@@ -1,14 +1,14 @@
 import { Link, useLocation } from "wouter";
-import { BookOpen, Calendar, Target, User, Trophy } from "lucide-react";
+import { BookOpen, Calendar, Target, User, Rocket } from "lucide-react";
 
 export default function Navigation() {
   const [location] = useLocation();
 
   const navItems = [
-    { path: "/levels", label: "关卡地图", icon: Target },
-    { path: "/tasks", label: "训练计划", icon: Calendar },
-    { path: "/ninety-day-challenge", label: "90天挑战", icon: Trophy },
-    { path: "/profile", label: "个人档案", icon: User },
+    { path: "/ninety-day-challenge", label: "挑战", icon: Rocket },
+    { path: "/tasks", label: "技能库", icon: BookOpen },
+    { path: "/levels", label: "练习场", icon: Target },
+    { path: "/profile", label: "我的", icon: User },
   ];
 
   return (
@@ -16,7 +16,7 @@ export default function Navigation() {
       <div className="flex justify-around items-center py-2 px-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location === item.path || (item.path === "/levels" && location === "/");
+          const isActive = location === item.path || (item.path === "/ninety-day-challenge" && location === "/");
           
           return (
             <Link
