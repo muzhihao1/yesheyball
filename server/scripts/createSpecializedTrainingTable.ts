@@ -11,6 +11,11 @@ async function createTable() {
   try {
     console.log('Creating specialized_training table...');
 
+    if (!db) {
+      console.error('❌ Database connection is not available');
+      process.exit(1);
+    }
+
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS specialized_training (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

@@ -31,6 +31,11 @@ async function importData() {
 
     console.log(`Found ${trainings.length} training exercises to import`);
 
+    if (!db) {
+      console.error('❌ Database connection is not available');
+      process.exit(1);
+    }
+
     // Import each training
     for (const training of trainings) {
       console.log(`Importing: ${training.name}`);
