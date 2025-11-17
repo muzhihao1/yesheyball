@@ -18,6 +18,7 @@ import {
 } from "./experienceSystem.js";
 import { recalculateUserExperience } from "./recalculateExperience.js";
 import { initializeGoalTemplates, getUserGoalsWithDetails, updateGoalProgress } from "./goalService.js";
+import { updateUserStats, getUserStreakData } from "./userStatsService.js";
 import { z } from "zod";
 import OpenAI from "openai";
 import path from "path";
@@ -55,85 +56,9 @@ function requireSessionUserId(req: Request): string {
 }
 
 // Initialize OpenAI client
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
-
-// Calculate training streak based on completed sessions
-function calculateTrainingStreak(completedSessions: any[]): {
-  currentStreak: number;
-  longestStreak: number;
-  totalDays: number;
-  recentDays: { date: string; hasActivity: boolean; sessions: number }[];
-} {
-  if (completedSessions.length === 0) {
-    return {
-      currentStreak: 0,
-      longestStreak: 0,
-      totalDays: 0,
-      recentDays: []
-    };
-  }
-
-  // Group sessions by date
-  const sessionsByDate = new Map<string, number>();
-  completedSessions.forEach(session => {
-    const date = new Date(session.createdAt).toDateString();
-    sessionsByDate.set(date, (sessionsByDate.get(date) || 0) + 1);
-  });
-
-  const uniqueDates = Array.from(sessionsByDate.keys()).sort();
-  const totalDays = uniqueDates.length;
-
-  // Calculate current streak (consecutive days from today)
-  let currentStreak = 0;
-  const today = new Date().toDateString();
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
-  
-  // Start from today or yesterday if no activity today
-  let checkDate = sessionsByDate.has(today) ? today : yesterday;
-  let currentDate = new Date(checkDate);
-  
-  while (sessionsByDate.has(currentDate.toDateString())) {
-    currentStreak++;
-    currentDate.setDate(currentDate.getDate() - 1);
-  }
-
-  // Calculate longest streak
-  let longestStreak = 0;
-  let tempStreak = 0;
-  let prevDate: Date | null = null;
-
-  uniqueDates.forEach(dateStr => {
-    const date = new Date(dateStr);
-    if (prevDate && Math.abs(date.getTime() - prevDate.getTime()) <= 25 * 60 * 60 * 1000) {
-      tempStreak++;
-    } else {
-      tempStreak = 1;
-    }
-    longestStreak = Math.max(longestStreak, tempStreak);
-    prevDate = date;
-  });
-
-  // Generate recent 7 days data
-  const recentDays = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
-    const dateStr = date.toDateString();
-    recentDays.push({
-      date: dateStr,
-      hasActivity: sessionsByDate.has(dateStr),
-      sessions: sessionsByDate.get(dateStr) || 0
-    });
-  }
-
-  return {
-    currentStreak,
-    longestStreak,
-    totalDays,
-    recentDays
-  };
-}
 
 // Generate AI coaching feedback
 async function generateAICoachingFeedback(sessionData: {
@@ -244,38 +169,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
-      // Fetch training records from BOTH systems
-      // System 1: Skills Library (training_sessions table)
-      const skillsLibrarySessions = await storage.getUserTrainingSessions(userId);
-      const completedSkillsSessions = skillsLibrarySessions.filter(s => s.completed);
-
-      // System 2: 90-Day Challenge (ninety_day_training_records table)
-      const ninetyDaySessions = await db!
-        .select({
-          id: ninetyDayTrainingRecords.id,
-          userId: ninetyDayTrainingRecords.userId,
-          dayNumber: ninetyDayTrainingRecords.dayNumber,
-          completedAt: ninetyDayTrainingRecords.completedAt,
-        })
-        .from(ninetyDayTrainingRecords)
-        .where(eq(ninetyDayTrainingRecords.userId, userId));
-
-      // Merge both systems into unified format for streak calculation
-      const allCompletedSessions = [
-        // Skills Library sessions
-        ...completedSkillsSessions.map(s => ({
-          createdAt: s.createdAt,
-          source: 'skills_library' as const
-        })),
-        // 90-Day Challenge sessions (use completedAt as the date)
-        ...ninetyDaySessions.map(s => ({
-          createdAt: s.completedAt,
-          source: 'ninety_day_challenge' as const
-        }))
-      ];
-
-      // Calculate streak data from merged sessions
-      const streakData = calculateTrainingStreak(allCompletedSessions);
+      // Use unified stats service for consistent streak calculation
+      // This merges Skills Library + 90-Day Challenge automatically
+      const streakData = await getUserStreakData(userId);
 
       res.json(streakData);
     } catch (error) {
@@ -890,6 +786,15 @@ export async function registerRoutes(app: Express): Promise<void> {
           
           // Check and unlock achievements after updating user stats
           await storage.checkAndUnlockAchievements(validatedData.userId);
+
+          // Update unified training stats (streak, totalDays) by merging Skills Library + 90-Day Challenge
+          try {
+            await updateUserStats(validatedData.userId);
+            console.log('📊 Unified training stats updated (streak synced)');
+          } catch (error) {
+            console.error('Failed to update unified training stats:', error);
+            // Don't fail the whole request if stats update fails
+          }
 
           // Update daily goals progress
           try {
@@ -2847,6 +2752,15 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Process training and update ability scores
       const result = await processTrainingRecord(submission);
+
+      // Update unified training stats (streak, totalDays) by merging Skills Library + 90-Day Challenge
+      try {
+        await updateUserStats(userId);
+        console.log('📊 Unified training stats updated (streak synced)');
+      } catch (error) {
+        console.error('Failed to update unified training stats:', error);
+        // Don't fail the whole request if stats update fails
+      }
 
       res.json({
         success: true,
