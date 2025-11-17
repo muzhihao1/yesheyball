@@ -68,6 +68,7 @@ export const DIFFICULTY_MULTIPLIERS = {
 
 /**
  * Clearance score weights (五维能力加权)
+ * DEPRECATED: Changed to simple sum (2025-01-17)
  * Total: 100%
  */
 export const CLEARANCE_WEIGHTS = {
@@ -120,17 +121,21 @@ export function calculateSkillScore(
 
 /**
  * Calculate clearance score (清台能力总分)
- * Formula: Weighted average of 5 dimensions
+ * Formula: Simple sum of 5 dimensions (修改于 2025-01-17)
+ *
+ * 注意：从加权平均改为简单求和
+ * - 旧公式：加权平均（最大100分）
+ * - 新公式：简单求和（最大500分）
  */
 export function calculateClearanceScore(scores: AbilityScores): number {
-  const weightedSum =
-    scores.accuracy_score * CLEARANCE_WEIGHTS.accuracy +
-    scores.spin_score * CLEARANCE_WEIGHTS.spin +
-    scores.positioning_score * CLEARANCE_WEIGHTS.positioning +
-    scores.power_score * CLEARANCE_WEIGHTS.power +
-    scores.strategy_score * CLEARANCE_WEIGHTS.strategy;
+  const simpleSum =
+    scores.accuracy_score +
+    scores.spin_score +
+    scores.positioning_score +
+    scores.power_score +
+    scores.strategy_score;
 
-  return Math.round(weightedSum);
+  return Math.round(simpleSum);
 }
 
 /**
