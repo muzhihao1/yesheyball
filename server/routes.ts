@@ -251,7 +251,12 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // System 2: 90-Day Challenge (ninety_day_training_records table)
       const ninetyDaySessions = await db!
-        .select()
+        .select({
+          id: ninetyDayTrainingRecords.id,
+          userId: ninetyDayTrainingRecords.userId,
+          dayNumber: ninetyDayTrainingRecords.dayNumber,
+          completedAt: ninetyDayTrainingRecords.completedAt,
+        })
         .from(ninetyDayTrainingRecords)
         .where(eq(ninetyDayTrainingRecords.userId, userId));
 

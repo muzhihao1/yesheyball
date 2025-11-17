@@ -24,8 +24,8 @@ export default function Header() {
                 <div className="w-6 h-6 bg-white rounded-full"></div>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-green-700">台球大师之路</h1>
-                <p className="text-sm text-gray-600">中式八球训练系统</p>
+                <h1 className="text-2xl font-bold text-green-700">三个月一杆清台</h1>
+                <p className="text-sm text-gray-600">台球训练系统</p>
               </div>
             </div>
             <div className="flex items-center space-x-6">
@@ -65,8 +65,8 @@ export default function Header() {
               </div>
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-2xl font-bold text-green-700 truncate">中八大师之路</h1>
-              <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">中式八球训练系统</p>
+              <h1 className="text-lg sm:text-2xl font-bold text-green-700 truncate">三个月一杆清台</h1>
+              <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">台球训练系统</p>
             </div>
           </div>
           
