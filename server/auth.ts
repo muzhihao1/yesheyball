@@ -460,48 +460,60 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return next();
   }
 
-  // Try JWT token first (for serverless/stateless auth)
+  // 🔒 Pure JWT authentication (stateless, serverless-compatible)
   const authHeader = req.headers.authorization;
-  if (authHeader?.startsWith('Bearer ')) {
-    try {
-      const token = authHeader.substring(7);
-      const { supabaseAdmin, hasSupabaseAdmin } = await import("./supabaseAdmin.js");
-
-      if (hasSupabaseAdmin()) {
-        // Verify JWT token with Supabase
-        const { data: { user }, error } = await supabaseAdmin!.auth.getUser(token);
-
-        if (user && !error) {
-          // Get user from database
-          const dbUser = await storage.getUserByEmail(user.email!);
-          if (dbUser) {
-            // Create session user object and attach to request
-            const sessionUser = buildSessionUser(dbUser);
-            req.user = sessionUser as any;
-            return next();
-          }
-        }
-      }
-    } catch (error) {
-      console.error('JWT verification failed:', error);
-    }
-  }
-
-  // Fall back to session-based auth
-  const sessionUser = req.session?.user;
-  if (!sessionUser) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  if (sessionUser.expires_at <= nowSeconds) {
-    req.session.destroy(() => {
-      res.status(401).json({ message: "Session expired" });
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({
+      message: "Unauthorized - No token provided",
+      hint: "Please login again to refresh your session"
     });
-    return;
   }
 
-  next();
+  try {
+    const token = authHeader.substring(7);
+    const { supabaseAdmin, hasSupabaseAdmin } = await import("./supabaseAdmin.js");
+
+    if (!hasSupabaseAdmin()) {
+      console.error('⚠️ Supabase Admin not configured - cannot verify JWT');
+      return res.status(500).json({
+        message: "Authentication service unavailable",
+        hint: "Server configuration error - please contact support"
+      });
+    }
+
+    // Verify JWT token with Supabase
+    const { data: { user }, error } = await supabaseAdmin!.auth.getUser(token);
+
+    if (error || !user) {
+      console.log('❌ JWT verification failed:', error?.message || 'No user returned');
+      return res.status(401).json({
+        message: "Unauthorized - Invalid or expired token",
+        hint: "Please login again to refresh your session"
+      });
+    }
+
+    // Get user from database
+    const dbUser = await storage.getUserByEmail(user.email!);
+    if (!dbUser) {
+      console.error(`⚠️ JWT valid but user not found in database: ${user.email}`);
+      return res.status(401).json({
+        message: "User account not found",
+        hint: "Please contact support if you believe this is an error"
+      });
+    }
+
+    // Create session user object and attach to request
+    const sessionUser = buildSessionUser(dbUser);
+    req.user = sessionUser as any;
+    return next();
+
+  } catch (error) {
+    console.error('❌ JWT authentication error:', error);
+    return res.status(401).json({
+      message: "Authentication failed",
+      hint: "Please login again to refresh your session"
+    });
+  }
 };
 
 export { authDisabled };
