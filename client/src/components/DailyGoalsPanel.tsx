@@ -99,6 +99,7 @@ interface GoalItemProps {
     currentValue: number;
     isCompleted: boolean;
     template: {
+      type: string;
       description: string;
       difficulty: string;
       rewardXp: number;
@@ -124,6 +125,27 @@ function GoalItem({ goal, index }: GoalItemProps) {
     MEDIUM: "中等",
     HARD: "困难",
   };
+
+  /**
+   * Get unit text based on goal type
+   * - TOTAL_DURATION: 分钟
+   * - SESSION_COUNT: 次
+   * - MIN_RATING: 星
+   */
+  const getUnitText = (type: string): string => {
+    switch (type) {
+      case "TOTAL_DURATION":
+        return "分钟";
+      case "SESSION_COUNT":
+        return "次";
+      case "MIN_RATING":
+        return "星";
+      default:
+        return "";
+    }
+  };
+
+  const unit = getUnitText(goal.template.type);
 
   return (
     <motion.div
@@ -184,7 +206,7 @@ function GoalItem({ goal, index }: GoalItemProps) {
               </div>
               <div className="mt-1 flex items-center justify-between text-xs">
                 <span className="text-gray-600">
-                  {goal.currentValue} / {goal.targetValue}
+                  {goal.currentValue}/{goal.targetValue}{unit}
                 </span>
                 <span className="text-gray-500">{Math.round(progress)}%</span>
               </div>
