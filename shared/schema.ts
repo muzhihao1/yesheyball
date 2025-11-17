@@ -43,12 +43,14 @@ export const users = pgTable("users", {
   currentDay: integer("current_day").notNull().default(1), // Current training day in the system program (1-30)
 
   // Ability Score System (5-dimension scoring for 90-day challenge)
+  // 五维能力评分系统：每个维度独立计分0-100，清台能力总分为五维求和0-500
+  // 计算公式 (server/abilityScoreEngine.ts:130): clearanceScore = accuracy + spin + positioning + power + strategy
   accuracyScore: integer("accuracy_score").notNull().default(0), // 准度分 (0-100)
   spinScore: integer("spin_score").notNull().default(0), // 杆法分 (0-100)
   positioningScore: integer("positioning_score").notNull().default(0), // 走位分 (0-100)
   powerScore: integer("power_score").notNull().default(0), // 发力分 (0-100)
   strategyScore: integer("strategy_score").notNull().default(0), // 策略分 (0-100)
-  clearanceScore: integer("clearance_score").notNull().default(0), // 清台能力总分 (0-100)
+  clearanceScore: integer("clearance_score").notNull().default(0), // 清台能力总分 (0-500, 五维简单求和)
 
   // Raw data for ability score calculation
   accuracyTotalShots: integer("accuracy_total_shots").notNull().default(0),
