@@ -84,6 +84,16 @@ export default function AbilityRadarChart({ scores, isLoading, className }: Abil
     return '#ef4444'; // Red - 需要努力
   };
 
+  /**
+   * Get color for clearance score (0-500 scale)
+   */
+  const getClearanceScoreColor = (score: number) => {
+    if (score >= 400) return '#10b981'; // Green - 80% of 500
+    if (score >= 300) return '#3b82f6'; // Blue - 60% of 500
+    if (score >= 200) return '#f59e0b'; // Orange - 40% of 500
+    return '#ef4444'; // Red - below 40%
+  };
+
   const scoreColor = getScoreColor(avgScore);
 
   // Custom tooltip
@@ -125,11 +135,11 @@ export default function AbilityRadarChart({ scores, isLoading, className }: Abil
             initial={{ scale: 1.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="font-bold text-2xl ml-2"
-            style={{ color: getScoreColor(currentScores.clearance) }}
+            style={{ color: getClearanceScoreColor(currentScores.clearance) }}
           >
             {currentScores.clearance}
           </motion.span>
-          <span className="text-muted-foreground"> / 100</span>
+          <span className="text-muted-foreground"> / 500</span>
         </div>
       </CardHeader>
       <CardContent className="h-[400px]">

@@ -284,7 +284,7 @@ export default function NinetyDayChallenge() {
               <div className="text-3xl font-bold text-blue-600">
                 {abilityScores?.clearance || 0}
               </div>
-              <div className="text-xs text-muted-foreground">分</div>
+              <div className="text-xs text-muted-foreground">分 / 500</div>
             </div>
 
             {/* 当前天数 */}

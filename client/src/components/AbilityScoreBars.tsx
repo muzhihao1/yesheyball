@@ -80,6 +80,18 @@ export default function AbilityScoreBars({ scores, isLoading }: AbilityScoreBars
   };
 
   /**
+   * Get text color class for clearance score (0-500 scale)
+   * @param score - Clearance score value (0-500)
+   * @returns Tailwind CSS text color class
+   */
+  const getClearanceScoreTextColor = (score: number): string => {
+    if (score >= 400) return 'text-green-600';  // 80% of 500
+    if (score >= 300) return 'text-blue-600';   // 60% of 500
+    if (score >= 200) return 'text-orange-600'; // 40% of 500
+    return 'text-red-600';
+  };
+
+  /**
    * Get quality label based on score level
    * @param score - Score value (0-100)
    * @returns Quality label text
@@ -98,9 +110,10 @@ export default function AbilityScoreBars({ scores, isLoading }: AbilityScoreBars
           <span>能力详情</span>
           <div className="text-right">
             <div className="text-sm text-muted-foreground">清台能力总分</div>
-            <div className={`text-3xl font-bold ${getScoreTextColor(currentScores.clearance)}`}>
+            <div className={`text-3xl font-bold ${getClearanceScoreTextColor(currentScores.clearance)}`}>
               {currentScores.clearance}
             </div>
+            <div className="text-xs text-muted-foreground mt-1">满分: 500</div>
           </div>
         </CardTitle>
       </CardHeader>
