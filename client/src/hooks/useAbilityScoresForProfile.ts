@@ -1,8 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
 
 /**
+ * @deprecated This file is deprecated.
+ *
+ * USE INSTEAD: @/hooks/useAbilityScores
+ *
+ * This hook and interface are deprecated in favor of the unified ability scores system.
+ * The new system uses camelCase field names and fetches from a single source of truth.
+ *
+ * Migration guide:
+ * - Replace: import { useAbilityScoresForProfile } from '@/hooks/useAbilityScoresForProfile'
+ * - With: import { useAbilityScores } from '@/hooks/useAbilityScores'
+ * - Change: const { data } = useAbilityScoresForProfile(userId)
+ * - To: const { data } = useAbilityScores()  // No userId parameter needed
+ * - Update field names: accuracy_score → accuracy, spin_score → spin, etc.
+ */
+
+/**
  * Ability Scores Interface
  * Represents the 5-dimensional ability scoring system for billiards training
+ * @deprecated Use AbilityScores from '@/hooks/useAbilityScores' instead
  */
 export interface AbilityScores {
   accuracy_score: number;      // 准度分 (0-100)

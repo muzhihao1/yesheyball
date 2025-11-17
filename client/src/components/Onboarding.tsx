@@ -29,7 +29,7 @@ interface OnboardingStep {
 const steps: OnboardingStep[] = [
   {
     icon: '👋',
-    title: '欢迎来到耶氏台球！',
+    title: '欢迎来到三个月一杆清台！',
     description: '让我们用30秒了解如何开始你的台球大师之路',
     tip: '您可以随时点击右上角的 ✕ 跳过引导'
   },

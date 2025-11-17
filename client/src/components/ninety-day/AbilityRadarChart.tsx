@@ -1,7 +1,7 @@
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import type { AbilityScores } from '@/hooks/useNinetyDayTraining';
+import type { AbilityScores } from '@/hooks/useAbilityScores';
 
 /**
  * Ability Radar Chart Component
@@ -29,12 +29,12 @@ interface AbilityRadarChartProps {
 export default function AbilityRadarChart({ scores, isLoading, className }: AbilityRadarChartProps) {
   // Default scores if none provided
   const defaultScores: AbilityScores = {
-    accuracy_score: 0,
-    spin_score: 0,
-    positioning_score: 0,
-    power_score: 0,
-    strategy_score: 0,
-    clearance_score: 0,
+    accuracy: 0,
+    spin: 0,
+    positioning: 0,
+    power: 0,
+    strategy: 0,
+    clearance: 0,
   };
 
   const currentScores = scores || defaultScores;
@@ -43,38 +43,38 @@ export default function AbilityRadarChart({ scores, isLoading, className }: Abil
   const data = [
     {
       subject: '准度',
-      value: currentScores.accuracy_score,
+      value: currentScores.accuracy,
       fullMark: 100,
     },
     {
       subject: '杆法',
-      value: currentScores.spin_score,
+      value: currentScores.spin,
       fullMark: 100,
     },
     {
       subject: '走位',
-      value: currentScores.positioning_score,
+      value: currentScores.positioning,
       fullMark: 100,
     },
     {
       subject: '发力',
-      value: currentScores.power_score,
+      value: currentScores.power,
       fullMark: 100,
     },
     {
       subject: '策略',
-      value: currentScores.strategy_score,
+      value: currentScores.strategy,
       fullMark: 100,
     },
   ];
 
   // Get color based on average score
   const avgScore = (
-    currentScores.accuracy_score +
-    currentScores.spin_score +
-    currentScores.positioning_score +
-    currentScores.power_score +
-    currentScores.strategy_score
+    currentScores.accuracy +
+    currentScores.spin +
+    currentScores.positioning +
+    currentScores.power +
+    currentScores.strategy
   ) / 5;
 
   const getScoreColor = (score: number) => {
@@ -121,13 +121,13 @@ export default function AbilityRadarChart({ scores, isLoading, className }: Abil
         <div className="text-center text-sm text-muted-foreground mt-2">
           清台能力总分：
           <motion.span
-            key={currentScores.clearance_score}
+            key={currentScores.clearance}
             initial={{ scale: 1.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="font-bold text-2xl ml-2"
-            style={{ color: getScoreColor(currentScores.clearance_score) }}
+            style={{ color: getScoreColor(currentScores.clearance) }}
           >
-            {currentScores.clearance_score}
+            {currentScores.clearance}
           </motion.span>
           <span className="text-muted-foreground"> / 100</span>
         </div>

@@ -97,7 +97,7 @@ function TenCoreSkillsView() {
             十大招系统即将上线
           </h2>
           <p className="text-lg text-gray-600 max-w-md mx-auto">
-            耶氏台球十大招技能系统正在准备中，敬请期待！
+            三个月一杆清台十大招技能系统正在准备中，敬请期待！
           </p>
         </div>
       </div>

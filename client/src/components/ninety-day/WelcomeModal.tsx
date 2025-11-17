@@ -146,7 +146,7 @@ export default function WelcomeModal({ open, onOpenChange, onStart, isStarting }
               "成功的秘诀在于持之以恒的努力"
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              - 耶氏台球学院
+              - 三个月一杆清台
             </p>
           </motion.div>
 

@@ -423,11 +423,19 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 /**
+ * @deprecated This function is deprecated. Use useAbilityScores from '@/hooks/useAbilityScores' instead.
+ *
  * Fetch user's current ability scores
  * @param userId - User ID
  * @returns Query result with ability scores
+ *
+ * Migration: Replace this with the unified useAbilityScores hook:
+ * - Old: const { data } = useAbilityScores(userId)
+ * - New: import { useAbilityScores } from '@/hooks/useAbilityScores'
+ * - New: const { data } = useAbilityScores()  // No userId needed
  */
 export function useAbilityScores(userId: string) {
+  console.warn('⚠️  DEPRECATED: useAbilityScores from useNinetyDayTraining.ts is deprecated. Use @/hooks/useAbilityScores instead.');
   return useQuery<AbilityScores>({
     queryKey: ['/api/users/ability-scores', userId],
     queryFn: async () => {

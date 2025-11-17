@@ -57,7 +57,7 @@ function SkillsOverview({ skills, userProgress, onSkillClick }: SkillsOverviewPr
       {/* Page Header */}
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-800 mb-3">
-          耶氏台球十大招
+          三个月一杆清台十大招
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           掌握十大核心技能，从基本功到战略思维，系统化提升台球水平

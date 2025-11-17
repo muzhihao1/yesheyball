@@ -9,8 +9,9 @@ import StatsPanel from '@/components/ninety-day/StatsPanel';
 import WelcomeModal from '@/components/ninety-day/WelcomeModal';
 import TrainingModal from '@/components/ninety-day/TrainingModal';
 import ScoreFeedbackModal from '@/components/ninety-day/ScoreFeedbackModal';
+import { AiFeedbackModal } from '@/components/AiFeedbackModal';
+import { useAbilityScores } from '@/hooks/useAbilityScores';
 import {
-  useAbilityScores,
   useNinetyDayChallengeProgress,
   useDayCurriculum,
   useTrainingSubmission,
@@ -47,8 +48,14 @@ export default function NinetyDayChallenge() {
   const [lastSubmissionResult, setLastSubmissionResult] = useState<TrainingSubmissionResponse | null>(null);
   const [isStartingChallenge, setIsStartingChallenge] = useState(false);
 
-  // Fetch user data
-  const { data: abilityScores, isLoading: scoresLoading } = useAbilityScores(user?.id || '');
+  // AI Feedback state
+  const [showAiFeedbackModal, setShowAiFeedbackModal] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<string>("");
+  const [lastTrainingNotes, setLastTrainingNotes] = useState<string>("");
+  const [lastTrainingDuration, setLastTrainingDuration] = useState<number>(0);
+
+  // Fetch user data (unified ability scores hook)
+  const { data: abilityScores, isLoading: scoresLoading } = useAbilityScores();
   const { data: challengeProgress, isLoading: progressLoading, refetch: refetchProgress } = useNinetyDayChallengeProgress(
     user?.id || ''
   );
@@ -159,6 +166,10 @@ export default function NinetyDayChallenge() {
       // Store result for feedback modal
       setLastSubmissionResult(result);
 
+      // Store training data for AI feedback
+      setLastTrainingNotes(payload.notes || "");
+      setLastTrainingDuration(payload.duration_minutes);
+
       // Close training modal
       setShowTrainingModal(false);
 
@@ -172,10 +183,45 @@ export default function NinetyDayChallenge() {
 
   /**
    * Handle feedback modal close
-   * Refreshes all data after training completion
+   * Generates AI feedback and shows AI feedback modal
    */
-  const handleFeedbackClose = () => {
+  const handleFeedbackClose = async () => {
     setShowFeedbackModal(false);
+
+    // Generate AI feedback in background
+    try {
+      // Calculate rating from score changes (1-5 stars)
+      const scoreChanges = lastSubmissionResult?.score_changes;
+      const totalChange = scoreChanges
+        ? Object.values(scoreChanges).reduce((sum, val) => sum + (val || 0), 0)
+        : 0;
+
+      // Map score change to rating: 0-5 → 1, 6-10 → 2, 11-15 → 3, 16-20 → 4, 21+ → 5
+      const rating = Math.min(Math.max(Math.ceil(totalChange / 5), 1), 5);
+
+      const response = await fetch("/api/coaching-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          duration: lastTrainingDuration,
+          notes: lastTrainingNotes,
+          rating: rating,
+          sessionType: currentCurriculum?.curriculum?.title || "90天挑战训练",
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiFeedback(data.feedback);
+        setShowAiFeedbackModal(true);
+      }
+    } catch (error) {
+      console.error("Failed to generate AI feedback:", error);
+      // Continue even if AI feedback fails - don't block user
+    }
+
+    // Clean up
     setLastSubmissionResult(null);
   };
 
@@ -236,7 +282,7 @@ export default function NinetyDayChallenge() {
             <div className="text-center">
               <div className="text-sm text-muted-foreground mb-1">清台能力</div>
               <div className="text-3xl font-bold text-blue-600">
-                {abilityScores?.clearance_score || 0}
+                {abilityScores?.clearance || 0}
               </div>
               <div className="text-xs text-muted-foreground">分</div>
             </div>
@@ -413,6 +459,28 @@ export default function NinetyDayChallenge() {
         scoreChanges={lastSubmissionResult?.score_changes || null}
         newScores={lastSubmissionResult?.new_scores || null}
       />
+
+      {/* AI Feedback Modal - Show personalized coaching feedback */}
+      {showAiFeedbackModal && (
+        <AiFeedbackModal
+          onClose={() => {
+            setShowAiFeedbackModal(false);
+            setAiFeedback("");
+          }}
+          feedback={aiFeedback}
+          rating={Math.min(
+            Math.max(
+              Math.ceil(
+                (lastSubmissionResult?.score_changes
+                  ? Object.values(lastSubmissionResult.score_changes).reduce((sum, val) => sum + (val || 0), 0)
+                  : 0) / 5
+              ),
+              1
+            ),
+            5
+          )}
+        />
+      )}
     </div>
   );
 }

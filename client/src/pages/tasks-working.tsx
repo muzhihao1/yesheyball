@@ -34,7 +34,7 @@ export default function TasksWorking() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const mainProgram = programs.find(p => p.name === "耶氏台球学院系统教学");
+  const mainProgram = programs.find(p => p.name === "三个月一杆清台系统教学");
   
   // Get training days
   const { data: trainingDays = [] } = useQuery<TrainingDay[]>({

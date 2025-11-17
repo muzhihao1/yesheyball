@@ -35,7 +35,7 @@ export default function TasksFixed() {
     retry: 1,
   });
 
-  const mainProgram = programs?.find(p => p?.name === "耶氏台球学院系统教学");
+  const mainProgram = programs?.find(p => p?.name === "三个月一杆清台系统教学");
   
   // Get training days with error handling
   const { data: trainingDays = [], isLoading: daysLoading } = useQuery<TrainingDay[]>({

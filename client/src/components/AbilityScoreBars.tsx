@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import type { AbilityScores } from '@/hooks/useAbilityScoresForProfile';
+import type { AbilityScores } from '@/hooks/useAbilityScores';
 
 /**
  * AbilityScoreBars Component
@@ -26,11 +26,11 @@ interface AbilityScoreBarsProps {
 }
 
 const DIMENSIONS = [
-  { key: 'accuracy_score', label: '准度分', icon: '🎯', description: '击球精准度' },
-  { key: 'spin_score', label: '杆法分', icon: '🌀', description: '旋转控制能力' },
-  { key: 'positioning_score', label: '走位分', icon: '🎱', description: '母球控制能力' },
-  { key: 'power_score', label: '发力分', icon: '💪', description: '力量控制能力' },
-  { key: 'strategy_score', label: '策略分', icon: '🧠', description: '战术思考能力' },
+  { key: 'accuracy', label: '准度分', icon: '🎯', description: '击球精准度' },
+  { key: 'spin', label: '杆法分', icon: '🌀', description: '旋转控制能力' },
+  { key: 'positioning', label: '走位分', icon: '🎱', description: '母球控制能力' },
+  { key: 'power', label: '发力分', icon: '💪', description: '力量控制能力' },
+  { key: 'strategy', label: '策略分', icon: '🧠', description: '战术思考能力' },
 ] as const;
 
 export default function AbilityScoreBars({ scores, isLoading }: AbilityScoreBarsProps) {
@@ -45,12 +45,12 @@ export default function AbilityScoreBars({ scores, isLoading }: AbilityScoreBars
   }
 
   const defaultScores: AbilityScores = {
-    accuracy_score: 0,
-    spin_score: 0,
-    positioning_score: 0,
-    power_score: 0,
-    strategy_score: 0,
-    clearance_score: 0,
+    accuracy: 0,
+    spin: 0,
+    positioning: 0,
+    power: 0,
+    strategy: 0,
+    clearance: 0,
   };
 
   const currentScores = scores || defaultScores;
@@ -98,8 +98,8 @@ export default function AbilityScoreBars({ scores, isLoading }: AbilityScoreBars
           <span>能力详情</span>
           <div className="text-right">
             <div className="text-sm text-muted-foreground">清台能力总分</div>
-            <div className={`text-3xl font-bold ${getScoreTextColor(currentScores.clearance_score)}`}>
-              {currentScores.clearance_score}
+            <div className={`text-3xl font-bold ${getScoreTextColor(currentScores.clearance)}`}>
+              {currentScores.clearance}
             </div>
           </div>
         </CardTitle>

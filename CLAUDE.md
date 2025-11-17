@@ -154,7 +154,7 @@ import { users } from "@shared/schema";
 - Drives experience calculation and streak logic
 
 ### trainingPrograms
-- 30-day structured curriculum (耶氏台球学院 - Ye's Billiards Academy system)
+- 30-day structured curriculum (三个月一杆清台训练系统)
 - 8 skill levels from beginner to master
 - Contains: title, description, videoUrl, requirements, ballPatterns
 
@@ -321,7 +321,7 @@ queryFn: async () => {
 
 ## Growth Path System
 
-The application uses an 8-level growth path system (耶氏台球成长路径):
+The application uses an 8-level growth path system (三个月一杆清台成长路径):
 
 1. **Level 1-2**: Basic fundamentals (stance, grip, aim)
 2. **Level 3-4**: Ball control and positioning
@@ -332,6 +332,80 @@ The application uses an 8-level growth path system (耶氏台球成长路径):
 - Users must complete exercises in order within each level
 - Unlocking next level requires completing all exercises in current level
 - Progress tracked via `currentLevel`, `currentExercise`, and `completedExercises`
+
+## Data Source Unification (Updated 2025-11-17)
+
+**Critical**: The application uses a unified data architecture to ensure consistency across all pages.
+
+### Ability Scores System
+
+**Single Source of Truth**: All ability scores must be fetched from `/api/v1/dashboard/summary`
+
+**Unified Hook** (`client/src/hooks/useAbilityScores.ts`):
+```typescript
+import { useAbilityScores } from '@/hooks/useAbilityScores';
+
+// Correct: Use unified hook
+const { data: scores } = useAbilityScores();
+console.log(scores?.accuracy, scores?.clearance); // camelCase fields
+```
+
+**Deprecated Patterns** (Do NOT use):
+```typescript
+// ❌ WRONG: Old hook with userId parameter
+import { useAbilityScoresForProfile } from '@/hooks/useAbilityScoresForProfile';
+const { data } = useAbilityScoresForProfile(userId); // DEPRECATED
+
+// ❌ WRONG: snake_case field names
+scores?.accuracy_score // DEPRECATED, use scores?.accuracy
+
+// ❌ WRONG: Deprecated API endpoint
+fetch(`/api/users/${userId}/ability-scores`) // DEPRECATED
+```
+
+**Field Naming Convention**: All ability scores use **camelCase**:
+- `accuracy` (准度分)
+- `spin` (杆法分)
+- `positioning` (走位分)
+- `power` (发力分)
+- `strategy` (策略分)
+- `clearance` (清台能力总分)
+
+### Training Streak System
+
+**Unified Calculation**: Streak endpoint (`/api/user/streak`) automatically merges data from:
+1. Skills Library system (`training_sessions` table)
+2. 90-Day Challenge system (`ninety_day_training_records` table)
+
+**Implementation** (`server/routes.ts:233`):
+- Fetches from both training systems
+- Merges into unified session list
+- Calculates current/longest streak
+- Returns recent 7-day activity
+
+### Best Practices
+
+1. **Single Hook Per Data Type**: Use only one hook for each data type (e.g., `useAbilityScores()`)
+2. **No Fallback Logic**: Avoid `data1 || data2` patterns that cause race conditions
+3. **Unified Cache Keys**: Related data shares same queryKey prefix
+4. **camelCase Fields**: All API responses use camelCase for consistency
+5. **Deprecation Warnings**: Check console for deprecated API warnings
+
+### Migration from Legacy Code
+
+If you encounter deprecated code:
+
+```typescript
+// Before (DEPRECATED)
+import { useAbilityScoresForProfile } from '@/hooks/useAbilityScoresForProfile';
+const { data: scores } = useAbilityScoresForProfile(user?.id);
+const accuracyScore = scores?.accuracy_score;
+
+// After (CORRECT)
+import { useAbilityScores } from '@/hooks/useAbilityScores';
+const { data: scores } = useAbilityScores();
+const accuracyScore = scores?.accuracy;
+```
 
 ## Testing Checklist
 
@@ -346,8 +420,11 @@ Since automated tests are minimal, manually verify:
   - Check experience/level update
   - View streak calculation
   - Growth path progression
+  - **Ability scores consistent across all pages**
+  - **90-day challenge training counts toward streak**
 - [ ] Server logs show no errors on key operations
 - [ ] Database schema pushes without conflicts
+- [ ] **No deprecated API warnings in console**
 
 ## Common Gotchas
 
@@ -451,6 +528,15 @@ The codebase contains several legacy page variants that should generally be avoi
 
 These were used during development/debugging. Use `tasks.tsx` for the canonical tasks page implementation.
 
-## Branding
+## Branding (Updated 2025-11-17)
 
-The application is branded as "耶氏台球" (Ye's Billiards) throughout the UI. When adding new features or pages, maintain consistent branding in Chinese text.
+**Core Brand**: "三个月一杆清台" (Three Months to Clear the Table)
+
+The application is branded as "三个月一杆清台" throughout the UI. This is the primary and only brand name - there is no subtitle or secondary brand name.
+
+**Brand Guidelines**:
+- Use "三个月一杆清台" in all page titles, headers, and navigation
+- HTML title: `三个月一杆清台 - 台球训练系统`
+- Do NOT use "耶氏台球" or "Ye's Billiards" (deprecated branding)
+- When adding new features or pages, maintain consistent branding in Chinese text
+- SEO keywords: 台球训练, 台球教学, 90天挑战, 清台能力, 台球技巧

@@ -370,6 +370,25 @@ export async function processTrainingRecord(
       `
     );
 
+    // 9. Update challenge progress (auto-advance to next day)
+    // Only update if this is the current day being completed
+    const progressUpdate = await tx.execute(
+      rawSql`
+        UPDATE users
+        SET
+          challenge_current_day = LEAST(challenge_current_day + 1, 90),
+          challenge_completed_days = challenge_completed_days + 1
+        WHERE id = ${user_id}
+          AND challenge_current_day = ${day_number}
+        RETURNING challenge_current_day, challenge_completed_days
+      `
+    );
+
+    if (progressUpdate && progressUpdate.length > 0) {
+      const progress = progressUpdate[0] as Record<string, any>;
+      console.log(`✅ Updated challenge progress for user ${user_id}: Day ${day_number} completed → Now on Day ${progress.challenge_current_day} (Total completed: ${progress.challenge_completed_days})`);
+    }
+
     return {
       success: true,
       scoreChanges,

@@ -42,7 +42,7 @@ function ProgressHeader({
               <Trophy className="w-7 h-7 mr-2" />
               学习进度
             </h2>
-            <p className="text-green-100 text-sm">耶氏台球十大招</p>
+            <p className="text-green-100 text-sm">三个月一杆清台十大招</p>
           </div>
           <div className="text-right">
             <div className="text-4xl md:text-5xl font-bold">

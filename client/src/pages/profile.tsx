@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AchievementGrid } from "@/components/AchievementGrid";
 import { TrainingTrendChart } from "@/components/TrainingTrendChart";
 import { SkillRadarChart } from "@/components/SkillRadarChart";
-import { useAbilityScoresForProfile } from "@/hooks/useAbilityScoresForProfile";
+import { useAbilityScores } from "@/hooks/useAbilityScores";
 import AbilityRadarChart from "@/components/ninety-day/AbilityRadarChart";
 import AbilityScoreBars from "@/components/AbilityScoreBars";
 import { useDashboardSummary } from "@/hooks/useDashboardSummary";
@@ -32,21 +32,11 @@ import {
 export default function Profile() {
   const { user, isLoading } = useAuth();
 
-  // Fetch unified dashboard summary
+  // Fetch unified dashboard summary (for 90-day challenge, skills library, practice field)
   const { data: dashboardData, isLoading: isLoadingDashboard } = useDashboardSummary();
 
-  const { data: abilityScores, isLoading: isLoadingAbilityScores } =
-    useAbilityScoresForProfile(user?.id);
-
-  // Transform dashboard ability scores to match AbilityScores interface
-  const transformedAbilityScores = dashboardData?.abilityScores ? {
-    accuracy_score: dashboardData.abilityScores.accuracy,
-    spin_score: dashboardData.abilityScores.spin,
-    positioning_score: dashboardData.abilityScores.positioning,
-    power_score: dashboardData.abilityScores.power,
-    strategy_score: dashboardData.abilityScores.strategy,
-    clearance_score: dashboardData.abilityScores.clearance,
-  } : undefined;
+  // Fetch ability scores (single source of truth)
+  const { data: abilityScores, isLoading: isLoadingAbilityScores } = useAbilityScores();
 
   const { data: userStats } = useQuery({
     queryKey: ["/api/user/streak"],
@@ -214,16 +204,16 @@ export default function Profile() {
             {/* Left: Radar Chart - Hidden on mobile */}
             <div className="hidden lg:block">
               <AbilityRadarChart
-                scores={transformedAbilityScores || abilityScores}
-                isLoading={isLoadingDashboard || isLoadingAbilityScores}
+                scores={abilityScores}
+                isLoading={isLoadingAbilityScores}
               />
             </div>
 
             {/* Right: Detailed Score Bars - Full width on mobile */}
             <div className="lg:col-span-1">
               <AbilityScoreBars
-                scores={transformedAbilityScores || abilityScores}
-                isLoading={isLoadingDashboard || isLoadingAbilityScores}
+                scores={abilityScores}
+                isLoading={isLoadingAbilityScores}
               />
             </div>
           </div>

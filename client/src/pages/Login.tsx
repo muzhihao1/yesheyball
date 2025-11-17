@@ -113,7 +113,7 @@ export default function Login() {
             <div className="w-12 h-12 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center border border-white/20">
               <span className="text-2xl font-bold text-white">耶</span>
             </div>
-            <span className="text-white text-2xl font-bold">耶氏台球</span>
+            <span className="text-white text-2xl font-bold">三个月一杆清台</span>
           </div>
 
           {/* Main heading */}
@@ -166,13 +166,13 @@ export default function Login() {
               <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
                 <span className="text-xl font-bold text-white">耶</span>
               </div>
-              <span className="text-green-800 text-xl font-bold">耶氏台球</span>
+              <span className="text-green-800 text-xl font-bold">三个月一杆清台</span>
             </div>
           </div>
 
           <div className="space-y-2 text-center">
             <h1 className="text-3xl font-bold text-green-800">登录</h1>
-            <p className="text-gray-600">登录您的耶氏台球账号</p>
+            <p className="text-gray-600">登录您的三个月一杆清台账号</p>
           </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

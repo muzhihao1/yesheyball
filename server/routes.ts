@@ -4,7 +4,7 @@ import { db } from "./db.js";
 import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse, demoUserProfile } from "./auth.js";
 import { generateCoachingFeedback, generateDiaryInsights } from "./openai.js";
 import { upload, persistUploadedImage } from "./upload.js";
-import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema, trainingSkills, subSkills, trainingUnits, trainingLevels, userTrainingProgress, users, userSkillProgressV3, userNinetyDayProgress } from "../shared/schema.js";
+import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema, trainingSkills, subSkills, trainingUnits, trainingLevels, userTrainingProgress, users, userSkillProgressV3, userNinetyDayProgress, ninetyDayTrainingRecords } from "../shared/schema.js";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses.js";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer.js";
 import { adaptiveLearning } from "./adaptiveLearning.js";
@@ -244,11 +244,33 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
-      const sessions = await storage.getUserTrainingSessions(userId);
-      const completedSessions = sessions.filter(s => s.completed);
+      // Fetch training records from BOTH systems
+      // System 1: Skills Library (training_sessions table)
+      const skillsLibrarySessions = await storage.getUserTrainingSessions(userId);
+      const completedSkillsSessions = skillsLibrarySessions.filter(s => s.completed);
 
-      // Calculate streak data
-      const streakData = calculateTrainingStreak(completedSessions);
+      // System 2: 90-Day Challenge (ninety_day_training_records table)
+      const ninetyDaySessions = await db!
+        .select()
+        .from(ninetyDayTrainingRecords)
+        .where(eq(ninetyDayTrainingRecords.userId, userId));
+
+      // Merge both systems into unified format for streak calculation
+      const allCompletedSessions = [
+        // Skills Library sessions
+        ...completedSkillsSessions.map(s => ({
+          createdAt: s.createdAt,
+          source: 'skills_library' as const
+        })),
+        // 90-Day Challenge sessions (use completedAt as the date)
+        ...ninetyDaySessions.map(s => ({
+          createdAt: s.completedAt,
+          source: 'ninety_day_challenge' as const
+        }))
+      ];
+
+      // Calculate streak data from merged sessions
+      const streakData = calculateTrainingStreak(allCompletedSessions);
 
       res.json(streakData);
     } catch (error) {
@@ -2807,7 +2829,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           target_count: z.number().int().optional(),
           duration_minutes: z.number().optional(),
         }),
-        duration_minutes: z.number().min(1),
+        duration_minutes: z.number().min(0.1), // Allow minimum 0.1 minutes (6 seconds)
         notes: z.string().optional(),
       });
 
@@ -2844,10 +2866,17 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   /**
+   * @deprecated This endpoint is deprecated. Use GET /api/v1/dashboard/summary instead.
+   *
    * Get user's current ability scores
    * GET /api/users/:userId/ability-scores
+   *
+   * DEPRECATED: Use /api/v1/dashboard/summary which returns unified data including ability scores.
+   * This endpoint will be removed in a future version.
+   * Migration: Use the abilityScores field from /api/v1/dashboard/summary response.
    */
   app.get("/api/users/:userId/ability-scores", isAuthenticated, async (req, res) => {
+    console.warn('⚠️  DEPRECATED API called: GET /api/users/:userId/ability-scores - Use /api/v1/dashboard/summary instead');
     try {
       const requestingUserId = requireSessionUserId(req);
       const targetUserId = req.params.userId;

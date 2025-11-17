@@ -64,7 +64,7 @@ export default function Landing() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
-            耶氏台球学院
+            三个月一杆清台
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
             专业的中式八球训练平台，通过科学的训练体系和AI智能分析，帮助您快速提升球技水平
