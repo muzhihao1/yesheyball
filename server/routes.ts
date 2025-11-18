@@ -1407,61 +1407,6 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Get user skill levels for radar chart
-  app.get("/api/user/stats/skills", isAuthenticated, async (req, res) => {
-    try {
-      const userId = requireSessionUserId(req);
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      const trainingSessions = await storage.getUserTrainingSessions(userId);
-      const completedSessions = trainingSessions.filter((s: any) => s.completed);
-
-      // Calculate skill levels based on training data
-      // These are simplified calculations - you can make them more sophisticated
-      const totalSessions = completedSessions.length;
-      const avgRating = completedSessions.reduce((sum: any, s: any) => sum + (s.rating || 0), 0) / Math.max(totalSessions, 1);
-
-      // Base skills calculation on level, experience, and training history
-      const baseSkill = Math.min(20 + (user.level * 8), 100);
-      const experienceBonus = Math.min((user.exp / 100), 30);
-
-      const skills = [
-        {
-          name: '准度',
-          value: Math.min(Math.round(baseSkill + experienceBonus + (avgRating * 5)), 100),
-          fullMark: 100
-        },
-        {
-          name: '力度',
-          value: Math.min(Math.round(baseSkill + experienceBonus - 5), 100),
-          fullMark: 100
-        },
-        {
-          name: '走位',
-          value: Math.min(Math.round(baseSkill + (experienceBonus * 0.8)), 100),
-          fullMark: 100
-        },
-        {
-          name: '策略',
-          value: Math.min(Math.round(baseSkill + (experienceBonus * 0.9) + (totalSessions * 2)), 100),
-          fullMark: 100
-        },
-        {
-          name: '心态',
-          value: Math.min(Math.round(baseSkill + experienceBonus + (user.streak * 3)), 100),
-          fullMark: 100
-        }
-      ];
-
-      res.json(skills);
-    } catch (error) {
-      console.error("Skills data error:", error);
-      res.status(500).json({ message: "Failed to get skills data" });
-    }
-  });
 
   // Analyze single exercise image
   app.post("/api/analyze-exercise", async (req, res) => {

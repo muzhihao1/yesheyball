@@ -10,12 +10,12 @@
  * - Filled area for better visualization
  * - Polar grid and axes
  *
- * Skill dimensions:
+ * Skill dimensions (统一五维模型):
  * - 准度 (Accuracy)
- * - 力度 (Power)
+ * - 杆法 (Spin)
  * - 走位 (Positioning)
+ * - 发力 (Power)
  * - 策略 (Strategy)
- * - 心态 (Mentality)
  *
  * Data format:
  * - Array of { name: string, value: number, fullMark: number }

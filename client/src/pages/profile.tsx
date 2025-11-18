@@ -62,10 +62,14 @@ export default function Profile() {
     enabled: !!user,
   });
 
-  const { data: skillsData } = useQuery({
-    queryKey: ["/api/user/stats/skills"],
-    enabled: !!user,
-  });
+  // Transform ability scores to radar chart format (using unified hook from line 39)
+  const skillsData = abilityScores ? [
+    { name: '准度', value: abilityScores.accuracy, fullMark: 100 },
+    { name: '杆法', value: abilityScores.spin, fullMark: 100 },
+    { name: '走位', value: abilityScores.positioning, fullMark: 100 },
+    { name: '发力', value: abilityScores.power, fullMark: 100 },
+    { name: '策略', value: abilityScores.strategy, fullMark: 100 },
+  ] : [];
 
   if (isLoading) {
     return (
