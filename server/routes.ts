@@ -2785,40 +2785,6 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   /**
-   * @deprecated This endpoint is deprecated. Use GET /api/v1/dashboard/summary instead.
-   *
-   * Get user's current ability scores
-   * GET /api/users/:userId/ability-scores
-   *
-   * DEPRECATED: Use /api/v1/dashboard/summary which returns unified data including ability scores.
-   * This endpoint will be removed in a future version.
-   * Migration: Use the abilityScores field from /api/v1/dashboard/summary response.
-   */
-  app.get("/api/users/:userId/ability-scores", isAuthenticated, async (req, res) => {
-    console.warn('⚠️  DEPRECATED API called: GET /api/users/:userId/ability-scores - Use /api/v1/dashboard/summary instead');
-    try {
-      const requestingUserId = requireSessionUserId(req);
-      const targetUserId = req.params.userId;
-
-      // Users can only view their own scores (for now)
-      if (requestingUserId !== targetUserId && requestingUserId !== 'admin') {
-        return res.status(403).json({ message: "Forbidden" });
-      }
-
-      const scores = await getUserAbilityScores(targetUserId);
-
-      if (!scores) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      res.json({ scores });
-    } catch (error) {
-      console.error("Error fetching ability scores:", error);
-      res.status(500).json({ message: "Failed to fetch ability scores" });
-    }
-  });
-
-  /**
    * Get user's training history for 90-day challenge
    * GET /api/ninety-day-training/:userId?limit=30
    */

@@ -423,38 +423,6 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 /**
- * @deprecated This function is deprecated. Use useAbilityScores from '@/hooks/useAbilityScores' instead.
- *
- * Fetch user's current ability scores
- * @param userId - User ID
- * @returns Query result with ability scores
- *
- * Migration: Replace this with the unified useAbilityScores hook:
- * - Old: const { data } = useAbilityScores(userId)
- * - New: import { useAbilityScores } from '@/hooks/useAbilityScores'
- * - New: const { data } = useAbilityScores()  // No userId needed
- */
-export function useAbilityScores(userId: string) {
-  console.warn('⚠️  DEPRECATED: useAbilityScores from useNinetyDayTraining.ts is deprecated. Use @/hooks/useAbilityScores instead.');
-  return useQuery<AbilityScores>({
-    queryKey: ['/api/users/ability-scores', userId],
-    queryFn: async () => {
-      const response = await fetch(`/api/users/${userId}/ability-scores`, {
-        headers: getAuthHeaders(),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch ability scores');
-      }
-
-      return response.json();
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutes - refresh frequently for real-time updates
-  });
-}
-
-/**
  * Submit training record and calculate ability scores
  * @returns Mutation hook for training submission
  */
@@ -478,8 +446,8 @@ export function useTrainingSubmission() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Invalidate ability scores to trigger refetch
-      queryClient.invalidateQueries({ queryKey: ['/api/users/ability-scores'] });
+      // Invalidate unified ability scores from dashboard summary
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/dashboard/summary'] });
 
       // Invalidate training history
       queryClient.invalidateQueries({ queryKey: ['/api/ninety-day-training'] });

@@ -30,8 +30,28 @@ export const users = pgTable("users", {
   username: text("username").unique(), // Keep for backwards compatibility
   level: integer("level").notNull().default(1),
   exp: integer("exp").notNull().default(0),
+
+  // ================================================================================
+  // 训练统计字段 (Training Statistics Fields)
+  // ================================================================================
+  // 注意：训练统计涉及双系统数据合并（技能库 + 90天挑战）
+  // 统一更新入口：server/userStatsService.ts
+
   streak: integer("streak").notNull().default(0),
+  // 当前连续训练天数 (从今天/昨天往回推算)
+  // - 计算规则：遇到断开的日期立即清零
+  // - 更新时机：每次训练完成后自动调用 updateUserStats()
+  // - 相关文件：server/userStatsService.ts:calculateTrainingStreak()
+  // - 区别说明：与 daysSinceStart 不同，这是连续训练的天数，会因断训而清零
+
   totalDays: integer("total_days").notNull().default(0),
+  // 总训练天数（去重后的日期数）
+  // - 数据来源：技能库(training_sessions) + 90天挑战(ninety_day_training_records)
+  // - 更新时机：每次训练完成后自动调用 updateUserStats()
+  // - 计算方式：合并两个系统的所有训练记录，按日期去重后统计
+  // - 相关文件：server/userStatsService.ts:updateUserStats()
+  // - 注意：与 daysSinceStart 不同，这是实际训练的天数，不包括未训练的日期
+
   completedTasks: integer("completed_tasks").notNull().default(0),
   totalTime: integer("total_time").notNull().default(0), // in minutes
   achievements: jsonb("achievements").default([]),
@@ -42,32 +62,116 @@ export const users = pgTable("users", {
   // System training progression tracking (耶氏台球学院系统教学)
   currentDay: integer("current_day").notNull().default(1), // Current training day in the system program (1-30)
 
-  // Ability Score System (5-dimension scoring for 90-day challenge)
+  // ================================================================================
+  // 能力评分系统 (Ability Score System)
+  // ================================================================================
   // 五维能力评分系统：每个维度独立计分0-100，清台能力总分为五维求和0-500
-  // 计算公式 (server/abilityScoreEngine.ts:130): clearanceScore = accuracy + spin + positioning + power + strategy
-  accuracyScore: integer("accuracy_score").notNull().default(0), // 准度分 (0-100)
-  spinScore: integer("spin_score").notNull().default(0), // 杆法分 (0-100)
-  positioningScore: integer("positioning_score").notNull().default(0), // 走位分 (0-100)
-  powerScore: integer("power_score").notNull().default(0), // 发力分 (0-100)
-  strategyScore: integer("strategy_score").notNull().default(0), // 策略分 (0-100)
-  clearanceScore: integer("clearance_score").notNull().default(0), // 清台能力总分 (0-500, 五维简单求和)
+  // 统一计算入口：server/abilityScoreEngine.ts
 
-  // Raw data for ability score calculation
+  accuracyScore: integer("accuracy_score").notNull().default(0),
+  // 准度分 (0-100)
+  // - 计算方式：基于成功率 (accuracySuccessfulShots / accuracyTotalShots * 100)
+  // - 更新时机：每次完成训练记录后，由 abilityScoreEngine.ts 自动更新
+  // - 影响因素：准度相关练习的完成情况，如目标球进袋率
+  // - 相关文件：server/abilityScoreEngine.ts:calculateAbilityScores()
+
+  spinScore: integer("spin_score").notNull().default(0),
+  // 杆法分 (0-100)
+  // - 计算方式：基于杆法难度点完成率 (spinCompletedDifficultyPoints / spinTotalDifficultyPoints * 100)
+  // - 更新时机：每次完成训练记录后，由 abilityScoreEngine.ts 自动更新
+  // - 影响因素：杆法相关练习的完成情况，如低杆、高杆、加塞等技巧掌握度
+  // - 相关文件：server/abilityScoreEngine.ts:calculateAbilityScores()
+
+  positioningScore: integer("positioning_score").notNull().default(0),
+  // 走位分 (0-100)
+  // - 计算方式：基于走位难度点完成率 (positioningCompletedDifficultyPoints / positioningTotalDifficultyPoints * 100)
+  // - 更新时机：每次完成训练记录后，由 abilityScoreEngine.ts 自动更新
+  // - 影响因素：走位相关练习的完成情况，如母球停位控制、连续击球走位等
+  // - 相关文件：server/abilityScoreEngine.ts:calculateAbilityScores()
+
+  powerScore: integer("power_score").notNull().default(0),
+  // 发力分 (0-100)
+  // - 计算方式：基于力度难度点完成率 (powerCompletedDifficultyPoints / powerTotalDifficultyPoints * 100)
+  // - 更新时机：每次完成训练记录后，由 abilityScoreEngine.ts 自动更新
+  // - 影响因素：发力相关练习的完成情况，如力度控制、大力击球等
+  // - 相关文件：server/abilityScoreEngine.ts:calculateAbilityScores()
+
+  strategyScore: integer("strategy_score").notNull().default(0),
+  // 策略分 (0-100)
+  // - 计算方式：基于策略难度点完成率 (strategyCompletedDifficultyPoints / strategyTotalDifficultyPoints * 100)
+  // - 更新时机：每次完成训练记录后，由 abilityScoreEngine.ts 自动更新
+  // - 影响因素：策略相关练习的完成情况，如球型判断、解球路线选择等
+  // - 相关文件：server/abilityScoreEngine.ts:calculateAbilityScores()
+
+  clearanceScore: integer("clearance_score").notNull().default(0),
+  // 清台能力总分 (0-500)
+  // - 计算公式：accuracyScore + spinScore + positioningScore + powerScore + strategyScore
+  // - 更新时机：每次五维能力分更新后自动计算
+  // - 取值范围：0-500 (五维简单求和)
+  // - 历史说明：从2025-01-17起改为简单求和（旧公式为加权平均0-100）
+  // - 相关文件：server/abilityScoreEngine.ts:130
+
+  // ================================================================================
+  // 能力评分原始数据 (Raw Data for Ability Score Calculation)
+  // ================================================================================
+  // 这些字段用于存储能力评分计算所需的原始统计数据
+  // 更新时机：每次训练记录创建/更新时，由 abilityScoreEngine.ts 累加更新
+
+  // 准度原始数据
   accuracyTotalShots: integer("accuracy_total_shots").notNull().default(0),
+  // 准度总出杆数 - 用于计算准度成功率
   accuracySuccessfulShots: integer("accuracy_successful_shots").notNull().default(0),
-  spinTotalDifficultyPoints: integer("spin_total_difficulty_points").notNull().default(0),
-  spinCompletedDifficultyPoints: integer("spin_completed_difficulty_points").notNull().default(0),
-  positioningTotalDifficultyPoints: integer("positioning_total_difficulty_points").notNull().default(0),
-  positioningCompletedDifficultyPoints: integer("positioning_completed_difficulty_points").notNull().default(0),
-  powerTotalDifficultyPoints: integer("power_total_difficulty_points").notNull().default(0),
-  powerCompletedDifficultyPoints: integer("power_completed_difficulty_points").notNull().default(0),
-  strategyTotalDifficultyPoints: integer("strategy_total_difficulty_points").notNull().default(0),
-  strategyCompletedDifficultyPoints: integer("strategy_completed_difficulty_points").notNull().default(0),
+  // 准度成功出杆数 - 用于计算准度成功率
 
-  // 90-day challenge progress tracking
-  challengeStartDate: timestamp("challenge_start_date"), // When user started 90-day challenge
-  challengeCurrentDay: integer("challenge_current_day").default(1), // Current day in 90-day challenge (1-90)
-  challengeCompletedDays: integer("challenge_completed_days").default(0), // Total days completed successfully
+  // 杆法原始数据（基于难度点系统）
+  spinTotalDifficultyPoints: integer("spin_total_difficulty_points").notNull().default(0),
+  // 杆法总难度点 - 所有杆法练习的难度点总和
+  spinCompletedDifficultyPoints: integer("spin_completed_difficulty_points").notNull().default(0),
+  // 杆法完成难度点 - 成功完成的杆法练习难度点总和
+
+  // 走位原始数据（基于难度点系统）
+  positioningTotalDifficultyPoints: integer("positioning_total_difficulty_points").notNull().default(0),
+  // 走位总难度点 - 所有走位练习的难度点总和
+  positioningCompletedDifficultyPoints: integer("positioning_completed_difficulty_points").notNull().default(0),
+  // 走位完成难度点 - 成功完成的走位练习难度点总和
+
+  // 发力原始数据（基于难度点系统）
+  powerTotalDifficultyPoints: integer("power_total_difficulty_points").notNull().default(0),
+  // 发力总难度点 - 所有发力练习的难度点总和
+  powerCompletedDifficultyPoints: integer("power_completed_difficulty_points").notNull().default(0),
+  // 发力完成难度点 - 成功完成的发力练习难度点总和
+
+  // 策略原始数据（基于难度点系统）
+  strategyTotalDifficultyPoints: integer("strategy_total_difficulty_points").notNull().default(0),
+  // 策略总难度点 - 所有策略练习的难度点总和
+  strategyCompletedDifficultyPoints: integer("strategy_completed_difficulty_points").notNull().default(0),
+  // 策略完成难度点 - 成功完成的策略练习难度点总和
+
+  // ================================================================================
+  // 90天挑战进度追踪 (90-Day Challenge Progress Tracking)
+  // ================================================================================
+
+  challengeStartDate: timestamp("challenge_start_date"),
+  // 90天挑战开始日期
+  // - 说明：用户明确点击"开始挑战"时设置的日期
+  // - 取值：NULL表示未开始挑战，有值表示已开始
+  // - 用途：计算 daysSinceStart (从开始日期到今天的日历天数)
+  // - 更新时机：用户首次点击"开始90天挑战"按钮时设置
+  // - 相关文件：server/routes.ts (90天挑战相关接口)
+
+  challengeCurrentDay: integer("challenge_current_day").default(1),
+  // 90天挑战当前进度天数 (1-90)
+  // - 说明：用户在90天课程中应该完成的天数（课程进度）
+  // - 更新时机：每次完成当天课程后递增
+  // - 区别说明：与 daysSinceStart 不同，这是课程进度，可能因用户跳过或重复训练而不同步
+  // - 注意：此字段可能与实际训练天数不一致（用户可能跳过某天或重复训练）
+
+  challengeCompletedDays: integer("challenge_completed_days").default(0),
+  // 90天挑战成功完成的天数
+  // - 说明：用户实际完成训练的天数（达到当天目标的天数）
+  // - 更新时机：每次成功完成当天训练目标后递增
+  // - 计算方式：从 ninety_day_training_records 表中统计 achievedTarget=true 的记录数
+  // - 区别说明：与 totalDays 不同，这只统计90天挑战系统内的完成天数
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastActiveAt: timestamp("last_active_at").notNull().defaultNow(),
