@@ -698,8 +698,15 @@ export const submitNinetyDayTrainingRecordSchema = z.object({
   durationMinutes: z.number().int().min(1, "训练时长至少1分钟").max(300, "训练时长不能超过5小时"),
   notes: z.string().max(1000, "训练笔记不能超过1000字").optional(),
   trainingStats: z.object({
-    shotsAttempted: z.number().int().min(0, "尝试球数不能为负").optional(),
-    shotsSuccessful: z.number().int().min(0, "成功球数不能为负").optional(),
+    // Convert NaN to undefined to handle empty number inputs from react-hook-form
+    shotsAttempted: z.preprocess(
+      (val) => (typeof val === 'number' && isNaN(val)) ? undefined : val,
+      z.number().int().min(0, "尝试球数不能为负").optional()
+    ),
+    shotsSuccessful: z.preprocess(
+      (val) => (typeof val === 'number' && isNaN(val)) ? undefined : val,
+      z.number().int().min(0, "成功球数不能为负").optional()
+    ),
     focusAreas: z.array(
       z.enum(['准度', '走位', '杆法', '发力', '策略'])
     ).optional(),

@@ -26,11 +26,25 @@ import type { TrainingSubmissionPayload } from '@/hooks/useNinetyDayTraining';
 
 // Combined validation schema with all possible fields
 const combinedSchema = z.object({
-  total_attempts: z.number().int().min(1, '总次数必须大于0').optional(),
-  successful_shots: z.number().int().min(0, '成功次数不能为负').optional(),
-  completed_count: z.number().int().min(0, '完成数量不能为负').optional(),
-  target_count: z.number().int().min(1, '目标数量必须大于0').optional(),
-  duration_minutes: z.number().min(1, '训练时长必须大于0分钟'),
+  // Convert NaN to undefined to handle empty number inputs
+  total_attempts: z.preprocess(
+    (val) => (typeof val === 'number' && isNaN(val)) ? undefined : val,
+    z.number().int().min(1, '总次数必须大于0').optional()
+  ),
+  successful_shots: z.preprocess(
+    (val) => (typeof val === 'number' && isNaN(val)) ? undefined : val,
+    z.number().int().min(0, '成功次数不能为负').optional()
+  ),
+  completed_count: z.preprocess(
+    (val) => (typeof val === 'number' && isNaN(val)) ? undefined : val,
+    z.number().int().min(0, '完成数量不能为负').optional()
+  ),
+  target_count: z.preprocess(
+    (val) => (typeof val === 'number' && isNaN(val)) ? undefined : val,
+    z.number().int().min(1, '目标数量必须大于0').optional()
+  ),
+  // Allow any duration >= 0, soft warning shown in UI instead of hard validation
+  duration_minutes: z.number().min(0, '训练时长不能为负'),
   notes: z.string().optional(),
 });
 
@@ -245,7 +259,7 @@ export default function TrainingForm({
       <Button
         type="submit"
         className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-6"
-        disabled={isSubmitting || duration < 1}
+        disabled={isSubmitting}
       >
         {isSubmitting ? (
           <>
@@ -258,9 +272,9 @@ export default function TrainingForm({
       </Button>
 
       {duration < 1 && (
-        <p className="text-sm text-amber-600 dark:text-amber-400 text-center flex items-center justify-center gap-1">
+        <p className="text-sm text-blue-600 dark:text-blue-400 text-center flex items-center justify-center gap-1">
           <AlertCircle className="w-4 h-4" />
-          请先开始计时器，训练时长必须大于0分钟
+          💡 提示：建议使用计时器记录训练时长，效果更佳
         </p>
       )}
     </form>
