@@ -13,6 +13,7 @@ import WelcomeModal from '@/components/ninety-day/WelcomeModal';
 import TrainingModal from '@/components/ninety-day/TrainingModal';
 import ScoreFeedbackModal from '@/components/ninety-day/ScoreFeedbackModal';
 import { AiFeedbackModal } from '@/components/AiFeedbackModal';
+import ProgressOverviewModal from '@/components/ninety-day/ProgressOverviewModal';
 import { useAbilityScores } from '@/hooks/useAbilityScores';
 import {
   useNinetyDayChallengeProgress,
@@ -59,6 +60,7 @@ export default function NinetyDayChallenge() {
   const [showDayDetailModal, setShowDayDetailModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false); // Training record submission modal
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showProgressOverview, setShowProgressOverview] = useState(false); // Progress overview modal
   const [lastSubmissionResult, setLastSubmissionResult] = useState<TrainingSubmissionResponse | null>(null);
   const [isStartingChallenge, setIsStartingChallenge] = useState(false);
 
@@ -503,20 +505,11 @@ export default function NinetyDayChallenge() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setViewMode(viewMode === 'segmented' ? 'full' : 'segmented')}
-              className="flex items-center gap-2 border-emerald-200 hover:bg-emerald-50"
+              onClick={() => setShowProgressOverview(true)}
+              className="flex items-center gap-2 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-700 dark:hover:bg-emerald-900/20"
             >
-              {viewMode === 'segmented' ? (
-                <>
-                  <Maximize2 className="w-4 h-4 text-emerald-600" />
-                  查看完整地图
-                </>
-              ) : (
-                <>
-                  <Minimize2 className="w-4 h-4 text-emerald-600" />
-                  返回分段视图
-                </>
-              )}
+              <Target className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              查看进度总览
             </Button>
           </div>
           <AdventureMap
@@ -623,6 +616,32 @@ export default function NinetyDayChallenge() {
           )}
         />
       )}
+
+      {/* Progress Overview Modal - Show comprehensive 90-day statistics */}
+      <ProgressOverviewModal
+        isOpen={showProgressOverview}
+        onClose={() => setShowProgressOverview(false)}
+        currentDay={currentDay}
+        completedDays={challengeProgress?.challenge_completed_days || 0}
+        totalDuration={(() => {
+          // Calculate total duration from training records
+          if (!trainingRecordsData?.records) return 0;
+          return trainingRecordsData.records.reduce((sum, record) => sum + (record.durationMinutes || 0), 0);
+        })()}
+        avgDuration={(() => {
+          // Calculate average duration
+          if (!trainingRecordsData?.records || trainingRecordsData.records.length === 0) return 0;
+          const total = trainingRecordsData.records.reduce((sum, record) => sum + (record.durationMinutes || 0), 0);
+          return total / trainingRecordsData.records.length;
+        })()}
+        qualifiedDays={(() => {
+          // Count days that achieved target
+          if (!trainingRecordsData?.records) return 0;
+          return trainingRecordsData.records.filter(record => record.achievedTarget === true).length;
+        })()}
+        currentStreak={user?.streak || 0}
+        longestStreak={user?.streak || 1}
+      />
     </div>
   );
 }
