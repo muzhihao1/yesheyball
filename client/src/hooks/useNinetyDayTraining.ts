@@ -218,7 +218,14 @@ export function useNinetyDayRecords(params?: { dayNumber?: number; limit?: numbe
   return useQuery<{ records: NinetyDayTrainingRecord[] }>({
     queryKey: ['/api/ninety-day/records', params],
     queryFn: async () => {
+      const accessToken = localStorage.getItem('supabase_access_token');
+      const headers: Record<string, string> = {};
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
       const response = await fetch(url, {
+        headers,
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch training records');
