@@ -331,22 +331,46 @@ export default function NinetyDayChallenge() {
               系统化训练 · 能力提升 · 成为更强的球手
             </p>
           </div>
-          <div className="flex items-center gap-6">
-            {/* 清台能力总分 */}
-            <div className="text-center px-6 py-3 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-2xl shadow-md border border-amber-200 dark:border-amber-800">
-              <div className="text-sm text-amber-700 dark:text-amber-300 mb-1 font-medium">清台能力</div>
-              <div className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
-                {abilityScores?.clearance || 0}
-              </div>
-              <div className="text-xs text-amber-600 dark:text-amber-400">分 / 500</div>
+          {/* Unified Challenge Progress Card */}
+          <div className="px-6 py-4 bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-50 dark:from-emerald-900/20 dark:via-green-900/20 dark:to-emerald-900/20 rounded-2xl shadow-lg border-2 border-emerald-200 dark:border-emerald-700">
+            <div className="flex items-center gap-3 mb-3">
+              <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-100">90天挑战进度</h3>
             </div>
 
-            {/* 当前天数 */}
-            <div className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-2xl shadow-md border border-emerald-200 dark:border-emerald-800">
-              <Target className="w-8 h-8 text-emerald-600" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                第 {currentDay} 天
-              </span>
+            <div className="space-y-3">
+              {/* Current Day Display */}
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                  第 {currentDay} 天
+                </span>
+                <span className="text-sm text-muted-foreground">/ 共 90 天</span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>完成进度</span>
+                  <span className="font-medium">{((currentDay / 90) * 100).toFixed(1)}%</span>
+                </div>
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-300"
+                    style={{ width: `${(currentDay / 90) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Clearance Score */}
+              <div className="flex items-center justify-between pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                <span className="text-sm text-muted-foreground">清台能力</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                    {abilityScores?.clearance || 0}
+                  </span>
+                  <span className="text-xs text-muted-foreground">/ 500</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
