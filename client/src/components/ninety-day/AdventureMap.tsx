@@ -15,6 +15,17 @@ export interface MapNode {
   y: number;
   status: NodeStatus;
   isMilestone: boolean;
+  rating?: number; // Training quality rating (1-5 stars), undefined if not completed
+}
+
+/**
+ * Training record summary for map node display
+ */
+export interface TrainingRecordSummary {
+  dayNumber: number;
+  rating: number; // 1-5 stars
+  duration: number; // minutes
+  notes: string | null;
 }
 
 /**
@@ -29,6 +40,14 @@ export interface AdventureMapProps {
   completedDays: number;
   /** Callback when a day node is clicked */
   onDayClick?: (day: number) => void;
+  /** Optional: View mode - 'segmented' shows portion, 'full' shows all days */
+  viewMode?: 'segmented' | 'full';
+  /** Optional: Start day for visible segment (default: auto-calculated based on currentDay) */
+  segmentStartDay?: number;
+  /** Optional: Days to show per segment (default: 30) */
+  daysPerSegment?: number;
+  /** Optional: Training records map for displaying star ratings on nodes */
+  trainingRecords?: Map<number, TrainingRecordSummary>;
 }
 
 /**
@@ -226,6 +245,25 @@ const MapNode = memo(({ node, onClick }: { node: MapNode; onClick?: () => void }
           ✓
         </text>
       )}
+
+      {/* Star rating for completed nodes with rating */}
+      {node.status === 'completed' && node.rating && node.rating > 0 && (
+        <g>
+          {Array.from({ length: node.rating }, (_, i) => (
+            <text
+              key={i}
+              x={node.x - 8 + i * 4}
+              y={node.y + 20}
+              textAnchor="middle"
+              className="text-[8px]"
+              fill="#fbbf24"
+              style={{ pointerEvents: 'none', userSelect: 'none' }}
+            >
+              ★
+            </text>
+          ))}
+        </g>
+      )}
     </motion.g>
   );
 });
@@ -260,17 +298,38 @@ MapNode.displayName = 'MapNode';
  * />
  * ```
  */
-export const AdventureMap = memo(({ totalDays, currentDay, completedDays, onDayClick }: AdventureMapProps) => {
+export const AdventureMap = memo(({
+  totalDays,
+  currentDay,
+  completedDays,
+  onDayClick,
+  viewMode = 'segmented',
+  segmentStartDay,
+  daysPerSegment = 30,
+  trainingRecords
+}: AdventureMapProps) => {
   // SVG canvas dimensions
   const width = 400;
   const height = totalDays * 35; // Responsive height based on node count
 
-  // Generate SVG path
+  // Calculate visible segment (only in segmented mode)
+  const calculateSegmentStart = () => {
+    if (viewMode === 'full') return 1; // Show all days in full mode
+    if (segmentStartDay !== undefined) return segmentStartDay;
+
+    // Center the view on currentDay
+    const segmentIndex = Math.floor((currentDay - 1) / daysPerSegment);
+    return segmentIndex * daysPerSegment + 1;
+  };
+
+  const visibleStartDay = calculateSegmentStart();
+  const visibleEndDay = viewMode === 'full' ? totalDays : Math.min(visibleStartDay + daysPerSegment - 1, totalDays);
+
+  // Generate SVG path for ALL days (we'll viewport into it)
   const pathData = generateAdventurePath(totalDays, width, height);
 
-  // Note: In production, we'd use useRef and useEffect to get actual path element
-  // For prototype, using calculated positions
-  const nodePositions = Array.from({ length: totalDays }, (_, i) => {
+  // Calculate ALL node positions (needed for path continuity)
+  const allNodePositions = Array.from({ length: totalDays }, (_, i) => {
     const verticalSpacing = height / (totalDays + 1);
     const y = verticalSpacing * (i + 1);
     const amplitude = width * 0.3;
@@ -279,25 +338,48 @@ export const AdventureMap = memo(({ totalDays, currentDay, completedDays, onDayC
     return { x, y };
   });
 
-  // Generate map nodes with status
-  const mapNodes: MapNode[] = nodePositions.map((pos, index) => {
+  // Helper function: Convert successRate (0-100) to star rating (1-5)
+  const successRateToStars = (successRate: number | null | undefined): number | undefined => {
+    if (successRate === null || successRate === undefined) return undefined;
+    if (successRate >= 90) return 5;
+    if (successRate >= 70) return 4;
+    if (successRate >= 50) return 3;
+    if (successRate >= 30) return 2;
+    return 1;
+  };
+
+  // Generate ALL map nodes
+  const allMapNodes: MapNode[] = allNodePositions.map((pos, index) => {
     const day = index + 1;
+    const trainingRecord = trainingRecords?.get(day);
     return {
       day,
       x: pos.x,
       y: pos.y,
       status: getNodeStatus(day, currentDay, completedDays),
       isMilestone: day % 10 === 0,
+      rating: successRateToStars(trainingRecord?.successRate), // Convert successRate to 1-5 stars
     };
   });
 
+  // Filter to only visible nodes
+  const visibleNodes = allMapNodes.filter(
+    node => node.day >= visibleStartDay && node.day <= visibleEndDay
+  );
+
+  // Calculate viewBox to show only visible segment
+  const segmentHeight = daysPerSegment * 35;
+  const viewBoxY = (visibleStartDay - 1) * 35;
+  const viewBoxHeight = Math.min(segmentHeight, height - viewBoxY);
+
   return (
-    <div className="w-full overflow-auto bg-gradient-to-br from-emerald-50/30 to-amber-50/30 rounded-2xl shadow-inner p-4">
+    <div className={`w-full overflow-auto bg-gradient-to-br from-emerald-50/30 to-amber-50/30 rounded-2xl shadow-inner p-4 ${
+      viewMode === 'full' ? 'max-h-[800px]' : ''
+    }`}>
       <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        className="mx-auto"
+        viewBox={`0 ${viewBoxY} ${width} ${viewBoxHeight}`}
+        className="mx-auto w-full h-auto"
+        preserveAspectRatio="xMidYMid meet"
       >
         {/* Adventure path (decorative background) */}
         <motion.path
@@ -325,8 +407,8 @@ export const AdventureMap = memo(({ totalDays, currentDay, completedDays, onDayC
           transition={{ duration: 1, ease: 'easeOut' }}
         />
 
-        {/* Map nodes */}
-        {mapNodes.map((node) => (
+        {/* Map nodes (only visible segment) */}
+        {visibleNodes.map((node) => (
           <MapNode
             key={node.day}
             node={node}

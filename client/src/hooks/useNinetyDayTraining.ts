@@ -90,17 +90,23 @@ export interface UserNinetyDayProgress {
 
 /**
  * Training Record
+ * Matches database schema: ninety_day_training_records
  */
 export interface NinetyDayTrainingRecord {
-  id: string;
+  id: number; // Changed from string to number (serial in database)
   userId: string;
   dayNumber: number;
-  curriculumId: string;
+  startedAt: string; // Training start time
+  completedAt: string | null; // Training completion time (nullable)
+  durationMinutes: number | null; // Duration in minutes (renamed from duration)
   trainingType: string;
-  duration: number; // minutes
-  rating: number; // 1-5
   notes: string | null;
+  trainingStats: Record<string, any>;
+  successRate: number | null; // 0-100
+  achievedTarget: boolean | null;
+  scoreChanges: Record<string, number>; // { accuracy: +5, clearance: +3 }
   createdAt: string;
+  // Note: rating and aiFeedback removed as they don't exist in current database schema
 }
 
 /**
@@ -506,6 +512,7 @@ export function useDayCurriculum(dayNumber: number) {
 
       return response.json();
     },
+    enabled: dayNumber >= 1 && dayNumber <= 90, // Only fetch if valid day number
     staleTime: 30 * 60 * 1000, // 30 minutes - curriculum data rarely changes
   });
 }

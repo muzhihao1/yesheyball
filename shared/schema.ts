@@ -500,14 +500,14 @@ export const userNinetyDayProgress = pgTable("user_ninety_day_progress", {
  * Detailed records of each training session
  */
 export const ninetyDayTrainingRecords = pgTable("ninety_day_training_records", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: serial("id").primaryKey(), // Changed from uuid to match existing database
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   dayNumber: integer("day_number").notNull(), // 1-90, references ninety_day_curriculum.day_number
+  startedAt: timestamp("started_at").notNull(), // Match existing column
+  completedAt: timestamp("completed_at"), // Match existing column (nullable)
+  durationMinutes: integer("duration_minutes"), // Match existing column name
   trainingType: varchar("training_type", { length: 20 }).notNull(), // '系统', '专项', '测试'
-  duration: integer("duration").notNull(), // minutes
-  rating: integer("rating"), // 1-5
   notes: text("notes"),
-  aiFeedback: text("ai_feedback"),
 
   // Training statistics and ability score tracking
   trainingStats: jsonb("training_stats").default({}), // Flexible stats: { total_attempts: 10, successful_shots: 7, angle: 30, etc. }
@@ -515,8 +515,7 @@ export const ninetyDayTrainingRecords = pgTable("ninety_day_training_records", {
   achievedTarget: boolean("achieved_target"), // Whether training target was met
   scoreChanges: jsonb("score_changes").default({}), // Ability score changes: { accuracy: +5, clearance: +3 }
 
-  completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow().notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // ============================================================================
@@ -686,6 +685,38 @@ export type InsertUserNinetyDayProgress = z.infer<typeof insertUserNinetyDayProg
 
 export type NinetyDayTrainingRecord = typeof ninetyDayTrainingRecords.$inferSelect;
 export type InsertNinetyDayTrainingRecord = z.infer<typeof insertNinetyDayTrainingRecordSchema>;
+
+/**
+ * Custom validation schema for user-submitted 90-day training records
+ * Used for frontend form submissions and API validation
+ */
+export const submitNinetyDayTrainingRecordSchema = z.object({
+  dayNumber: z.number().int().min(1).max(90, "训练天数必须在1-90之间"),
+  trainingType: z.enum(['系统', '自由', '特殊'], {
+    errorMap: () => ({ message: "训练类型必须是：系统、自由或特殊" })
+  }),
+  durationMinutes: z.number().int().min(1, "训练时长至少1分钟").max(300, "训练时长不能超过5小时"),
+  notes: z.string().max(1000, "训练笔记不能超过1000字").optional(),
+  trainingStats: z.object({
+    shotsAttempted: z.number().int().min(0, "尝试球数不能为负").optional(),
+    shotsSuccessful: z.number().int().min(0, "成功球数不能为负").optional(),
+    focusAreas: z.array(
+      z.enum(['准度', '走位', '杆法', '发力', '策略'])
+    ).optional(),
+  }).refine(
+    (data) => {
+      // Validate: successful shots cannot exceed attempted shots
+      if (data.shotsSuccessful !== undefined && data.shotsAttempted !== undefined) {
+        return data.shotsSuccessful <= data.shotsAttempted;
+      }
+      return true;
+    },
+    { message: '成功球数不能大于尝试球数' }
+  ),
+  achievedTarget: z.boolean({ required_error: "请选择是否达成训练目标" }),
+});
+
+export type SubmitNinetyDayTrainingRecord = z.infer<typeof submitNinetyDayTrainingRecordSchema>;
 
 // ============================================================================
 // Old V2.1 TypeScript Content Types

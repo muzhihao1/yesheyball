@@ -4,7 +4,7 @@ import { db } from "./db.js";
 import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse, demoUserProfile } from "./auth.js";
 import { generateCoachingFeedback, generateDiaryInsights } from "./openai.js";
 import { upload, persistUploadedImage } from "./upload.js";
-import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema, trainingSkills, subSkills, trainingUnits, trainingLevels, userTrainingProgress, users, userSkillProgressV3, userNinetyDayProgress, ninetyDayTrainingRecords } from "../shared/schema.js";
+import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema, trainingSkills, subSkills, trainingUnits, trainingLevels, userTrainingProgress, users, userSkillProgressV3, userNinetyDayProgress, ninetyDayTrainingRecords, submitNinetyDayTrainingRecordSchema } from "../shared/schema.js";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses.js";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer.js";
 import { adaptiveLearning } from "./adaptiveLearning.js";
@@ -30,6 +30,7 @@ import {
   getUserTrainingHistory,
   type TrainingSubmission
 } from "./abilityScoreEngine.js";
+import { calculateNinetyDayScoreChanges } from "./ninetyDayScoreCalculator.js";
 
 function getSessionUserId(req: Request): string | undefined {
   const sessionUser = getSessionUser(req);
@@ -2358,6 +2359,126 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Error fetching 90-day training records:", error);
       res.status(500).json({ message: "Failed to fetch training records" });
+    }
+  });
+
+  /**
+   * POST /api/ninety-day/records
+   * Submit a training record for a specific day in the 90-day challenge
+   * Body: { dayNumber, trainingType, durationMinutes, notes, trainingStats, achievedTarget }
+   * Returns: { data: NinetyDayTrainingRecord }
+   */
+  app.post("/api/ninety-day/records", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      if (!hasDatabase) {
+        return res.status(503).json({ message: "Database not available in demo mode" });
+      }
+
+      // Validate request body with Zod schema
+      const validatedData = submitNinetyDayTrainingRecordSchema.parse(req.body);
+
+      // Calculate success rate from training stats
+      const calculateSuccessRate = (stats: any): number | null => {
+        if (!stats.shotsAttempted || stats.shotsAttempted === 0) {
+          return null;
+        }
+        const rate = (stats.shotsSuccessful / stats.shotsAttempted) * 100;
+        return Math.round(rate);
+      };
+
+      const successRate = calculateSuccessRate(validatedData.trainingStats);
+
+      // Calculate ability score changes based on training type
+      const focusAreas = validatedData.trainingStats.focusAreas || [];
+      const scoreChanges = calculateNinetyDayScoreChanges(
+        validatedData.trainingType,
+        successRate,
+        validatedData.achievedTarget,
+        focusAreas
+      );
+
+      console.log(`📊 Score changes calculated for ${validatedData.trainingType} training:`, scoreChanges);
+
+      // Insert training record
+      if (!db) {
+        return res.status(503).json({ message: "Database connection not available" });
+      }
+
+      const [record] = await db.insert(ninetyDayTrainingRecords).values({
+        userId,
+        dayNumber: validatedData.dayNumber,
+        startedAt: new Date(), // Current time as start time
+        completedAt: new Date(), // Completed immediately for now
+        durationMinutes: validatedData.durationMinutes,
+        trainingType: validatedData.trainingType,
+        notes: validatedData.notes || null,
+        trainingStats: validatedData.trainingStats,
+        successRate,
+        achievedTarget: validatedData.achievedTarget,
+        scoreChanges, // Store calculated score changes
+      }).returning();
+
+      console.log(`✅ 90-day training record created: User ${userId}, Day ${validatedData.dayNumber}, Success Rate: ${successRate}%`);
+
+      // Update user's ability scores by adding the calculated score changes
+      if (hasDatabase && db) {
+        try {
+          await db.update(users)
+            .set({
+              accuracyScore: sql`LEAST(100, GREATEST(0, ${users.accuracyScore} + ${scoreChanges.accuracy || 0}))`,
+              spinScore: sql`LEAST(100, GREATEST(0, ${users.spinScore} + ${scoreChanges.spin || 0}))`,
+              positioningScore: sql`LEAST(100, GREATEST(0, ${users.positioningScore} + ${scoreChanges.positioning || 0}))`,
+              powerScore: sql`LEAST(100, GREATEST(0, ${users.powerScore} + ${scoreChanges.power || 0}))`,
+              strategyScore: sql`LEAST(100, GREATEST(0, ${users.strategyScore} + ${scoreChanges.strategy || 0}))`,
+              clearanceScore: sql`LEAST(500, GREATEST(0, ${users.clearanceScore} + ${scoreChanges.clearance || 0}))`,
+            })
+            .where(eq(users.id, userId));
+
+          console.log(`✨ Ability scores updated for user ${userId}:`, {
+            accuracy: `+${scoreChanges.accuracy || 0}`,
+            spin: `+${scoreChanges.spin || 0}`,
+            positioning: `+${scoreChanges.positioning || 0}`,
+            power: `+${scoreChanges.power || 0}`,
+            strategy: `+${scoreChanges.strategy || 0}`,
+            clearance: `+${scoreChanges.clearance || 0}`,
+          });
+        } catch (err) {
+          console.error('⚠️  Failed to update ability scores:', err);
+          // Don't fail the request if score update fails
+        }
+      }
+
+      // Update user stats (streak, total days, etc.)
+      if (hasDatabase) {
+        await updateUserStats(userId).catch(err => {
+          console.error('⚠️  Failed to update user stats after training submission:', err);
+          // Don't fail the request if stats update fails
+        });
+      }
+
+      res.status(201).json({ data: record });
+    } catch (error: any) {
+      // Handle Zod validation errors
+      if (error instanceof z.ZodError) {
+        console.error("Validation error submitting training record:", error.errors);
+        return res.status(400).json({
+          message: "数据验证失败",
+          errors: error.errors.map(e => ({ path: e.path.join('.'), message: e.message }))
+        });
+      }
+
+      // Handle unique constraint violation (duplicate submission)
+      if (error.code === '23505' && error.constraint === 'unique_user_day') {
+        console.error(`Duplicate training record attempt: User ${requireSessionUserId(req)}, Day ${req.body?.dayNumber}`);
+        return res.status(409).json({
+          message: "该天已提交训练记录，无法重复提交"
+        });
+      }
+
+      console.error("Error creating 90-day training record:", error);
+      res.status(500).json({ message: "Failed to create training record" });
     }
   });
 

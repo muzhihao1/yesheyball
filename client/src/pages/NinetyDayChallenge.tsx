@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { AlertCircle, BookOpen, PlayCircle, Target } from 'lucide-react';
+import { AlertCircle, BookOpen, PlayCircle, Target, Maximize2, Minimize2 } from 'lucide-react';
 import { AdventureMap } from '@/components/ninety-day/AdventureMap';
+import { DayDetailModal } from '@/components/ninety-day/DayDetailModal';
+import { TrainingSubmitModal } from '@/components/ninety-day/TrainingSubmitModal';
 import ProgressCalendar, { type DayStatus } from '@/components/ninety-day/ProgressCalendar';
 import StatsPanel from '@/components/ninety-day/StatsPanel';
 import WelcomeModal from '@/components/ninety-day/WelcomeModal';
@@ -16,8 +18,10 @@ import {
   useNinetyDayChallengeProgress,
   useDayCurriculum,
   useTrainingSubmission,
+  useNinetyDayRecords,
   type TrainingSubmissionPayload,
   type TrainingSubmissionResponse,
+  type NinetyDayTrainingRecord,
 } from '@/hooks/useNinetyDayTraining';
 
 /**
@@ -42,9 +46,18 @@ export default function NinetyDayChallenge() {
   const { user } = useAuth();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
+  // Auto-scroll to map section on first load
+  const mapSectionRef = useRef<HTMLElement>(null);
+  const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
+
+  // Map view mode: 'segmented' shows 30 days at a time, 'full' shows all 90 days
+  const [viewMode, setViewMode] = useState<'segmented' | 'full'>('segmented');
+
   // Modal state management
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [showDayDetailModal, setShowDayDetailModal] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false); // Training record submission modal
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [lastSubmissionResult, setLastSubmissionResult] = useState<TrainingSubmissionResponse | null>(null);
   const [isStartingChallenge, setIsStartingChallenge] = useState(false);
@@ -65,10 +78,28 @@ export default function NinetyDayChallenge() {
   const currentDay = challengeProgress?.challenge_current_day || 1;
   const { data: currentCurriculum, isLoading: curriculumLoading } = useDayCurriculum(currentDay);
 
+  // Fetch selected day curriculum (for detail modal)
+  const { data: selectedCurriculum, isLoading: selectedCurriculumLoading } = useDayCurriculum(selectedDay || 0);
+
+  // Fetch all training records (for displaying ratings on map nodes)
+  const { data: trainingRecordsData } = useNinetyDayRecords();
+
   // Training submission mutation
   const trainingSubmission = useTrainingSubmission();
 
   const isLoading = scoresLoading || progressLoading || curriculumLoading;
+
+  // Create dayNumber → training record mapping for map node ratings
+  const trainingRecordsMap = new Map<number, NinetyDayTrainingRecord>();
+  if (trainingRecordsData?.records) {
+    trainingRecordsData.records.forEach(record => {
+      trainingRecordsMap.set(record.dayNumber, record);
+    });
+  }
+
+  // ✅ Now using real API data from /api/ninety-day/records
+  // Star ratings are calculated from training records' successRate (0-100 → 1-5 stars)
+  // The AdventureMap component will display stars for completed training days
 
   // Check if user is first-time (no challenge start date)
   useEffect(() => {
@@ -76,6 +107,20 @@ export default function NinetyDayChallenge() {
       setShowWelcomeModal(true);
     }
   }, [isLoading, challengeProgress]);
+
+  // Auto-scroll to training map on first load
+  useEffect(() => {
+    if (!hasAutoScrolled && !isLoading && challengeProgress && currentDay > 0) {
+      // Delay scroll to ensure DOM is fully rendered
+      setTimeout(() => {
+        mapSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+        setHasAutoScrolled(true);
+      }, 300);
+    }
+  }, [hasAutoScrolled, isLoading, challengeProgress, currentDay]);
 
   // Generate day statuses for calendar
   const generateDayStatuses = (): DayStatus[] => {
@@ -140,12 +185,20 @@ export default function NinetyDayChallenge() {
   };
 
   /**
-   * Handle day click in calendar
-   * TODO: Show day details modal for reviewing past days
+   * Handle day click in adventure map/calendar
+   * Opens training submission modal for the selected day
    */
   const handleDayClick = (dayNumber: number) => {
     setSelectedDay(dayNumber);
-    // Future: Show day details modal with training history
+    setShowSubmitModal(true);
+  };
+
+  /**
+   * Handle viewing day curriculum details
+   */
+  const handleViewDayDetails = (dayNumber: number) => {
+    setSelectedDay(dayNumber);
+    setShowDayDetailModal(true);
   };
 
   /**
@@ -417,16 +470,39 @@ export default function NinetyDayChallenge() {
         </section>
 
         {/* Adventure Map (SVG Path Visualization) */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Target className="w-6 h-6 text-emerald-600" />
-            训练地图
-          </h2>
+        <section ref={mapSectionRef} className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Target className="w-6 h-6 text-emerald-600" />
+              训练地图
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode(viewMode === 'segmented' ? 'full' : 'segmented')}
+              className="flex items-center gap-2 border-emerald-200 hover:bg-emerald-50"
+            >
+              {viewMode === 'segmented' ? (
+                <>
+                  <Maximize2 className="w-4 h-4 text-emerald-600" />
+                  查看完整地图
+                </>
+              ) : (
+                <>
+                  <Minimize2 className="w-4 h-4 text-emerald-600" />
+                  返回分段视图
+                </>
+              )}
+            </Button>
+          </div>
           <AdventureMap
-            totalDays={30} // Prototype with 30 days, will scale to 90
+            totalDays={90} // Full 90-day challenge map
             currentDay={currentDay}
             completedDays={challengeProgress?.challenge_completed_days || 0}
             onDayClick={handleDayClick}
+            viewMode={viewMode}
+            daysPerSegment={30} // Show 30 days at a time
+            trainingRecords={trainingRecordsMap} // Pass training records for star ratings
           />
         </section>
 
@@ -465,6 +541,33 @@ export default function NinetyDayChallenge() {
         onSubmit={handleTrainingSubmit}
         curriculum={currentCurriculum?.curriculum}
         isSubmitting={trainingSubmission.isPending}
+      />
+
+      {/* Day Detail Modal - Show curriculum details for selected day */}
+      <DayDetailModal
+        open={showDayDetailModal}
+        onClose={() => {
+          setShowDayDetailModal(false);
+          setSelectedDay(null);
+        }}
+        dayNumber={selectedDay || 0}
+        curriculum={selectedCurriculum?.curriculum || null}
+        isLoading={selectedCurriculumLoading}
+      />
+
+      {/* Training Submit Modal - Submit training record for selected day */}
+      <TrainingSubmitModal
+        isOpen={showSubmitModal}
+        onClose={() => {
+          setShowSubmitModal(false);
+          setSelectedDay(null);
+        }}
+        dayNumber={selectedDay || 0}
+        onSubmitSuccess={() => {
+          // The useSubmitTraining hook already invalidates queries in onSuccess
+          // Map will automatically refresh with new star ratings
+          console.log('Training record submitted successfully for day', selectedDay);
+        }}
       />
 
       {/* Score Feedback Modal - Show training results */}
