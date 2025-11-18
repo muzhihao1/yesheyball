@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertCircle, BookOpen, PlayCircle, Target } from 'lucide-react';
+import { AdventureMap } from '@/components/ninety-day/AdventureMap';
 import ProgressCalendar, { type DayStatus } from '@/components/ninety-day/ProgressCalendar';
 import StatsPanel from '@/components/ninety-day/StatsPanel';
 import WelcomeModal from '@/components/ninety-day/WelcomeModal';
@@ -415,10 +416,24 @@ export default function NinetyDayChallenge() {
           </Card>
         </section>
 
-        {/* Progress Calendar */}
+        {/* Adventure Map (SVG Path Visualization) */}
         <section className="space-y-4">
-          <ProgressCalendar days={dayStatuses} onDayClick={handleDayClick} />
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Target className="w-6 h-6 text-emerald-600" />
+            训练地图
+          </h2>
+          <AdventureMap
+            totalDays={30} // Prototype with 30 days, will scale to 90
+            currentDay={currentDay}
+            completedDays={challengeProgress?.challenge_completed_days || 0}
+            onDayClick={handleDayClick}
+          />
         </section>
+
+        {/* Legacy Progress Calendar (keep for comparison) */}
+        {/* <section className="space-y-4">
+          <ProgressCalendar days={dayStatuses} onDayClick={handleDayClick} />
+        </section> */}
 
         {/* Stats Panel */}
         <section>
