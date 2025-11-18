@@ -1,19 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 
-interface StreakData {
-  currentStreak: number;
-  longestStreak: number;
-  totalDays: number;
-}
-
 export default function Header() {
   const { user, isLoading } = useAuth();
-
-  const { data: streakData } = useQuery<StreakData>({
-    queryKey: ["/api/user/streak"],
-  });
 
   if (isLoading) {
     return (
@@ -78,13 +67,7 @@ export default function Header() {
           </Link>
           
           <div className="flex items-center space-x-3 sm:space-x-5 lg:space-x-8 flex-shrink-0">
-            <div className="text-center hidden sm:block">
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-red-500 dark:text-red-400 flex items-center justify-center">
-                <span className="mr-1 text-xl">🔥</span>
-                {streakData?.currentStreak || 0}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">连续天数</div>
-            </div>
+            {/* Removed consecutive days - moved to Profile page only to reduce information duplication */}
             <div className="text-center">
               <div className="text-lg sm:text-xl lg:text-2xl font-bold text-trophy-gold dark:text-yellow-400 flex items-center justify-center">
                 <span className="mr-1 text-xl">⭐</span>

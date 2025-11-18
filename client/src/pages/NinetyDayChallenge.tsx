@@ -8,7 +8,7 @@ import { AdventureMap } from '@/components/ninety-day/AdventureMap';
 import { DayDetailModal } from '@/components/ninety-day/DayDetailModal';
 import { TrainingSubmitModal } from '@/components/ninety-day/TrainingSubmitModal';
 import ProgressCalendar, { type DayStatus } from '@/components/ninety-day/ProgressCalendar';
-import StatsPanel from '@/components/ninety-day/StatsPanel';
+// Removed StatsPanel import - cumulative statistics moved to ProgressOverviewModal and Profile page
 import WelcomeModal from '@/components/ninety-day/WelcomeModal';
 import TrainingModal from '@/components/ninety-day/TrainingModal';
 import ScoreFeedbackModal from '@/components/ninety-day/ScoreFeedbackModal';
@@ -528,19 +528,10 @@ export default function NinetyDayChallenge() {
           <ProgressCalendar days={dayStatuses} onDayClick={handleDayClick} />
         </section> */}
 
-        {/* Stats Panel */}
-        <section>
-          <StatsPanel
-            stats={{
-              completedDays: challengeProgress?.challenge_completed_days || 0,
-              currentDay: challengeProgress?.challenge_current_day || 1,
-              totalTime: 0, // TODO: Get from backend
-              successfulDays: challengeProgress?.successful_days || 0,
-              daysSinceStart: challengeProgress?.days_since_start || null,
-            }}
-            isLoading={progressLoading}
-          />
-        </section>
+        {/* Stats Panel removed - cumulative statistics now available in:
+            1. ProgressOverviewModal (accessed via "查看进度总览" button)
+            2. Profile page (global statistics)
+            This eliminates data duplication and reduces cognitive load */}
       </div>
 
       {/* Welcome Modal - First-time user onboarding */}
