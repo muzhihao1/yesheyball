@@ -228,12 +228,12 @@ export default function NinetyDayChallenge() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-8">
-            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-            <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-xl w-1/3"></div>
+            <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl shadow-lg"></div>
+            <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl shadow-md"></div>
           </div>
         </div>
       </div>
@@ -243,9 +243,9 @@ export default function NinetyDayChallenge() {
   // Error state - no user
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          <Card className="border-red-200 bg-red-50 dark:bg-red-900/20">
+          <Card className="border-red-200 bg-red-50 dark:bg-red-900/20 rounded-xl shadow-lg">
             <CardContent className="p-6 flex items-center gap-4">
               <AlertCircle className="w-8 h-8 text-red-600" />
               <div>
@@ -265,12 +265,12 @@ export default function NinetyDayChallenge() {
   const dayStatuses = generateDayStatuses();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-green-600 to-amber-600">
               90天台球挑战
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -279,18 +279,18 @@ export default function NinetyDayChallenge() {
           </div>
           <div className="flex items-center gap-6">
             {/* 清台能力总分 */}
-            <div className="text-center">
-              <div className="text-sm text-muted-foreground mb-1">清台能力</div>
-              <div className="text-3xl font-bold text-blue-600">
+            <div className="text-center px-6 py-3 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-2xl shadow-md border border-amber-200 dark:border-amber-800">
+              <div className="text-sm text-amber-700 dark:text-amber-300 mb-1 font-medium">清台能力</div>
+              <div className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
                 {abilityScores?.clearance || 0}
               </div>
-              <div className="text-xs text-muted-foreground">分 / 500</div>
+              <div className="text-xs text-amber-600 dark:text-amber-400">分 / 500</div>
             </div>
 
             {/* 当前天数 */}
-            <div className="flex items-center gap-2">
-              <Target className="w-8 h-8 text-blue-600" />
-              <span className="text-2xl font-bold text-blue-600">
+            <div className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-2xl shadow-md border border-emerald-200 dark:border-emerald-800">
+              <Target className="w-8 h-8 text-emerald-600" />
+              <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
                 第 {currentDay} 天
               </span>
             </div>
@@ -300,27 +300,27 @@ export default function NinetyDayChallenge() {
         {/* Current Day Section */}
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-indigo-600" />
+            <BookOpen className="w-6 h-6 text-emerald-600" />
             今日训练
           </h2>
 
-          <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+          <Card className="border-2 border-emerald-200 dark:border-emerald-800 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-emerald-50 via-green-50 to-amber-50 dark:from-emerald-900/20 dark:via-green-900/20 dark:to-amber-900/20">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-2xl text-blue-900 dark:text-blue-100">
+                  <CardTitle className="text-2xl text-emerald-900 dark:text-emerald-100 font-bold">
                     {curriculum?.title || `第${currentDay}天训练`}
                   </CardTitle>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full font-medium">
+                  <div className="flex items-center gap-4 mt-3 text-sm">
+                    <span className="px-4 py-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full font-medium shadow-sm">
                       {curriculum?.trainingType || '系统训练'}
                     </span>
-                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-full font-medium">
+                    <span className="px-4 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full font-medium shadow-sm">
                       {curriculum?.difficulty || '中级'}
                     </span>
                     {curriculum?.estimatedDuration && (
-                      <span className="text-muted-foreground">
-                        预计时长: {curriculum.estimatedDuration} 分钟
+                      <span className="text-muted-foreground font-medium">
+                        ⏱ {curriculum.estimatedDuration} 分钟
                       </span>
                     )}
                   </div>
@@ -344,7 +344,7 @@ export default function NinetyDayChallenge() {
                   <ul className="space-y-2">
                     {curriculum.objectives.map((objective: string, index: number) => (
                       <li key={index} className="flex items-start gap-2">
-                        <span className="text-blue-600 mt-1">•</span>
+                        <span className="text-emerald-600 mt-1 font-bold">•</span>
                         <span className="text-foreground">{objective}</span>
                       </li>
                     ))}
@@ -359,7 +359,7 @@ export default function NinetyDayChallenge() {
                   <ul className="space-y-2">
                     {curriculum.keyPoints.map((point: string, index: number) => (
                       <li key={index} className="flex items-start gap-2">
-                        <span className="text-indigo-600 mt-1">✓</span>
+                        <span className="text-amber-600 mt-1 font-bold">✓</span>
                         <span className="text-foreground">{point}</span>
                       </li>
                     ))}
@@ -372,7 +372,7 @@ export default function NinetyDayChallenge() {
                 <Button
                   onClick={handleStartTraining}
                   size="lg"
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-6 text-lg"
+                  className="w-full bg-gradient-to-r from-emerald-600 via-green-600 to-amber-600 hover:from-emerald-700 hover:via-green-700 hover:to-amber-700 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
                 >
                   <PlayCircle className="w-6 h-6 mr-2" />
                   开始今日训练
@@ -383,28 +383,28 @@ export default function NinetyDayChallenge() {
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
                 <Button
                   variant="outline"
-                  className="w-full"
+                  className="w-full border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-all duration-300"
                   onClick={() => window.location.href = '/profile'}
                 >
-                  <Target className="w-4 h-4 mr-2" />
+                  <Target className="w-4 h-4 mr-2 text-emerald-600" />
                   查看完整能力分析
                 </Button>
 
                 <div className="text-sm text-muted-foreground space-y-2">
                   <p className="text-center font-medium">✅ 完成今日任务后，你可以：</p>
-                  <div className="text-xs space-y-1 bg-blue-50/50 rounded-lg p-3">
+                  <div className="text-xs space-y-1 bg-gradient-to-r from-emerald-50/50 to-amber-50/50 dark:from-emerald-900/20 dark:to-amber-900/20 rounded-xl p-3 shadow-sm">
                     <p>📚 <strong>技能库</strong> - 复习十大招理论，巩固知识</p>
                     <p>🎯 <strong>专项训练道场</strong> - 针对薄弱环节，反复强化</p>
                     <p>🎮 <strong>练习场</strong> - 做题测试，验证学习成果</p>
                   </div>
                   <div className="flex flex-wrap gap-2 justify-center pt-2">
                     <Link href="/tasks">
-                      <Button variant="outline" size="sm" className="text-xs h-8 border-indigo-300 hover:bg-indigo-100">
+                      <Button variant="outline" size="sm" className="text-xs h-8 border-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg transition-all duration-300">
                         📚 技能库
                       </Button>
                     </Link>
                     <Link href="/levels">
-                      <Button variant="outline" size="sm" className="text-xs h-8 border-purple-300 hover:bg-purple-100">
+                      <Button variant="outline" size="sm" className="text-xs h-8 border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg transition-all duration-300">
                         🎮 练习场
                       </Button>
                     </Link>
