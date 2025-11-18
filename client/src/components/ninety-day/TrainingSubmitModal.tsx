@@ -42,7 +42,7 @@ export function TrainingSubmitModal({
 }: TrainingSubmitModalProps) {
   const { toast } = useToast();
   const submitMutation = useSubmitTraining();
-  const [selectedFocusAreas, setSelectedFocusAreas] = useState<string[]>([]);
+  const [selectedFocusAreas, setSelectedFocusAreas] = useState<Array<typeof FOCUS_AREAS[number]>>([]);
 
   const form = useForm<SubmitNinetyDayTrainingRecord>({
     resolver: zodResolver(submitNinetyDayTrainingRecordSchema),
@@ -119,7 +119,7 @@ export function TrainingSubmitModal({
     });
   };
 
-  const handleFocusAreaToggle = (area: string) => {
+  const handleFocusAreaToggle = (area: typeof FOCUS_AREAS[number]) => {
     setSelectedFocusAreas(prev =>
       prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area]
     );

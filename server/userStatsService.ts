@@ -173,11 +173,13 @@ export async function updateUserStats(userId: string): Promise<StreakData> {
       createdAt: s.createdAt,
       source: 'skills_library' as const,
     })),
-    // 90-Day Challenge sessions
-    ...ninetyDaySessions.map(s => ({
-      createdAt: s.completedAt,
-      source: 'ninety_day_challenge' as const,
-    })),
+    // 90-Day Challenge sessions (filter out null completedAt)
+    ...ninetyDaySessions
+      .filter(s => s.completedAt !== null)
+      .map(s => ({
+        createdAt: s.completedAt!,
+        source: 'ninety_day_challenge' as const,
+      })),
   ];
 
   console.log(`📊 Found ${completedSkillsSessions.length} skills sessions + ${ninetyDaySessions.length} 90-day sessions`);
@@ -226,16 +228,18 @@ export async function getUserStreakData(userId: string): Promise<StreakData> {
     .from(ninetyDayTrainingRecords)
     .where(eq(ninetyDayTrainingRecords.userId, userId));
 
-  // Merge and calculate
+  // Merge and calculate (filter out null completedAt from 90-day sessions)
   const allSessions: UnifiedTrainingSession[] = [
     ...completedSkillsSessions.map(s => ({
       createdAt: s.createdAt,
       source: 'skills_library' as const,
     })),
-    ...ninetyDaySessions.map(s => ({
-      createdAt: s.completedAt,
-      source: 'ninety_day_challenge' as const,
-    })),
+    ...ninetyDaySessions
+      .filter(s => s.completedAt !== null)
+      .map(s => ({
+        createdAt: s.completedAt!,
+        source: 'ninety_day_challenge' as const,
+      })),
   ];
 
   return calculateTrainingStreak(allSessions);

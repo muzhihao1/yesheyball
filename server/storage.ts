@@ -1576,8 +1576,9 @@ export class DatabaseStorage implements IStorage {
       userId,
       dayNumber,
       trainingType: curriculum.trainingType,
-      duration,
-      rating,
+      startedAt: new Date(),
+      completedAt: new Date(),
+      durationMinutes: duration,
       notes,
     });
 
