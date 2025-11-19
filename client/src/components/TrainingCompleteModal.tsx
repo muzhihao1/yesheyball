@@ -16,7 +16,7 @@
  * - sessionTitle: Name of completed training session
  * - earnedExp: Experience points earned
  * - stars: Rating (1-5)
- * - duration: Training duration in minutes (optional)
+ * - duration: Training duration in seconds (optional)
  * - onClose: Callback when modal is closed
  *
  * Usage:
@@ -164,7 +164,7 @@ export function TrainingCompleteModal({
               </motion.div>
 
               {/* Duration */}
-              {duration && (
+              {duration !== undefined && duration > 0 && (
                 <motion.div
                   className="bg-gradient-to-br from-blue-50 to-sky-50 border-2 border-blue-200 rounded-xl p-4 text-center"
                   initial={{ scale: 0, rotate: 10 }}
@@ -174,8 +174,23 @@ export function TrainingCompleteModal({
                   <div className="text-sm text-gray-600 mb-1">训练时长</div>
                   <div className="text-3xl font-bold text-blue-600 flex items-center justify-center gap-1">
                     <Clock className="w-6 h-6" />
-                    {duration}
-                    <span className="text-lg">分</span>
+                    {duration >= 60 ? (
+                      <>
+                        {Math.floor(duration / 60)}
+                        <span className="text-lg">分</span>
+                        {duration % 60 > 0 && (
+                          <>
+                            {duration % 60}
+                            <span className="text-lg">秒</span>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {duration}
+                        <span className="text-lg">秒</span>
+                      </>
+                    )}
                   </div>
                 </motion.div>
               )}

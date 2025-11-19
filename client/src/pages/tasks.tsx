@@ -229,12 +229,9 @@ export default function TasksPage() {
     setActiveElapsedTime(0);
     setIsTrainingPaused(false);
     setTrainingNotes("");
-    // Clear ALL navigation states to return to main page where training interface is rendered
-    setSelectedTrainingPlan(null);
-    setSelectedTraining(null);
-    setSelectedSkill(null);
-    setSelectedSubSkill(null);
-    console.log('[DEBUG] Cleared all navigation states');
+    // Stay on the training plan detail page - don't clear navigation states
+    // The training interface will be rendered on the detail page
+    console.log('[DEBUG] Training started, staying on detail page');
     toast({
       title: "开始训练",
       description: `开始「${plan.title}」训练`,
@@ -270,6 +267,39 @@ export default function TasksPage() {
     const combinedNotes = [trainingNotes, additionalFeedback]
       .filter(Boolean)
       .join("\n") || "完成了训练";
+
+    // Save training session to database
+    try {
+      const sessionResponse = await fetch("/api/training-sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          duration: Math.round(activeElapsedTime / 60), // Convert seconds to minutes
+          rating: rating,
+          notes: combinedNotes,
+          sessionType: activeUnit ? "guided" : "custom",
+          trainingProgramId: activeTrainingPlan?.id,
+        }),
+      });
+
+      if (!sessionResponse.ok) {
+        console.error("Failed to save training session:", await sessionResponse.text());
+      } else {
+        console.log('[DEBUG] Training session saved successfully');
+        // Invalidate queries to refresh daily goals and other stats
+        queryClient.invalidateQueries({ queryKey: ['/api/daily-goals'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/user/streak'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/v1/dashboard/summary'] });
+      }
+    } catch (error) {
+      console.error("Failed to save training session:", error);
+      // Continue even if save fails - show celebration and AI feedback
+    }
 
     // Generate AI feedback in background
     try {
@@ -448,14 +478,111 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* Start Training Button */}
-        <Button
-          size="lg"
-          className="w-full bg-purple-600 hover:bg-purple-700"
-          onClick={() => handleStartSpecializedTraining(selectedTrainingPlan)}
-        >
-          开始训练
-        </Button>
+        {/* Start Training Button - Only show when not training */}
+        {!isTrainingActive && (
+          <Button
+            size="lg"
+            className="w-full bg-purple-600 hover:bg-purple-700"
+            onClick={() => handleStartSpecializedTraining(selectedTrainingPlan)}
+          >
+            开始训练
+          </Button>
+        )}
+
+        {/* Active Training Interface - Show when training is active */}
+        {isTrainingActive && activeTrainingPlan && (
+          <Card className="border-purple-500 border-2">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>正在训练: {activeTrainingPlan.title}</span>
+                <Badge variant="outline" className="text-lg font-mono">
+                  {formatTime(activeElapsedTime)}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Training controls */}
+              <div className="flex gap-2">
+                {!isTrainingPaused ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsTrainingPaused(true)}
+                    className="flex-1"
+                  >
+                    <Pause className="w-4 h-4 mr-2" />
+                    暂停
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsTrainingPaused(false)}
+                    className="flex-1"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    继续
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  onClick={handleStopTraining}
+                  className="flex-1"
+                >
+                  <Square className="w-4 h-4 mr-2" />
+                  结束训练
+                </Button>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  训练笔记（可选）
+                </label>
+                <Textarea
+                  value={trainingNotes}
+                  onChange={(e) => setTrainingNotes(e.target.value)}
+                  placeholder="记录训练中的感受、发现或问题..."
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Modals for training plan detail page */}
+        {showRatingModal && activeTrainingPlan && (
+          <RatingModal
+            sessionType={activeTrainingPlan.title}
+            duration={activeElapsedTime}
+            notes={trainingNotes}
+            onCancel={() => setShowRatingModal(false)}
+            onSubmit={handleRatingSubmit}
+          />
+        )}
+
+        <TrainingCompleteModal
+          isOpen={showCelebration}
+          onClose={() => {
+            setShowCelebration(false);
+            if (aiFeedback) {
+              setShowAiFeedbackModal(true);
+            }
+          }}
+          sessionTitle={celebrationData?.sessionTitle || ""}
+          earnedExp={celebrationData?.earnedExp || 0}
+          stars={celebrationData?.stars || 0}
+          duration={celebrationData?.duration}
+        />
+
+        {showAiFeedbackModal && (
+          <AiFeedbackModal
+            onClose={() => {
+              setShowAiFeedbackModal(false);
+              setAiFeedback("");
+            }}
+            feedback={aiFeedback}
+            rating={currentRating}
+          />
+        )}
       </div>
     );
   }
@@ -567,6 +694,58 @@ export default function TasksPage() {
           </AlertDescription>
         </Alert>
 
+        {/* Specialized Training Arena - Moved up for practice-first approach */}
+        {specializedTrainings.length > 0 && (
+          <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <Trophy className="h-6 w-6 text-purple-600" />
+                <div>
+                  <CardTitle className="text-lg text-purple-800">🎯 专项训练道场 - 针对性突破</CardTitle>
+                  <p className="text-sm text-purple-700 mt-1">
+                    从十大招中精选的<strong>重点训练内容</strong>，哪里薄弱练哪里！
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {specializedTrainings
+                  .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                  .map((training) => (
+                    <Card
+                      key={training.id}
+                      className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.05] border-purple-200 bg-white"
+                      onClick={() => {
+                        console.log('[DEBUG] Clicked specialized training:', training.title);
+                        // Clear other navigation states to ensure proper routing
+                        setSelectedSkill(null);
+                        setSelectedSubSkill(null);
+                        setSelectedTrainingPlan(null);
+                        setSelectedTraining(training);
+                      }}
+                    >
+                      <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                        <div className="text-purple-600">
+                          {training.iconName && iconMap[training.iconName] || <Target className="w-8 h-8" />}
+                        </div>
+                        <h4 className="font-semibold text-sm text-gray-800">{training.title}</h4>
+                        {training.description && (
+                          <p className="text-xs text-gray-600 line-clamp-2">{training.description}</p>
+                        )}
+                        {training.category && (
+                          <Badge className="bg-purple-100 text-purple-700 text-xs">
+                            {training.category}
+                          </Badge>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Daily Goals Panel */}
         <DailyGoalsPanel />
 
@@ -666,54 +845,6 @@ export default function TasksPage() {
             );
           })}
         </div>
-
-        {/* Specialized Training Arena */}
-        {specializedTrainings.length > 0 && (
-          <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <Trophy className="h-6 w-6 text-purple-600" />
-                <div>
-                  <CardTitle className="text-lg text-purple-800">🎯 专项训练道场 - 针对性突破</CardTitle>
-                  <p className="text-sm text-purple-700 mt-1">
-                    从十大招中精选的<strong>重点训练内容</strong>，哪里薄弱练哪里！
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {specializedTrainings
-                  .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-                  .map((training) => (
-                    <Card
-                      key={training.id}
-                      className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.05] border-purple-200 bg-white"
-                      onClick={() => {
-                        console.log('[DEBUG] Clicked specialized training:', training.title);
-                        setSelectedTraining(training);
-                      }}
-                    >
-                      <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-                        <div className="text-purple-600">
-                          {training.iconName && iconMap[training.iconName] || <Target className="w-8 h-8" />}
-                        </div>
-                        <h4 className="font-semibold text-sm text-gray-800">{training.title}</h4>
-                        {training.description && (
-                          <p className="text-xs text-gray-600 line-clamp-2">{training.description}</p>
-                        )}
-                        {training.category && (
-                          <Badge className="bg-purple-100 text-purple-700 text-xs">
-                            {training.category}
-                          </Badge>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Active Training Interface */}
         {(() => {
