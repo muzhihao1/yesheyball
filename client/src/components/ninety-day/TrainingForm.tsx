@@ -43,8 +43,8 @@ const combinedSchema = z.object({
     (val) => (typeof val === 'number' && isNaN(val)) ? undefined : val,
     z.number().int().min(1, '目标数量必须大于0').optional()
   ),
-  // Allow any duration >= 0, soft warning shown in UI instead of hard validation
-  duration_minutes: z.number().min(0, '训练时长不能为负'),
+  // Require minimum duration of 0.1 minutes (6 seconds) to match backend validation
+  duration_minutes: z.number().min(0.1, '请使用计时器记录训练时长'),
   notes: z.string().optional(),
 });
 
