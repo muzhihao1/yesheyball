@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserStats } from "@/hooks/useUserStats";
 import {
   Trophy,
   Medal,
@@ -32,8 +33,7 @@ interface RankingUser {
 export default function Ranking() {
   const { user } = useAuth();
 
-  const { data: userStats } = useQuery({
-    queryKey: ["/api/user/streak"],
+  const { data: userStats } = useUserStats({
     enabled: !!user,
   });
 

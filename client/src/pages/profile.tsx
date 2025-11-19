@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserStats } from "@/hooks/useUserStats";
 import { AchievementGrid } from "@/components/AchievementGrid";
 import { TrainingTrendChart } from "@/components/TrainingTrendChart";
 import { SkillRadarChart } from "@/components/SkillRadarChart";
@@ -38,8 +39,7 @@ export default function Profile() {
   // Fetch ability scores (single source of truth)
   const { data: abilityScores, isLoading: isLoadingAbilityScores } = useAbilityScores();
 
-  const { data: userStats } = useQuery({
-    queryKey: ["/api/user/streak"],
+  const { data: userStats } = useUserStats({
     enabled: !!user,
   });
 
@@ -162,15 +162,15 @@ export default function Profile() {
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
-            <div className="text-lg font-bold text-orange-600">{(userStats as any)?.currentStreak || 0}天</div>
+            <div className="text-lg font-bold text-orange-600">{userStats?.currentStreak || 0}天</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">连续训练</p>
-            <p className="text-xs text-gray-500">最长: {(userStats as any)?.longestStreak || 0}天</p>
+            <p className="text-xs text-gray-500">最长: {userStats?.longestStreak || 0}天</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center shadow-sm">
             <div className="text-lg font-bold text-blue-600">{(trainingRecords as any)?.length || 0}</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">训练记录</p>
-            <p className="text-xs text-gray-500">总训练: {(userStats as any)?.totalDays || 0}天</p>
+            <p className="text-xs text-gray-500">总训练: {userStats?.totalDays || 0}天</p>
           </div>
         </div>
 

@@ -155,6 +155,54 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  /**
+   * GET /api/user/stats - Unified User Statistics API
+   *
+   * Returns comprehensive user training statistics including:
+   * - Current streak (consecutive training days from today/yesterday)
+   * - Longest streak (historical best)
+   * - Total days (unique training days across all systems)
+   * - Recent activity pattern (last 7 days)
+   *
+   * Data source: Merged from Skills Library + 90-Day Challenge systems
+   * Updated by: server/userStatsService.ts
+   */
+  app.get("/api/user/stats", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      // Demo mode: return empty stats
+      if (!hasDatabase) {
+        return res.json({
+          currentStreak: 0,
+          longestStreak: 0,
+          totalDays: 0,
+          recentDays: []
+        });
+      }
+
+      // Get user record from database (includes persisted stats)
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Also get calculated streak data with recent activity
+      const streakData = await getUserStreakData(userId);
+
+      // Return combined stats (database + calculated)
+      res.json({
+        currentStreak: user.streak,
+        longestStreak: user.longestStreak,
+        totalDays: user.totalDays,
+        recentDays: streakData.recentDays,
+      });
+    } catch (error) {
+      console.error("User stats error:", error);
+      res.status(500).json({ message: "Failed to get user stats" });
+    }
+  });
+
   // Get user training streak data
   app.get("/api/user/streak", isAuthenticated, async (req, res) => {
     try {

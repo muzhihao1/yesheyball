@@ -194,6 +194,7 @@ export async function updateUserStats(userId: string): Promise<StreakData> {
     .update(users)
     .set({
       streak: streakData.currentStreak,
+      longestStreak: streakData.longestStreak,
       totalDays: streakData.totalDays,
       lastActiveAt: new Date(),
     })

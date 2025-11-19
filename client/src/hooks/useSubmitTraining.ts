@@ -78,7 +78,7 @@ export function useSubmitTraining() {
       // Invalidate and refetch related queries to update UI
       queryClient.invalidateQueries({ queryKey: ['/api/ninety-day/records'] });
       queryClient.invalidateQueries({ queryKey: ['/api/v1/dashboard/summary'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/user/streak'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/ninety-day/progress'] });
 
       console.log(`✅ Training record submitted successfully: Day ${data.data.dayNumber}`);

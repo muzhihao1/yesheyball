@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useUserStats } from "@/hooks/useUserStats";
 
 interface User {
   id: number;
@@ -137,9 +138,7 @@ export default function GrowthPage() {
   });
 
   // Fetch streak data
-  const { data: streakData } = useQuery<{currentStreak: number; longestStreak: number; totalDays: number}>({
-    queryKey: ["/api/user/streak"],
-  });
+  const { data: streakData } = useUserStats();
 
   // Fetch training program data
   const { data: trainingProgram } = useQuery<{id: number; name: string; description: string; totalDays: number; currentDay: number; difficulty: string; createdAt: string}>({

@@ -44,6 +44,13 @@ export const users = pgTable("users", {
   // - 相关文件：server/userStatsService.ts:calculateTrainingStreak()
   // - 区别说明：与 daysSinceStart 不同，这是连续训练的天数，会因断训而清零
 
+  longestStreak: integer("longest_streak").notNull().default(0),
+  // 历史最长连续训练天数
+  // - 计算方式：从所有训练记录中找出最长的连续训练天数
+  // - 更新时机：每次训练完成后自动调用 updateUserStats()
+  // - 用途：用于展示用户的训练毅力和历史最佳表现
+  // - 相关文件：server/userStatsService.ts:calculateTrainingStreak()
+
   totalDays: integer("total_days").notNull().default(0),
   // 总训练天数（去重后的日期数）
   // - 数据来源：技能库(training_sessions) + 90天挑战(ninety_day_training_records)
