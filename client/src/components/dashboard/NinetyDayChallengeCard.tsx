@@ -54,7 +54,7 @@ export function NinetyDayChallengeCard({ data }: NinetyDayChallengeCardProps) {
             {data.daysSinceStart !== null && (
               <div className="flex items-center gap-2 text-sm text-gray-600 bg-white/50 rounded-lg p-2">
                 <TrendingUp className="h-4 w-4" />
-                <span>已坚持 {data.daysSinceStart} 天</span>
+                <span>挑战天数 {data.daysSinceStart} 天</span>
               </div>
             )}
           </>

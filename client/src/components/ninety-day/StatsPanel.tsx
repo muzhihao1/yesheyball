@@ -140,7 +140,7 @@ export default function StatsPanel({ stats, isLoading, className }: StatsPanelPr
     },
     {
       icon: Zap,
-      label: '已坚持',
+      label: '挑战天数',
       value: daysSinceStart !== null ? `${daysSinceStart}天` : '-',
       subtitle: '从开始挑战至今',
       color: 'bg-rose-500',
