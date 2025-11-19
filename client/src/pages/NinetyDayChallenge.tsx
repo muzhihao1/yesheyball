@@ -92,10 +92,21 @@ export default function NinetyDayChallenge() {
   const isLoading = scoresLoading || progressLoading || curriculumLoading;
 
   // Create dayNumber → training record mapping for map node ratings
-  const trainingRecordsMap = new Map<number, NinetyDayTrainingRecord>();
+  // Convert NinetyDayTrainingRecord to TrainingRecordSummary format
+  const trainingRecordsMap = new Map<number, { dayNumber: number; rating: number; duration: number; notes: string | null }>();
   if (trainingRecordsData?.records) {
     trainingRecordsData.records.forEach(record => {
-      trainingRecordsMap.set(record.dayNumber, record);
+      // Convert successRate (0-100) to star rating (1-5)
+      const rating = record.successRate !== null
+        ? Math.max(1, Math.min(5, Math.ceil((record.successRate / 100) * 5)))
+        : 3; // Default to 3 stars if no success rate
+
+      trainingRecordsMap.set(record.dayNumber, {
+        dayNumber: record.dayNumber,
+        rating,
+        duration: record.durationMinutes || 0,
+        notes: record.notes,
+      });
     });
   }
 
@@ -470,26 +481,39 @@ export default function NinetyDayChallenge() {
                   查看完整能力分析
                 </Button>
 
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p className="text-center font-medium">✅ 完成今日任务后，你可以：</p>
-                  <div className="text-xs space-y-1 bg-gradient-to-r from-emerald-50/50 to-amber-50/50 dark:from-emerald-900/20 dark:to-amber-900/20 rounded-xl p-3 shadow-sm">
-                    <p>📚 <strong>技能库</strong> - 复习十大招理论，巩固知识</p>
-                    <p>🎯 <strong>专项训练道场</strong> - 针对薄弱环节，反复强化</p>
-                    <p>🎮 <strong>练习场</strong> - 做题测试，验证学习成果</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 justify-center pt-2">
-                    <Link href="/tasks">
-                      <Button variant="outline" size="sm" className="text-xs h-8 border-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg transition-all duration-300">
-                        📚 技能库
-                      </Button>
-                    </Link>
-                    <Link href="/levels">
-                      <Button variant="outline" size="sm" className="text-xs h-8 border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg transition-all duration-300">
-                        🎮 练习场
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
+                {/* Unified Card-Style Guide Area (Problem 4 Fix) */}
+                <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-emerald-200 dark:border-emerald-800 shadow-md">
+                  <CardContent className="p-6">
+                    <h3 className="text-center text-lg font-bold text-emerald-700 dark:text-emerald-300 mb-2">
+                      🎉 太棒了！今日训练已完成
+                    </h3>
+                    <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      接下来你可以：
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Link href="/tasks" className="block">
+                        <Button
+                          variant="default"
+                          className="w-full h-auto flex flex-col items-center gap-2 py-4 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white rounded-xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300"
+                        >
+                          <span className="text-2xl">📚</span>
+                          <span className="font-semibold">技能库</span>
+                          <span className="text-xs opacity-90">复习理论知识</span>
+                        </Button>
+                      </Link>
+                      <Link href="/levels" className="block">
+                        <Button
+                          variant="outline"
+                          className="w-full h-auto flex flex-col items-center gap-2 py-4 bg-white dark:bg-gray-900 border-2 border-emerald-600 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 rounded-xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300"
+                        >
+                          <span className="text-2xl">🎮</span>
+                          <span className="font-semibold">练习场</span>
+                          <span className="text-xs opacity-90">做题巩固</span>
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>

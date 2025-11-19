@@ -358,7 +358,7 @@ export const AdventureMap = memo(({
       y: pos.y,
       status: getNodeStatus(day, currentDay, completedDays),
       isMilestone: day % 10 === 0,
-      rating: successRateToStars(trainingRecord?.successRate), // Convert successRate to 1-5 stars
+      rating: trainingRecord?.rating, // Training quality rating (1-5 stars)
     };
   });
 

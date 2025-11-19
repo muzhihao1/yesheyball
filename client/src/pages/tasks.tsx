@@ -657,7 +657,7 @@ export default function TasksPage() {
                     {progress && (
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <span>{progress.totalXpEarned} XP</span>
-                        <span>{progress.completedUnits} 单元已完成</span>
+                        <span>{progress.completedSubSkills} 子技能已完成</span>
                       </div>
                     )}
                   </div>
@@ -834,11 +834,12 @@ export default function TasksPage() {
             rating={currentRating}
           />
         )}
-        <AchievementUnlockModal
-          isOpen={showAchievementModal}
-          onClose={() => setShowAchievementModal(false)}
-          achievements={unlockedAchievements}
-        />
+        {showAchievementModal && (
+          <AchievementUnlockModal
+            onClose={() => setShowAchievementModal(false)}
+            achievements={unlockedAchievements}
+          />
+        )}
       </div>
     );
   }
@@ -1044,11 +1045,12 @@ export default function TasksPage() {
           duration={celebrationData?.duration}
         />
 
-        <AchievementUnlockModal
-          isOpen={showAchievementModal}
-          onClose={() => setShowAchievementModal(false)}
-          achievements={unlockedAchievements}
-        />
+        {showAchievementModal && (
+          <AchievementUnlockModal
+            onClose={() => setShowAchievementModal(false)}
+            achievements={unlockedAchievements}
+          />
+        )}
       </div>
     );
   }
@@ -1194,11 +1196,12 @@ export default function TasksPage() {
           rating={currentRating}
         />
       )}
-      <AchievementUnlockModal
-        isOpen={showAchievementModal}
-        onClose={() => setShowAchievementModal(false)}
-        achievements={unlockedAchievements}
-      />
+      {showAchievementModal && (
+        <AchievementUnlockModal
+          onClose={() => setShowAchievementModal(false)}
+          achievements={unlockedAchievements}
+        />
+      )}
     </div>
   );
 }

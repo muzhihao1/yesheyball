@@ -8,12 +8,12 @@ import { BookOpen, Target, Lightbulb, Clock, X } from 'lucide-react';
 export interface DayCurriculum {
   dayNumber: number;
   title: string;
-  description: string;
+  description: string | null; // Allow null to match NinetyDayCurriculum type
   objectives: string[];
   keyPoints: string[];
   trainingType: string;
-  difficulty: string;
-  estimatedDuration?: number;
+  difficulty: string | null; // Allow null to match NinetyDayCurriculum type
+  estimatedDuration?: number | null; // Allow null to match NinetyDayCurriculum type
 }
 
 /**
@@ -102,9 +102,11 @@ export function DayDetailModal({
                 <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full text-sm font-medium">
                   {curriculum.trainingType}
                 </span>
-                <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full text-sm font-medium">
-                  {curriculum.difficulty}
-                </span>
+                {curriculum.difficulty && (
+                  <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full text-sm font-medium">
+                    {curriculum.difficulty}
+                  </span>
+                )}
                 {curriculum.estimatedDuration && (
                   <span className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
