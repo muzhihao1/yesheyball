@@ -116,9 +116,23 @@ export default function NinetyDayChallenge() {
   // The AdventureMap component will display stars for completed training days
 
   // Check if user is first-time (no challenge start date)
+  // Use localStorage to prevent repeated showing of welcome modal
   useEffect(() => {
-    if (!isLoading && challengeProgress && !challengeProgress.challenge_start_date) {
-      setShowWelcomeModal(true);
+    if (!isLoading && challengeProgress) {
+      const hasStartedBefore = localStorage.getItem('ninety_day_challenge_started');
+
+      // Show welcome modal only if:
+      // 1. No challenge_start_date AND
+      // 2. No localStorage flag AND
+      // 3. No completed days (hasn't actually trained yet)
+      const shouldShowWelcome =
+        !challengeProgress.challenge_start_date &&
+        !hasStartedBefore &&
+        (challengeProgress.challenge_completed_days || 0) === 0;
+
+      if (shouldShowWelcome) {
+        setShowWelcomeModal(true);
+      }
     }
   }, [isLoading, challengeProgress]);
 
@@ -176,6 +190,7 @@ export default function NinetyDayChallenge() {
         if (response.status === 400) {
           console.log('Challenge already started, refreshing data...');
           await refetchProgress();
+          localStorage.setItem('ninety_day_challenge_started', 'true');
           setShowWelcomeModal(false);
           setIsStartingChallenge(false);
           return;
@@ -187,6 +202,9 @@ export default function NinetyDayChallenge() {
 
       // Refresh progress data
       await refetchProgress();
+
+      // Mark challenge as started in localStorage
+      localStorage.setItem('ninety_day_challenge_started', 'true');
 
       // Close welcome modal
       setShowWelcomeModal(false);
