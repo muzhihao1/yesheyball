@@ -31,8 +31,9 @@ export default function DurationTimer({ onDurationChange, className }: DurationT
       interval = setInterval(() => {
         setSeconds((prev) => {
           const newSeconds = prev + 1;
-          // Update parent with minutes (rounded)
-          onDurationChange(Math.round(newSeconds / 60));
+          // Update parent with minutes (with decimal precision for validation)
+          // Use 2 decimal places to allow proper validation (0.1 min = 6 seconds)
+          onDurationChange(Math.round((newSeconds / 60) * 100) / 100);
           return newSeconds;
         });
       }, 1000);
@@ -85,7 +86,6 @@ export default function DurationTimer({ onDurationChange, className }: DurationT
           <Button
             onClick={handleStart}
             className="bg-green-600 hover:bg-green-700 text-white"
-            disabled={seconds > 0 && !isRunning}
           >
             <Play className="w-4 h-4 mr-2" />
             {seconds === 0 ? '开始' : '继续'}
