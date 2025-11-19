@@ -34,6 +34,18 @@
 import { useQuery } from "@tanstack/react-query";
 
 /**
+ * Get Authorization headers with JWT token for authenticated requests
+ */
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const accessToken = localStorage.getItem('supabase_access_token');
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  return headers;
+}
+
+/**
  * User training statistics interface
  */
 export interface UserStats {
@@ -57,6 +69,7 @@ export interface UserStats {
  */
 async function fetchUserStats(): Promise<UserStats> {
   const response = await fetch("/api/user/stats", {
+    headers: getAuthHeaders(),
     credentials: "include",
   });
 
