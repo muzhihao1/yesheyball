@@ -278,11 +278,13 @@ export default function TasksPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          duration: Math.round(activeElapsedTime / 60), // Convert seconds to minutes
+          title: sessionTitle, // Required field
+          duration: Math.max(1, Math.round(activeElapsedTime / 60)), // Minimum 1 minute
           rating: rating,
           notes: combinedNotes,
           sessionType: activeUnit ? "guided" : "custom",
-          trainingProgramId: activeTrainingPlan?.id,
+          programId: activeTrainingPlan?.id, // Correct field name
+          completed: true, // Mark as completed
         }),
       });
 
