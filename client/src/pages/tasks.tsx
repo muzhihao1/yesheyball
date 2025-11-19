@@ -283,7 +283,7 @@ export default function TasksPage() {
           rating: rating,
           notes: combinedNotes,
           sessionType: activeUnit ? "guided" : "custom",
-          programId: activeTrainingPlan?.id, // Correct field name
+          programId: activeTrainingPlan?.id ? Number(activeTrainingPlan.id) : undefined, // Convert to number
           completed: true, // Mark as completed
         }),
       });
