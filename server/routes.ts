@@ -2983,38 +2983,35 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
-      // Get progress data
-      const progress = await storage.getUserNinetyDayProgress(targetUserId);
-
-      // Get user's ability scores
+      // Get user data (single source of truth for challenge progress)
       const [user] = await db!.select().from(users).where(eq(users.id, targetUserId)).limit(1);
 
-      // Calculate days since start
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Calculate days since start from challengeStartDate
       let daysSinceStart: number | null = null;
-      if (progress?.startDate) {
-        const start = new Date(progress.startDate);
+      if (user.challengeStartDate) {
+        const start = new Date(user.challengeStartDate);
         const now = new Date();
         daysSinceStart = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       }
 
-      // Count completed days
-      const completedDaysCount = Array.isArray(progress?.completedDays)
-        ? progress.completedDays.length
-        : 0;
-
-      // Return data in format expected by frontend
+      // Return data from users table (single source of truth)
+      // processTrainingRecord updates users.challenge_current_day and users.challenge_completed_days
       res.json({
-        challenge_start_date: progress?.startDate || null,
-        challenge_current_day: progress?.currentDay || 1,
-        challenge_completed_days: completedDaysCount,
-        accuracy_score: user?.accuracyScore || 0,
-        spin_score: user?.spinScore || 0,
-        positioning_score: user?.positioningScore || 0,
-        power_score: user?.powerScore || 0,
-        strategy_score: user?.strategyScore || 0,
-        clearance_score: user?.clearanceScore || 0,
-        total_trained_days: completedDaysCount,
-        successful_days: 0, // TODO: Calculate from training records
+        challenge_start_date: user.challengeStartDate || null,
+        challenge_current_day: user.challengeCurrentDay || 1,
+        challenge_completed_days: user.challengeCompletedDays || 0,
+        accuracy_score: user.accuracyScore || 0,
+        spin_score: user.spinScore || 0,
+        positioning_score: user.positioningScore || 0,
+        power_score: user.powerScore || 0,
+        strategy_score: user.strategyScore || 0,
+        clearance_score: user.clearanceScore || 0,
+        total_trained_days: user.challengeCompletedDays || 0,
+        successful_days: user.challengeCompletedDays || 0, // Completed days are successful days
         days_since_start: daysSinceStart,
       });
     } catch (error) {
@@ -3070,19 +3067,16 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // === 1. 90-Day Challenge Data ===
-      const ninetyDayProgress = await storage.getUserNinetyDayProgress(targetUserId);
-
+      // === 1. 90-Day Challenge Data (from users table - single source of truth) ===
+      // processTrainingRecord updates users.challenge_current_day and users.challenge_completed_days
       let daysSinceStart: number | null = null;
-      if (ninetyDayProgress?.startDate) {
-        const start = new Date(ninetyDayProgress.startDate);
+      if (user.challengeStartDate) {
+        const start = new Date(user.challengeStartDate);
         const now = new Date();
         daysSinceStart = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       }
 
-      const completedDaysCount = Array.isArray(ninetyDayProgress?.completedDays)
-        ? ninetyDayProgress.completedDays.length
-        : 0;
+      const completedDaysCount = user.challengeCompletedDays || 0;
 
       // === 2. Skills Library Data (Ten Core Skills V3) ===
       const skillsProgress = await db!
@@ -3122,10 +3116,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Return unified dashboard data
       res.json({
         ninetyDayChallenge: {
-          currentDay: ninetyDayProgress?.currentDay || 1,
+          currentDay: user.challengeCurrentDay || 1,
           totalDays: 90,
           completedDays: completedDaysCount,
-          startDate: ninetyDayProgress?.startDate || null,
+          startDate: user.challengeStartDate || null,
           daysSinceStart
         },
         skillsLibrary: {
