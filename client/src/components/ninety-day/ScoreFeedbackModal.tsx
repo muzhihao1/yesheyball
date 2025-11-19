@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, TrendingUp, Target, Zap, GitBranch, Flame, Brain, Sparkles } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/useWindowSize';
+import { useLocation } from 'wouter';
 import type { ScoreChanges, AbilityScores } from '@/hooks/useNinetyDayTraining';
 
 /**
@@ -48,6 +49,7 @@ export default function ScoreFeedbackModal({
   newScores,
 }: ScoreFeedbackModalProps) {
   const { width, height } = useWindowSize();
+  const [, navigate] = useLocation();
 
   if (!scoreChanges || !newScores) {
     return null;
@@ -243,9 +245,7 @@ export default function ScoreFeedbackModal({
               继续训练
             </Button>
             <Button
-              onClick={() => {
-                window.location.href = '/profile';
-              }}
+              onClick={() => navigate('/profile')}
               size="lg"
               className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold"
             >

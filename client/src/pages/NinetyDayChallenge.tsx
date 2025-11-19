@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,6 +45,7 @@ import {
 
 export default function NinetyDayChallenge() {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   // Auto-scroll to map section on first load
@@ -475,7 +476,7 @@ export default function NinetyDayChallenge() {
                 <Button
                   variant="outline"
                   className="w-full border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-all duration-300"
-                  onClick={() => window.location.href = '/profile'}
+                  onClick={() => navigate('/profile')}
                 >
                   <Target className="w-4 h-4 mr-2 text-emerald-600" />
                   查看完整能力分析
