@@ -581,8 +581,14 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Duration and training notes are required" });
       }
 
+      // Parse and validate duration
+      const parsedDuration = parseInt(duration);
+      if (isNaN(parsedDuration) || parsedDuration < 0) {
+        return res.status(400).json({ message: "Invalid duration value" });
+      }
+
       const feedback = await generateCoachingFeedback({
-        duration: parseInt(duration),
+        duration: parsedDuration,
         summary: trainingNotes.trim(),
         rating: rating ? parseInt(rating) : null,
         exerciseType: sessionType || exerciseType,
@@ -590,9 +596,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
 
       res.json({ feedback });
-    } catch (error) {
-      console.error("Coaching feedback error:", error);
-      res.status(500).json({ message: "Failed to generate coaching feedback" });
+    } catch (error: any) {
+      console.error("Coaching feedback error:", error?.message || error);
+      // Return user-friendly error message if available
+      const errorMessage = error?.message || "获取教练反馈失败，请稍后重试";
+      res.status(500).json({ message: errorMessage });
     }
   });
 

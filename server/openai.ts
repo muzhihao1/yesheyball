@@ -1,7 +1,19 @@
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const apiKey = process.env.OPENAI_API_KEY;
+
+// Only create client if API key exists
+const openai = apiKey ? new OpenAI({ apiKey }) : null;
+
+// Check if OpenAI is configured
+function ensureOpenAI(): OpenAI {
+  if (!openai) {
+    console.error("OpenAI API key not configured");
+    throw new Error("AI教练功能暂时不可用，请稍后再试");
+  }
+  return openai;
+}
 
 interface TrainingSession {
   duration: number; // in seconds
@@ -12,8 +24,15 @@ interface TrainingSession {
 }
 
 export async function generateCoachingFeedback(trainingSession: TrainingSession): Promise<string> {
-  const durationMinutes = Math.floor(trainingSession.duration / 60);
-  const durationSeconds = trainingSession.duration % 60;
+  // Validate duration
+  const duration = trainingSession.duration;
+  if (typeof duration !== 'number' || isNaN(duration) || duration < 0) {
+    console.error("Invalid duration value:", duration);
+    throw new Error("训练时长数据无效");
+  }
+
+  const durationMinutes = Math.floor(duration / 60);
+  const durationSeconds = duration % 60;
   const timeString = `${durationMinutes}分${durationSeconds}秒`;
 
   // Determine feedback tone based on rating
@@ -52,7 +71,8 @@ ${ratingContext ? `- 训练状态：${ratingContext}` : ''}
 请用温暖、专业的语调回复：`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const client = ensureOpenAI();
+    const response = await client.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -69,8 +89,12 @@ ${ratingContext ? `- 训练状态：${ratingContext}` : ''}
     });
 
     return response.choices[0].message.content || "教练正在分析你的训练情况，请稍后再试。";
-  } catch (error) {
-    console.error("OpenAI API error:", error);
+  } catch (error: any) {
+    console.error("OpenAI API error:", error?.message || error);
+    // Re-throw user-friendly errors
+    if (error?.message?.includes("暂时不可用") || error?.message?.includes("数据无效")) {
+      throw error;
+    }
     throw new Error("获取教练反馈失败，请稍后重试");
   }
 }
@@ -93,7 +117,8 @@ export async function generateDiaryInsights(content: string, userLevel: number, 
 回复要专业、具体、激励性，控制在100-150字内。`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const client = ensureOpenAI();
+    const response = await client.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -110,8 +135,8 @@ export async function generateDiaryInsights(content: string, userLevel: number, 
     });
 
     return response.choices[0].message.content || "训练记录很详细，继续保持这种认真的态度，技术会稳步提升！";
-  } catch (error) {
-    console.error("OpenAI API error:", error);
+  } catch (error: any) {
+    console.error("OpenAI API error:", error?.message || error);
     return "训练记录很详细，继续保持这种认真的态度，技术会稳步提升！";
   }
 }
@@ -131,7 +156,8 @@ export async function generateMotivationalMessage(userLevel: number, streak: num
 语调要专业、温暖、激励人心。`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const client = ensureOpenAI();
+    const response = await client.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -148,8 +174,8 @@ export async function generateMotivationalMessage(userLevel: number, streak: num
     });
 
     return response.choices[0].message.content || "坚持就是胜利，每一次练习都在进步！";
-  } catch (error) {
-    console.error("OpenAI API error:", error);
+  } catch (error: any) {
+    console.error("OpenAI API error:", error?.message || error);
     return "坚持就是胜利，每一次练习都在进步！";
   }
 }
