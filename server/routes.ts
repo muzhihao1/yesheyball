@@ -2475,6 +2475,73 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  /**
+   * POST /api/ninety-day/recalculate-progress
+   * Recalculate challenge progress based on existing records
+   * Used to fix inconsistent data
+   */
+  app.post("/api/ninety-day/recalculate-progress", isAuthenticated, async (req, res) => {
+    if (!hasDatabase) {
+      return res.status(503).json({ message: "Database not available" });
+    }
+
+    const userId = requireSessionUserId(req);
+
+    try {
+      // Get all completed training records for this user
+      const records = await db!
+        .select()
+        .from(ninetyDayTrainingRecords)
+        .where(eq(ninetyDayTrainingRecords.userId, userId))
+        .orderBy(ninetyDayTrainingRecords.dayNumber);
+
+      if (records.length === 0) {
+        // No records, reset to initial state
+        await db!.update(users)
+          .set({
+            challengeCurrentDay: 1,
+            challengeCompletedDays: 0,
+            challengeStartDate: null,
+          })
+          .where(eq(users.id, userId));
+
+        return res.json({
+          message: "No training records found, progress reset to Day 1",
+          currentDay: 1,
+          completedDays: 0,
+        });
+      }
+
+      // Calculate progress from records
+      const completedDays = records.length;
+      const maxDayNumber = Math.max(...records.map(r => r.dayNumber));
+      const nextDay = Math.min(maxDayNumber + 1, 90);
+      const startDate = records[0].createdAt || new Date();
+
+      // Update user's challenge progress
+      await db!.update(users)
+        .set({
+          challengeCurrentDay: nextDay,
+          challengeCompletedDays: completedDays,
+          challengeStartDate: startDate,
+        })
+        .where(eq(users.id, userId));
+
+      console.log(`✅ Recalculated challenge progress for user ${userId}: currentDay=${nextDay}, completedDays=${completedDays}`);
+
+      res.json({
+        message: "Challenge progress recalculated successfully",
+        currentDay: nextDay,
+        completedDays: completedDays,
+        startDate: startDate,
+        recordsFound: records.length,
+      });
+    } catch (error) {
+      console.error("Error recalculating challenge progress:", error);
+      res.status(500).json({ message: "Failed to recalculate progress" });
+    }
+  });
+
   // ========================================================================
   // === Ten Core Skills System V3 API Routes (十大招系统) ===
   // ========================================================================
