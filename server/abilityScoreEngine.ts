@@ -377,14 +377,17 @@ export async function processTrainingRecord(
 
     // 9. Update challenge progress (auto-advance to next day)
     // Only update if this is the current day being completed
+    // Handle NULL values for users who haven't started the challenge yet
+    // Also set challenge_start_date if this is the first training
     const progressUpdate = await tx.execute(
       rawSql`
         UPDATE users
         SET
-          challenge_current_day = LEAST(challenge_current_day + 1, 90),
-          challenge_completed_days = challenge_completed_days + 1
+          challenge_current_day = LEAST(COALESCE(challenge_current_day, 0) + 1, 90),
+          challenge_completed_days = COALESCE(challenge_completed_days, 0) + 1,
+          challenge_start_date = CASE WHEN challenge_start_date IS NULL THEN NOW() ELSE challenge_start_date END
         WHERE id = ${user_id}
-          AND challenge_current_day = ${day_number}
+          AND (challenge_current_day = ${day_number} OR (challenge_current_day IS NULL AND ${day_number} = 1))
         RETURNING challenge_current_day, challenge_completed_days
       `
     );
