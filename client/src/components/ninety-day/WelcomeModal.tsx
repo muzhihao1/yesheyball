@@ -58,8 +58,8 @@ export default function WelcomeModal({ open, onOpenChange, onStart, isStarting }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <div className="py-6 space-y-8">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="py-4 md:py-6 space-y-6 md:space-y-8">
           {/* Header */}
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -67,13 +67,13 @@ export default function WelcomeModal({ open, onOpenChange, onStart, isStarting }
             transition={{ duration: 0.5, type: 'spring' }}
             className="text-center"
           >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 mb-4">
-              <Rocket className="w-10 h-10 text-white" />
+            <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 mb-3 md:mb-4">
+              <Rocket className="w-8 h-8 md:w-10 md:h-10 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-3">
+            <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2 md:mb-3 px-4">
               欢迎来到90天台球挑战
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
               通过系统化训练和科学的能力评分系统，让你在90天内成为更强大的球手
             </p>
           </motion.div>
@@ -88,15 +88,15 @@ export default function WelcomeModal({ open, onOpenChange, onStart, isStarting }
                   initial={{ x: index % 2 === 0 ? -50 : 50, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-                  className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
+                  className="p-3 md:p-5 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-lg bg-gradient-to-br ${feature.color} bg-opacity-10 shrink-0`}>
-                      <Icon className="w-6 h-6 text-white" />
+                  <div className="flex items-start gap-3 md:gap-4">
+                    <div className={`p-2 md:p-3 rounded-lg bg-gradient-to-br ${feature.color} bg-opacity-10 shrink-0`}>
+                      <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-bold text-foreground mb-1">{feature.title}</h3>
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                      <h3 className="font-bold text-sm md:text-base text-foreground mb-1">{feature.title}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">{feature.description}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -109,27 +109,27 @@ export default function WelcomeModal({ open, onOpenChange, onStart, isStarting }
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl"
+            className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 md:p-6 rounded-xl"
           >
-            <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
-              <span className="text-2xl">🎯</span>
+            <h3 className="font-bold text-sm md:text-base text-blue-900 dark:text-blue-100 mb-2 md:mb-3 flex items-center gap-2">
+              <span className="text-xl md:text-2xl">🎯</span>
               挑战目标
             </h3>
-            <div className="space-y-2 text-blue-800 dark:text-blue-200">
+            <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-blue-800 dark:text-blue-200">
               <p className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">•</span>
+                <span className="text-blue-600 mt-0.5">•</span>
                 <span>完成90天系统化训练课程，每天坚持训练</span>
               </p>
               <p className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">•</span>
+                <span className="text-blue-600 mt-0.5">•</span>
                 <span>通过五维能力分系统，全面提升台球技术</span>
               </p>
               <p className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">•</span>
+                <span className="text-blue-600 mt-0.5">•</span>
                 <span>从初级到高级，难度递增，稳步进阶</span>
               </p>
               <p className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">•</span>
+                <span className="text-blue-600 mt-0.5">•</span>
                 <span>记录每次训练数据，见证自己的进步</span>
               </p>
             </div>
@@ -140,12 +140,12 @@ export default function WelcomeModal({ open, onOpenChange, onStart, isStarting }
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="text-center"
+            className="text-center px-4"
           >
-            <p className="text-xl font-medium text-foreground italic">
+            <p className="text-base md:text-xl font-medium text-foreground italic">
               "成功的秘诀在于持之以恒的努力"
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">
               - 三个月一杆清台
             </p>
           </motion.div>
@@ -160,22 +160,22 @@ export default function WelcomeModal({ open, onOpenChange, onStart, isStarting }
               onClick={onStart}
               disabled={isStarting}
               size="lg"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg py-6"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-base md:text-lg py-4 md:py-6"
             >
               {isStarting ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                  <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-white mr-2" />
                   正在初始化...
                 </>
               ) : (
                 <>
-                  <Rocket className="w-5 h-5 mr-2" />
+                  <Rocket className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                   开始90天挑战
                 </>
               )}
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground mt-3">
+            <p className="text-xs text-center text-muted-foreground mt-2 md:mt-3 px-4">
               点击开始后，系统将为您记录挑战开始日期
             </p>
           </motion.div>
