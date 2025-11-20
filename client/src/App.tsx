@@ -60,6 +60,29 @@ function Router() {
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // CRITICAL: Clean up legacy/corrupted tokens on app start
+  // This prevents infinite loading caused by mixed token storage formats
+  useEffect(() => {
+    const cleanupLegacyTokens = () => {
+      const legacyKeys = ['supabase_access_token', 'supabase_refresh_token'];
+      let cleaned = false;
+
+      legacyKeys.forEach(key => {
+        if (localStorage.getItem(key)) {
+          console.warn(`[Auth] Removing legacy token: ${key}`);
+          localStorage.removeItem(key);
+          cleaned = true;
+        }
+      });
+
+      if (cleaned) {
+        console.log('[Auth] Legacy tokens cleaned up. Please re-login if needed.');
+      }
+    };
+
+    cleanupLegacyTokens();
+  }, []); // Run once on mount
+
   // Listen to Supabase auth state changes to synchronize React Query state
   // This ensures the app UI updates when Supabase automatically logs out users
   // (e.g., when refresh token expires or user logs out from another tab)
