@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 import { RouteDebugger } from "@/components/RouteDebugger";
@@ -57,6 +58,29 @@ function Router() {
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+
+  // Handle mobile browser tab switching - refresh auth state when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Only refetch if page becomes visible and user was authenticated
+      if (!document.hidden && isAuthenticated) {
+        const accessToken = localStorage.getItem('supabase_access_token');
+
+        // If token exists, invalidate and refetch user data
+        if (accessToken) {
+          console.log('[Auth] Page visible - refreshing authentication');
+          queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        } else {
+          // Token missing - user needs to login again
+          console.warn('[Auth] Token missing after page visibility change');
+          queryClient.clear();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isAuthenticated]);
 
   return (
     <TooltipProvider>
