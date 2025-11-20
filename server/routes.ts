@@ -2423,6 +2423,31 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       console.log(`✅ 90-day training record created: User ${userId}, Day ${validatedData.dayNumber}, Success Rate: ${successRate}%`);
 
+      // Auto-start challenge if this is the first training record
+      const [currentUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!currentUser.challengeStartDate) {
+        await db.update(users)
+          .set({ challengeStartDate: new Date() })
+          .where(eq(users.id, userId));
+        console.log(`🚀 Auto-started 90-day challenge for user ${userId} on first training record`);
+      }
+
+      // Update challengeCompletedDays based on unique days with training records
+      const allUserRecords = await db
+        .select({ dayNumber: ninetyDayTrainingRecords.dayNumber })
+        .from(ninetyDayTrainingRecords)
+        .where(eq(ninetyDayTrainingRecords.userId, userId));
+
+      const uniqueDays = new Set(allUserRecords.map(r => r.dayNumber));
+      const completedDaysCount = uniqueDays.size;
+
+      await db.update(users)
+        .set({ challengeCompletedDays: completedDaysCount })
+        .where(eq(users.id, userId));
+
+      console.log(`📊 Updated completed days count: ${completedDaysCount} unique days`);
+
+
       // Update user's ability scores by adding the calculated score changes
       if (hasDatabase && db) {
         try {
