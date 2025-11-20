@@ -2,7 +2,7 @@
 /// Allows new users to create an account with email and password
 /// New users are automatically added to both auth.users and public.users via database trigger
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 
 interface RegisterForm {
   email: string;
@@ -24,6 +25,7 @@ interface RegisterForm {
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
   const [form, setForm] = useState<RegisterForm>({
     email: "",
     password: "",
@@ -31,6 +33,14 @@ export default function Register() {
     firstName: "",
     lastName: "",
   });
+
+  // CRITICAL: Redirect already authenticated users away from register page
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      console.log('[Register] User already authenticated, redirecting to home...');
+      setLocation('/');
+    }
+  }, [isAuthenticated, isLoading, setLocation]);
 
   const registerMutation = useMutation({
     mutationFn: async (data: Omit<RegisterForm, "confirmPassword">) => {

@@ -1,7 +1,7 @@
 /// User login page for email/password authentication
 /// Allows users to authenticate with their email and password
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LoginForm {
   email: string;
@@ -20,10 +21,20 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated, isLoading } = useAuth();
   const [form, setForm] = useState<LoginForm>({
     email: "",
     password: "",
   });
+
+  // CRITICAL: Redirect already authenticated users away from login page
+  // This prevents the infinite loading issue when logout doesn't properly clear session
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      console.log('[Login] User already authenticated, redirecting to home...');
+      setLocation('/');
+    }
+  }, [isAuthenticated, isLoading, setLocation]);
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
