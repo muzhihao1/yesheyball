@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAuthHeaders } from '@/lib/auth-headers';
 
 /**
  * 90-Day Training System Hooks (Fu Jiajun V2.1)
@@ -218,11 +219,7 @@ export function useNinetyDayRecords(params?: { dayNumber?: number; limit?: numbe
   return useQuery<{ records: NinetyDayTrainingRecord[] }>({
     queryKey: ['/api/ninety-day/records', params],
     queryFn: async () => {
-      const accessToken = localStorage.getItem('supabase_access_token');
-      const headers: Record<string, string> = {};
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
+      const headers = await getAuthHeaders();
 
       const response = await fetch(url, {
         headers,
@@ -420,22 +417,6 @@ export interface TrainingHistoryEntry {
 }
 
 /**
- * Helper function to get JWT auth headers
- */
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  const accessToken = localStorage.getItem('supabase_access_token');
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-
-  return headers;
-}
-
-/**
  * Submit training record and calculate ability scores
  * @returns Mutation hook for training submission
  */
@@ -444,9 +425,13 @@ export function useTrainingSubmission() {
 
   return useMutation<TrainingSubmissionResponse, Error, TrainingSubmissionPayload>({
     mutationFn: async (data: TrainingSubmissionPayload) => {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/ninety-day-training', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
         body: JSON.stringify(data),
       });
@@ -484,8 +469,9 @@ export function useTrainingHistory(userId: string, limit: number = 30) {
   return useQuery<TrainingHistoryEntry[]>({
     queryKey: ['/api/ninety-day-training', userId, limit],
     queryFn: async () => {
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/ninety-day-training/${userId}?limit=${limit}`, {
-        headers: getAuthHeaders(),
+        headers,
         credentials: 'include',
       });
 
@@ -508,8 +494,9 @@ export function useDayCurriculum(dayNumber: number) {
   return useQuery<{ curriculum: NinetyDayCurriculum }>({
     queryKey: ['/api/ninety-day-curriculum', dayNumber],
     queryFn: async () => {
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/ninety-day-curriculum/${dayNumber}`, {
-        headers: getAuthHeaders(),
+        headers,
         credentials: 'include',
       });
 
@@ -546,8 +533,9 @@ export function useNinetyDayChallengeProgress(userId: string) {
   }>({
     queryKey: ['/api/users/ninety-day-progress', userId],
     queryFn: async () => {
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/users/${userId}/ninety-day-progress`, {
-        headers: getAuthHeaders(),
+        headers,
         credentials: 'include',
       });
 

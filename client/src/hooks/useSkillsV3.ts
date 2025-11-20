@@ -12,15 +12,6 @@ import { getAuthHeaders } from '@/lib/auth-headers';
 // Helper Functions
 // ============================================================================
 
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {};
-  const accessToken = localStorage.getItem('supabase_access_token');
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-  return headers;
-}
-
 // ============================================================================
 // Type Definitions (matching backend schema)
 // ============================================================================
@@ -295,8 +286,9 @@ export function useUserSkillProgressV3(skillId?: string) {
       const url = skillId
         ? `/api/user/skills-v3/progress?skillId=${skillId}`
         : '/api/user/skills-v3/progress';
+      const headers = await getAuthHeaders();
       const response = await fetch(url, {
-        headers: getAuthHeaders(),
+        headers,
         credentials: 'include',
       });
       if (!response.ok) {
@@ -331,8 +323,9 @@ export function useUserUnitCompletions(unitId?: string) {
       const url = unitId
         ? `/api/user/units-v3/completions?unitId=${unitId}`
         : '/api/user/units-v3/completions';
+      const headers = await getAuthHeaders();
       const response = await fetch(url, {
-        headers: getAuthHeaders(),
+        headers,
         credentials: 'include',
       });
       if (!response.ok) {

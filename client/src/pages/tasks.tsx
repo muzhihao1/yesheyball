@@ -66,23 +66,14 @@ interface TrainingPlan {
   isActive: boolean | null;
 }
 
-// Helper function to get JWT auth headers
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {};
-  const accessToken = localStorage.getItem('supabase_access_token');
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-  return headers;
-}
-
 // Custom hook for specialized trainings
 function useSpecializedTrainings() {
   return useQuery({
     queryKey: ['/api/specialized-trainings'],
     queryFn: async () => {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/specialized-trainings', {
-        headers: getAuthHeaders(),
+        headers,
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch specialized trainings');
@@ -98,8 +89,9 @@ function useTrainingPlans(trainingId: string) {
     queryKey: [`/api/specialized-trainings/${trainingId}/plans`],
     queryFn: async () => {
       if (!trainingId) return [];
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/specialized-trainings/${trainingId}/plans`, {
-        headers: getAuthHeaders(),
+        headers,
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch training plans');
@@ -271,11 +263,12 @@ export default function TasksPage() {
 
     // Save training session to database
     try {
+      const authHeaders = await getAuthHeaders();
       const sessionResponse = await fetch("/api/training-sessions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...authHeaders,
         },
         credentials: "include",
         body: JSON.stringify({

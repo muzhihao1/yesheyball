@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertCircle, BookOpen, PlayCircle, Target, Maximize2, Minimize2 } from 'lucide-react';
+import { getAuthHeaders } from '@/lib/auth-headers';
 import { AdventureMap } from '@/components/ninety-day/AdventureMap';
 import { DayDetailModal } from '@/components/ninety-day/DayDetailModal';
 import { TrainingSubmitModal } from '@/components/ninety-day/TrainingSubmitModal';
@@ -176,11 +177,12 @@ export default function NinetyDayChallenge() {
     setIsStartingChallenge(true);
     try {
       // Call API to initialize challenge (set challenge_start_date)
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/ninety-day/start-challenge', {
         method: 'POST',
         headers: {
+          ...headers,
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase_access_token')}`,
         },
         credentials: 'include',
       });

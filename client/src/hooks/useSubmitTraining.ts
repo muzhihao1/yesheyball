@@ -5,6 +5,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { SubmitNinetyDayTrainingRecord } from '@shared/schema';
+import { getAuthHeaders } from '@/lib/auth-headers';
 
 interface TrainingRecordResponse {
   data: {
@@ -27,30 +28,18 @@ interface ErrorResponse {
   errors?: Array<{ path: string; message: string }>;
 }
 
-/**
- * Add Authorization header with JWT token for authenticated requests
- */
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  const accessToken = localStorage.getItem('supabase_access_token');
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-
-  return headers;
-}
-
 export function useSubmitTraining() {
   const queryClient = useQueryClient();
 
   return useMutation<TrainingRecordResponse, Error, SubmitNinetyDayTrainingRecord>({
     mutationFn: async (data: SubmitNinetyDayTrainingRecord) => {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/ninety-day/records', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
         credentials: 'include', // Include cookies for session fallback auth
         body: JSON.stringify(data),
       });
