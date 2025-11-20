@@ -17,9 +17,12 @@ export function useAuth() {
       // Retry network errors up to 2 times
       return failureCount < 2;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes - longer cache for stable sessions
-    gcTime: 30 * 60 * 1000, // 30 minutes
-    refetchOnWindowFocus: false, // 🔧 Disable to prevent unnecessary refetches
+    // ⏰ Short staleTime to prevent using expired tokens
+    // Supabase access tokens typically expire after 3600 seconds (1 hour)
+    // Setting staleTime to 30 minutes ensures we revalidate before expiry
+    staleTime: 30 * 60 * 1000, // 30 minutes - safely below JWT expiry
+    gcTime: 60 * 60 * 1000, // 60 minutes
+    refetchOnWindowFocus: true, // ✅ Enable to check auth on focus (important for mobile)
     refetchOnMount: true,
     refetchInterval: false,
   });

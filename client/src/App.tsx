@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 import { RouteDebugger } from "@/components/RouteDebugger";
+import { supabase } from "@/lib/supabase";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -59,20 +60,52 @@ function Router() {
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // Listen to Supabase auth state changes to synchronize React Query state
+  // This ensures the app UI updates when Supabase automatically logs out users
+  // (e.g., when refresh token expires or user logs out from another tab)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('[Auth] Supabase auth state changed:', event);
+
+        if (event === 'SIGNED_IN') {
+          // User signed in - refresh user data
+          console.log('[Auth] User signed in, refreshing queries');
+          await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        } else if (event === 'SIGNED_OUT') {
+          // User signed out - clear all cached data
+          console.log('[Auth] User signed out, clearing all queries');
+          queryClient.clear();
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Token was auto-refreshed - optionally log for debugging
+          console.log('[Auth] Token refreshed successfully');
+        }
+      }
+    );
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   // Handle mobile browser tab switching - refresh auth state when page becomes visible
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      // Only refetch if page becomes visible and user was authenticated
-      if (!document.hidden && isAuthenticated) {
-        const accessToken = localStorage.getItem('supabase_access_token');
+    const handleVisibilityChange = async () => {
+      // Only check if page becomes visible
+      if (!document.hidden) {
+        console.log('[Auth] Page visible - checking session validity');
 
-        // If token exists, invalidate and refetch user data
-        if (accessToken) {
-          console.log('[Auth] Page visible - refreshing authentication');
+        // Get current session from Supabase (single source of truth)
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          // Session exists - refresh user data
+          console.log('[Auth] Valid session found, refreshing authentication');
           queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
         } else {
-          // Token missing - user needs to login again
-          console.warn('[Auth] Token missing after page visibility change');
+          // No session - user needs to login again
+          console.warn('[Auth] No valid session found');
           queryClient.clear();
         }
       }
@@ -80,7 +113,7 @@ function AppContent() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isAuthenticated]);
+  }, []);
 
   return (
     <TooltipProvider>

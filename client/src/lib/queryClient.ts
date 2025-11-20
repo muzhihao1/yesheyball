@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { supabase } from "./supabase";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -7,13 +8,19 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-function getAuthHeaders(): Record<string, string> {
+/**
+ * Get authentication headers from Supabase session
+ * IMPORTANT: Always use supabase.auth.getSession() to get the current token
+ * This ensures we use Supabase's auto-refreshed tokens, not stale manual copies
+ */
+async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {};
 
-  // Add JWT token from localStorage if available
-  const accessToken = localStorage.getItem('supabase_access_token');
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+  // Get session from Supabase client (single source of truth)
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
   }
 
   return headers;
@@ -24,8 +31,9 @@ export async function apiRequest(
   method: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  const authHeaders = await getAuthHeaders();
   const headers = {
-    ...getAuthHeaders(),
+    ...authHeaders,
     ...(data ? { "Content-Type": "application/json" } : {}),
   };
 
@@ -46,7 +54,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const headers = getAuthHeaders();
+    const headers = await getAuthHeaders();
 
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",

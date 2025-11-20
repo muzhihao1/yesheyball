@@ -44,12 +44,9 @@ export default function Login() {
       return json;
     },
     onSuccess: async (data) => {
-      // Save Supabase session to localStorage for JWT-based auth
-      if (data.session?.access_token) {
-        localStorage.setItem('supabase_access_token', data.session.access_token);
-        localStorage.setItem('supabase_refresh_token', data.session.refresh_token);
-        console.log('✅ Supabase session saved to localStorage');
-      }
+      // Supabase client automatically persists session to localStorage
+      // No need to manually save tokens - this causes conflicts with auto-refresh
+      console.log('✅ Login successful, Supabase session persisted automatically');
 
       // Invalidate and refetch auth query to update user data
       // IMPORTANT: useAuth uses "/api/auth/user" query key
