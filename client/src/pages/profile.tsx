@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
 import { useUserStats } from "@/hooks/useUserStats";
 import { AchievementGrid } from "@/components/AchievementGrid";
 import { TrainingTrendChart } from "@/components/TrainingTrendChart";
@@ -112,11 +113,23 @@ export default function Profile() {
             size="sm"
             onClick={async () => {
               try {
-                await fetch('/api/auth/logout', { method: 'POST' });
+                // CRITICAL: Clear Supabase session first (frontend)
+                console.log('[Logout] Clearing Supabase session...');
+                await supabase.auth.signOut();
+
+                // Then call backend logout to clear server session
+                console.log('[Logout] Clearing backend session...');
+                await fetch('/api/auth/logout', {
+                  method: 'POST',
+                  credentials: 'include'
+                });
+
+                console.log('[Logout] Logout successful, redirecting to login...');
                 window.location.href = '/login';
               } catch (error) {
                 console.error('Logout failed:', error);
-                // Redirect to login anyway
+                // Even if API fails, clear local storage and redirect
+                await supabase.auth.signOut();
                 window.location.href = '/login';
               }
             }}
