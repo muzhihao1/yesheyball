@@ -374,12 +374,24 @@ export default function Profile() {
             {(trainingRecords as any) && (trainingRecords as any).length > 0 ? (
               <div className="space-y-3">
                 {(trainingRecords as any).slice(0, 3).map((record: any) => (
-                  <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
+                  <div key={record.id} className="p-3 border rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
                       <p className="font-medium">{record.title}</p>
-                      <p className="text-sm text-gray-600">完成时间: {new Date(record.createdAt || Date.now()).toLocaleDateString()}</p>
+                      <Star className="h-4 w-4 text-yellow-500" />
                     </div>
-                    <Star className="h-4 w-4 text-yellow-500" />
+                    <p className="text-sm text-gray-600">完成时间: {new Date(record.createdAt || record.completedAt || Date.now()).toLocaleDateString()}</p>
+                    {record.notes && (
+                      <div className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                        <p className="font-medium text-gray-600 mb-1">训练笔记:</p>
+                        <p className="whitespace-pre-wrap">{record.notes}</p>
+                      </div>
+                    )}
+                    {record.aiFeedback && (
+                      <div className="text-sm text-blue-700 bg-blue-50 p-2 rounded">
+                        <p className="font-medium text-blue-600 mb-1">AI反馈:</p>
+                        <p className="whitespace-pre-wrap">{record.aiFeedback}</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
