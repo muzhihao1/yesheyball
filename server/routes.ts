@@ -2432,7 +2432,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         console.log(`🚀 Auto-started 90-day challenge for user ${userId} on first training record`);
       }
 
-      // Update challengeCompletedDays based on unique days with training records
+      // Update challengeCompletedDays and challengeCurrentDay based on training records
       const allUserRecords = await db
         .select({ dayNumber: ninetyDayTrainingRecords.dayNumber })
         .from(ninetyDayTrainingRecords)
@@ -2441,11 +2441,17 @@ export async function registerRoutes(app: Express): Promise<void> {
       const uniqueDays = new Set(allUserRecords.map(r => r.dayNumber));
       const completedDaysCount = uniqueDays.size;
 
+      // Set currentDay to the highest day number trained
+      const maxDayNumber = Math.max(...Array.from(uniqueDays));
+
       await db.update(users)
-        .set({ challengeCompletedDays: completedDaysCount })
+        .set({
+          challengeCompletedDays: completedDaysCount,
+          challengeCurrentDay: maxDayNumber
+        })
         .where(eq(users.id, userId));
 
-      console.log(`📊 Updated completed days count: ${completedDaysCount} unique days`);
+      console.log(`📊 Updated challenge progress: ${completedDaysCount} days completed, current day: ${maxDayNumber}`);
 
 
       // Update user's ability scores by adding the calculated score changes
