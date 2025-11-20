@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
 
 interface LoginForm {
   email: string;
@@ -55,9 +56,20 @@ export default function Login() {
       return json;
     },
     onSuccess: async (data) => {
-      // Supabase client automatically persists session to localStorage
-      // No need to manually save tokens - this causes conflicts with auto-refresh
-      console.log('✅ Login successful, Supabase session persisted automatically');
+      // CRITICAL: Set session returned from backend into Supabase client
+      // The backend calls supabaseAdmin.auth.signInWithPassword() and returns the session
+      // We need to manually set it in the frontend Supabase client
+      if (data.session) {
+        console.log('[Login] Setting Supabase session from backend response...');
+        const { error } = await supabase.auth.setSession(data.session);
+        if (error) {
+          console.error('[Login] Failed to set session:', error);
+          throw new Error('Failed to persist login session');
+        }
+        console.log('✅ Login successful, Supabase session persisted');
+      } else {
+        console.warn('[Login] No session data in backend response');
+      }
 
       // Invalidate and refetch auth query to update user data
       // IMPORTANT: useAuth uses "/api/auth/user" query key
