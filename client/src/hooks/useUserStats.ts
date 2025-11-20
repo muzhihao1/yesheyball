@@ -32,6 +32,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
+import { getAuthHeaders } from '@/lib/auth-headers';
 
 /**
  * Get Authorization headers with JWT token for authenticated requests

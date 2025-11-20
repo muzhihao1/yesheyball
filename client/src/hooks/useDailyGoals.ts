@@ -3,15 +3,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {};
-  const accessToken = localStorage.getItem('supabase_access_token');
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-  return headers;
-}
+import { getAuthHeaders } from '@/lib/auth-headers';
 
 interface DailyGoal {
   id: number;
@@ -35,8 +27,9 @@ export function useDailyGoals() {
   return useQuery<DailyGoal[]>({
     queryKey: ["/api/goals/daily"],
     queryFn: async () => {
+      const headers = await getAuthHeaders();
       const response = await fetch("/api/goals/daily", {
-        headers: getAuthHeaders(),
+        headers,
         credentials: "include",
       });
 

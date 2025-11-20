@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { getAuthHeaders } from '@/lib/auth-headers';
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";

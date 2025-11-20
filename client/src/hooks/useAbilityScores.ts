@@ -9,6 +9,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { getAuthHeaders } from '@/lib/auth-headers';
 
 // ============================================================================
 // Type Definitions
@@ -32,23 +33,6 @@ export interface AbilityScores {
   power: number;
   strategy: number;
   clearance: number;
-}
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Get authentication headers for API requests
- * Includes Supabase JWT token if available
- */
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {};
-  const accessToken = localStorage.getItem('supabase_access_token');
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-  return headers;
 }
 
 // ============================================================================
@@ -81,8 +65,9 @@ export function useAbilityScores() {
   return useQuery<AbilityScores>({
     queryKey: ['/api/ability-scores'],  // Unified cache key
     queryFn: async () => {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/v1/dashboard/summary', {
-        headers: getAuthHeaders(),
+        headers,
         credentials: 'include',
       });
 
