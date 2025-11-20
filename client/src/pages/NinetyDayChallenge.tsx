@@ -268,12 +268,10 @@ export default function NinetyDayChallenge() {
   };
 
   /**
-   * Handle feedback modal close
-   * Generates AI feedback and shows AI feedback modal
+   * Generate AI feedback in background
+   * Shared helper for feedback modal close and profile navigation
    */
-  const handleFeedbackClose = async () => {
-    setShowFeedbackModal(false);
-
+  const generateAiFeedback = async () => {
     // Generate AI feedback in background
     try {
       // Calculate rating from score changes (1-5 stars)
@@ -291,7 +289,7 @@ export default function NinetyDayChallenge() {
         credentials: "include",
         body: JSON.stringify({
           duration: lastTrainingDuration,
-          notes: lastTrainingNotes,
+          notes: lastTrainingNotes || "无训练笔记", // Provide default if no notes
           rating: rating,
           sessionType: currentCurriculum?.curriculum?.title || "90天挑战训练",
         }),
@@ -301,11 +299,40 @@ export default function NinetyDayChallenge() {
         const data = await response.json();
         setAiFeedback(data.feedback);
         setShowAiFeedbackModal(true);
+      } else {
+        console.error("Failed to generate AI feedback: HTTP", response.status);
       }
     } catch (error) {
       console.error("Failed to generate AI feedback:", error);
       // Continue even if AI feedback fails - don't block user
     }
+  };
+
+  /**
+   * Handle feedback modal close
+   * Generates AI feedback and shows AI feedback modal
+   */
+  const handleFeedbackClose = async () => {
+    setShowFeedbackModal(false);
+    await generateAiFeedback();
+    // Clean up
+    setLastSubmissionResult(null);
+  };
+
+  /**
+   * Handle navigate to profile from feedback modal
+   * Generates AI feedback first, then navigates
+   */
+  const handleNavigateToProfile = async () => {
+    setShowFeedbackModal(false);
+
+    // Generate AI feedback (non-blocking)
+    generateAiFeedback().catch(err => {
+      console.error("Failed to generate AI feedback before navigation:", err);
+    });
+
+    // Navigate to profile immediately (don't wait for AI feedback)
+    navigate('/profile');
 
     // Clean up
     setLastSubmissionResult(null);
@@ -625,6 +652,7 @@ export default function NinetyDayChallenge() {
       <ScoreFeedbackModal
         open={showFeedbackModal}
         onClose={handleFeedbackClose}
+        onNavigateToProfile={handleNavigateToProfile}
         scoreChanges={lastSubmissionResult?.score_changes || null}
         newScores={lastSubmissionResult?.new_scores || null}
       />

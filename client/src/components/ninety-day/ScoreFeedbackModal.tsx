@@ -31,6 +31,7 @@ interface ScoreFeedbackModalProps {
   onClose: () => void;
   scoreChanges: ScoreChanges | null;
   newScores: AbilityScores | null;
+  onNavigateToProfile?: () => void;
 }
 
 interface ScoreChangeItem {
@@ -47,9 +48,19 @@ export default function ScoreFeedbackModal({
   onClose,
   scoreChanges,
   newScores,
+  onNavigateToProfile,
 }: ScoreFeedbackModalProps) {
   const { width, height } = useWindowSize();
   const [, navigate] = useLocation();
+
+  const handleNavigateToProfile = () => {
+    if (onNavigateToProfile) {
+      onNavigateToProfile();
+    } else {
+      onClose();
+      navigate('/profile');
+    }
+  };
 
   if (!scoreChanges || !newScores) {
     return null;
@@ -245,7 +256,7 @@ export default function ScoreFeedbackModal({
               继续训练
             </Button>
             <Button
-              onClick={() => navigate('/profile')}
+              onClick={handleNavigateToProfile}
               size="lg"
               className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold"
             >
