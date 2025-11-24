@@ -39,6 +39,8 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
+      console.log('[Login] Starting login process for:', data.email);
+
       // Use migrate-login endpoint for seamless Supabase Auth migration
       const res = await fetch("/api/auth/migrate-login", {
         method: "POST",
@@ -47,12 +49,21 @@ export default function Login() {
         body: JSON.stringify(data),
       });
 
+      console.log('[Login] Backend response status:', res.status);
       const json = await res.json();
+      console.log('[Login] Backend response data:', {
+        success: json.success,
+        migrated: json.migrated,
+        hasSession: !!json.session,
+        hasUser: !!json.user
+      });
 
       if (!res.ok) {
+        console.error('[Login] Login failed:', json.error || json.message);
         throw new Error(json.error || json.message || "Login failed");
       }
 
+      console.log('[Login] Login request successful');
       return json;
     },
     onSuccess: async (data) => {

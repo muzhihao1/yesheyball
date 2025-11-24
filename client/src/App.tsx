@@ -113,6 +113,8 @@ function AppContent() {
   }, []);
 
   // Handle mobile browser tab switching - refresh auth state when page becomes visible
+  // IMPORTANT: Only run this handler when user is already authenticated
+  // Prevents unnecessary checks and cache clearing on public pages (login, register)
   useEffect(() => {
     const handleVisibilityChange = async () => {
       // Only check if page becomes visible
@@ -127,16 +129,26 @@ function AppContent() {
           console.log('[Auth] Valid session found, refreshing authentication');
           queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
         } else {
-          // No session - user needs to login again
-          console.warn('[Auth] No valid session found');
-          queryClient.clear();
+          // No session found - only log warning, don't clear cache
+          // This prevents issues on public pages where users aren't logged in
+          console.warn('[Auth] No valid session found on visibility change');
+          // Only invalidate auth query, not entire cache
+          queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
         }
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+    // Only add listener if user is authenticated
+    // This prevents the handler from running on login/register pages
+    if (isAuthenticated && !isLoading) {
+      console.log('[Auth] Setting up visibility change listener (user authenticated)');
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => {
+        console.log('[Auth] Removing visibility change listener');
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+  }, [isAuthenticated, isLoading]);
 
   return (
     <TooltipProvider>
