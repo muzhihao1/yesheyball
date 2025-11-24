@@ -67,49 +67,37 @@ export default function Login() {
       return json;
     },
     onSuccess: async (data) => {
-      // CRITICAL: Set session returned from backend into Supabase client
-      // The backend calls supabaseAdmin.auth.signInWithPassword() and returns the session
-      // We need to manually set it in the frontend Supabase client
-      if (data.session) {
-        console.log('[Login] Setting Supabase session from backend response...');
-        const { error } = await supabase.auth.setSession(data.session);
-        if (error) {
-          console.error('[Login] Failed to set session:', error);
-          throw new Error('Failed to persist login session');
-        }
-        console.log('✅ Login successful, Supabase session persisted');
+      console.log('[Login] Backend validation successful:', {
+        migrated: data.migrated,
+        hasUser: !!data.user
+      });
 
-        // IMPORTANT: Wait a tick to ensure session is fully written to localStorage
-        // This prevents race condition with App.tsx's onAuthStateChange handler
-        await new Promise(resolve => setTimeout(resolve, 100));
-        console.log('[Login] Session persisted, verifying...');
+      // CRITICAL: Don't use the session from backend!
+      // Backend's Supabase Admin session is not compatible with frontend client
+      // Instead, let frontend create its own session by logging in directly to Supabase Auth
 
-        // Verify session is actually available
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          console.log('[Login] Session verified, access_token available:', !!session.access_token);
-        } else {
-          console.error('[Login] Session verification failed!');
-        }
-      } else {
-        console.warn('[Login] No session data in backend response');
-        return;
+      console.log('[Login] Now signing in to Supabase Auth with frontend client...');
+
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
+
+      if (authError || !authData.session) {
+        console.error('[Login] Frontend Supabase Auth login failed:', authError);
+        throw new Error(authError?.message || 'Failed to create frontend session');
       }
 
-      // Wait for App.tsx's onAuthStateChange handler to process the SIGNED_IN event
-      // and refetch user data before redirecting
-      console.log('[Login] Waiting for auth state to update...');
-
-      // Wait for auth query to be invalidated and refetched by App.tsx handler
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Manually verify auth status
-      const authQuery = queryClient.getQueryState(["/api/auth/user"]);
-      console.log('[Login] Auth query state after wait:', {
-        status: authQuery?.status,
-        fetchStatus: authQuery?.fetchStatus,
-        error: authQuery?.error
+      console.log('✅ Login successful, frontend Supabase session created');
+      console.log('[Login] Session details:', {
+        hasAccessToken: !!authData.session.access_token,
+        hasRefreshToken: !!authData.session.refresh_token,
+        expiresAt: authData.session.expires_at
       });
+
+      // Wait for App.tsx's onAuthStateChange handler to process the SIGNED_IN event
+      console.log('[Login] Waiting for auth state to update...');
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       // Show special message if user was migrated to Supabase Auth
       const title = data.migrated && data.message

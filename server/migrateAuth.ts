@@ -81,56 +81,13 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
       return;
     }
 
-    // Step 1: Try Supabase Auth login first
-    console.log(`🔍 Attempting Supabase Auth login for: ${normalizedEmail}`);
+    // Step 1: Check if user exists in database
+    console.log(`🔍 Checking database for user: ${normalizedEmail}`);
 
-    const { data: signInData, error: signInError } = await supabaseAdmin!.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
+    const dbUser = await storage.getUserByEmail(normalizedEmail);
 
-    if (signInData?.user && signInData?.session) {
-      // Success: User already migrated
-      console.log(`✅ User ${normalizedEmail} already migrated, login successful`);
-
-      // Get user from database to create Express session
-      const dbUser = await storage.getUserByEmail(normalizedEmail);
-      if (dbUser) {
-        // Create Express session
-        const { buildSessionUser } = await import("./auth.js");
-        const sessionUser = buildSessionUser(dbUser);
-        req.session.user = sessionUser;
-        req.user = sessionUser as any;
-
-        console.log(`✅ Express session created for ${normalizedEmail}`);
-
-        // Note: MemoryStore auto-saves, no need for explicit save() call
-        res.json({
-          success: true,
-          migrated: true,
-          user: signInData.user,
-          session: signInData.session,
-        });
-        return;
-      }
-
-      // If dbUser not found, still return success (shouldn't happen)
-      res.json({
-        success: true,
-        migrated: true,
-        user: signInData.user,
-        session: signInData.session,
-      });
-      return;
-    }
-
-    // Step 2: Supabase login failed, check old system
-    console.log(`🔄 Checking old system for: ${normalizedEmail}`);
-
-    const oldUser = await storage.getUserByEmail(normalizedEmail);
-
-    if (!oldUser) {
-      console.log(`❌ User ${normalizedEmail} not found in old system`);
+    if (!dbUser) {
+      console.log(`❌ User ${normalizedEmail} not found in database`);
       res.status(401).json({
         success: false,
         error: 'Invalid email or password'
@@ -138,7 +95,31 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
       return;
     }
 
-    if (!oldUser.passwordHash) {
+    // Step 2: Check if user already migrated to Supabase Auth
+    if (dbUser.migratedToSupabase) {
+      console.log(`✅ User ${normalizedEmail} already migrated to Supabase Auth`);
+
+      // Create Express session for backward compatibility
+      const { buildSessionUser } = await import("./auth.js");
+      const sessionUser = buildSessionUser(dbUser);
+      req.session.user = sessionUser;
+      req.user = sessionUser as any;
+
+      console.log(`✅ Express session created for ${normalizedEmail}`);
+
+      // Return success - frontend will handle Supabase Auth login
+      res.json({
+        success: true,
+        migrated: true,
+        message: 'User already migrated. Please proceed with login.',
+      });
+      return;
+    }
+
+    // Step 3: User not migrated yet, verify old password
+    console.log(`🔄 User ${normalizedEmail} not migrated yet, checking old password...`);
+
+    if (!dbUser.passwordHash) {
       console.log(`❌ User ${normalizedEmail} has no password in old system`);
       res.status(401).json({
         success: false,
@@ -147,10 +128,10 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
       return;
     }
 
-    // Step 3: Verify old password
+    // Step 4: Verify old password
     console.log(`🔐 Verifying old password for: ${normalizedEmail}`);
 
-    const isValidPassword = await comparePassword(password, oldUser.passwordHash);
+    const isValidPassword = await comparePassword(password, dbUser.passwordHash);
 
     if (!isValidPassword) {
       console.log(`❌ Invalid password for: ${normalizedEmail}`);
@@ -161,7 +142,7 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
       return;
     }
 
-    // Step 4: Password correct, migrate to Supabase Auth
+    // Step 5: Password correct, migrate to Supabase Auth
     console.log(`🚀 Migrating user ${normalizedEmail} to Supabase Auth...`);
 
     const { data: newUserData, error: createError } = await supabaseAdmin!.auth.admin.createUser({
@@ -169,8 +150,8 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
       password,
       email_confirm: true, // Skip email verification for migrated users
       user_metadata: {
-        firstName: oldUser.firstName,
-        lastName: oldUser.lastName,
+        firstName: dbUser.firstName,
+        lastName: dbUser.lastName,
         migratedFrom: 'legacy_auth',
         migratedAt: new Date().toISOString(),
       },
@@ -185,37 +166,18 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
       return;
     }
 
-    // Step 5: Update public.users table
+    // Step 6: Update public.users table
     console.log(`🔗 Linking ${normalizedEmail} to Supabase user ID: ${newUserData.user.id}`);
 
-    await storage.updateUser(oldUser.id, {
+    await storage.updateUser(dbUser.id, {
       supabaseUserId: newUserData.user.id,
       migratedToSupabase: true,
       passwordHash: null, // Clear old password hash for security
     });
 
-    // Step 6: Generate session for immediate login
-    console.log(`🎟️ Generating session for ${normalizedEmail}`);
-
-    const { data: sessionData, error: sessionError } = await supabaseAdmin!.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
-
-    if (sessionError || !sessionData?.session) {
-      console.error(`❌ Failed to create session for ${normalizedEmail}:`, sessionError);
-      // User is migrated but can't login immediately - they'll succeed on next attempt
-      res.json({
-        success: true,
-        migrated: true,
-        message: 'Account migrated successfully. Please login again.',
-      });
-      return;
-    }
-
     console.log(`✅ Successfully migrated ${normalizedEmail} to Supabase Auth`);
 
-    // Create Express session for immediate login
+    // Create Express session for backward compatibility
     const updatedUser = await storage.getUserByEmail(normalizedEmail);
     if (updatedUser) {
       const { buildSessionUser } = await import("./auth.js");
@@ -226,12 +188,11 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
       console.log(`✅ Express session created after migration for ${normalizedEmail}`);
 
       // Note: MemoryStore auto-saves, no need for explicit save() call
+      // DON'T return session - frontend will create its own by calling Supabase Auth
       res.json({
         success: true,
         migrated: true,
-        user: sessionData.user,
-        session: sessionData.session,
-        message: 'Account upgraded to new authentication system',
+        message: 'Account upgraded to new authentication system. Please login with your credentials.',
       });
       return;
     }
@@ -240,9 +201,7 @@ export async function handleMigrateLogin(req: Request, res: Response): Promise<v
     res.json({
       success: true,
       migrated: true,
-      user: sessionData.user,
-      session: sessionData.session,
-      message: 'Account upgraded to new authentication system',
+      message: 'Account upgraded to new authentication system. Please login with your credentials.',
     });
 
   } catch (error) {
