@@ -78,16 +78,38 @@ export default function Login() {
           throw new Error('Failed to persist login session');
         }
         console.log('✅ Login successful, Supabase session persisted');
+
+        // IMPORTANT: Wait a tick to ensure session is fully written to localStorage
+        // This prevents race condition with App.tsx's onAuthStateChange handler
+        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log('[Login] Session persisted, verifying...');
+
+        // Verify session is actually available
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('[Login] Session verified, access_token available:', !!session.access_token);
+        } else {
+          console.error('[Login] Session verification failed!');
+        }
       } else {
         console.warn('[Login] No session data in backend response');
+        return;
       }
 
-      // Invalidate and refetch auth query to update user data
-      // IMPORTANT: useAuth uses "/api/auth/user" query key
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      // Wait for App.tsx's onAuthStateChange handler to process the SIGNED_IN event
+      // and refetch user data before redirecting
+      console.log('[Login] Waiting for auth state to update...');
 
-      // Wait for the query to refetch before redirecting
-      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      // Wait for auth query to be invalidated and refetched by App.tsx handler
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Manually verify auth status
+      const authQuery = queryClient.getQueryState(["/api/auth/user"]);
+      console.log('[Login] Auth query state after wait:', {
+        status: authQuery?.status,
+        fetchStatus: authQuery?.fetchStatus,
+        error: authQuery?.error
+      });
 
       // Show special message if user was migrated to Supabase Auth
       const title = data.migrated && data.message
@@ -103,6 +125,7 @@ export default function Login() {
       });
 
       // Redirect to levels page after auth state is updated
+      console.log('[Login] Redirecting to /levels...');
       setLocation("/levels");
     },
     onError: (error: Error) => {

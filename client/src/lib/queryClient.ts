@@ -17,10 +17,19 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {};
 
   // Get session from Supabase client (single source of truth)
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session }, error } = await supabase.auth.getSession();
+
+  console.log('[getAuthHeaders] Retrieved session:', {
+    hasSession: !!session,
+    hasAccessToken: !!session?.access_token,
+    error: error?.message
+  });
 
   if (session?.access_token) {
     headers['Authorization'] = `Bearer ${session.access_token}`;
+    console.log('[getAuthHeaders] Added Authorization header');
+  } else {
+    console.warn('[getAuthHeaders] No access token available');
   }
 
   return headers;
