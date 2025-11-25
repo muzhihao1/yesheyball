@@ -5,6 +5,13 @@ import { supabase } from "@/lib/supabase";
 
 export function useAuth() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // Fallback timer to avoid being stuck on loading if query never resolves
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoad(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const queryResult = useQuery<User>({
     queryKey: ["/api/auth/user"],
