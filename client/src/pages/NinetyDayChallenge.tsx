@@ -137,19 +137,10 @@ export default function NinetyDayChallenge() {
     }
   }, [isLoading, challengeProgress]);
 
-  // Auto-scroll to training map on first load
+  // Auto-scroll disabled to avoid jumping to bottom on page load
   useEffect(() => {
-    if (!hasAutoScrolled && !isLoading && challengeProgress && currentDay > 0) {
-      // Delay scroll to ensure DOM is fully rendered
-      setTimeout(() => {
-        mapSectionRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-        setHasAutoScrolled(true);
-      }, 300);
-    }
-  }, [hasAutoScrolled, isLoading, challengeProgress, currentDay]);
+    setHasAutoScrolled(true);
+  }, []);
 
   // Generate day statuses for calendar
   const generateDayStatuses = (): DayStatus[] => {

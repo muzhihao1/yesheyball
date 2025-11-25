@@ -2965,9 +2965,33 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       const validatedData = submissionSchema.parse(req.body);
 
+      // Normalize numeric fields to integers where the DB expects integers
+      const durationMinutesInt = Math.max(1, Math.round(validatedData.duration_minutes));
+
       const submission: TrainingSubmission = {
         user_id: userId,
-        ...validatedData,
+        day_number: validatedData.day_number,
+        duration_minutes: durationMinutesInt,
+        notes: validatedData.notes,
+        training_stats: {
+          ...validatedData.training_stats,
+          // Ensure stats values are integers if provided
+          total_attempts: validatedData.training_stats.total_attempts !== undefined
+            ? Math.round(validatedData.training_stats.total_attempts)
+            : undefined,
+          successful_shots: validatedData.training_stats.successful_shots !== undefined
+            ? Math.round(validatedData.training_stats.successful_shots)
+            : undefined,
+          completed_count: validatedData.training_stats.completed_count !== undefined
+            ? Math.round(validatedData.training_stats.completed_count)
+            : undefined,
+          target_count: validatedData.training_stats.target_count !== undefined
+            ? Math.round(validatedData.training_stats.target_count)
+            : undefined,
+          duration_minutes: validatedData.training_stats.duration_minutes !== undefined
+            ? Math.max(1, Math.round(validatedData.training_stats.duration_minutes))
+            : durationMinutesInt,
+        }
       };
 
       // Process training and update ability scores
