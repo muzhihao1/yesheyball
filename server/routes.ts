@@ -587,15 +587,21 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Invalid duration value" });
       }
 
-      const feedback = await generateCoachingFeedback({
-        duration: parsedDuration,
-        summary: trainingNotes.trim(),
-        rating: rating ? parseInt(rating) : null,
-        exerciseType: sessionType || exerciseType,
-        level
-      });
-
-      res.json({ feedback });
+      try {
+        const feedback = await generateCoachingFeedback({
+          duration: parsedDuration,
+          summary: trainingNotes.trim(),
+          rating: rating ? parseInt(rating) : null,
+          exerciseType: sessionType || exerciseType,
+          level
+        });
+        res.json({ feedback });
+      } catch (apiError: any) {
+        console.error("OpenAI API error:", apiError?.message || apiError);
+        // Graceful fallback text，避免影响主流程
+        const fallback = "训练完成！继续保持努力，技术会持续提升。";
+        res.json({ feedback: fallback, warning: apiError?.message || 'AI反馈服务暂不可用' });
+      }
     } catch (error: any) {
       console.error("Coaching feedback error:", error?.message || error);
       // Return user-friendly error message if available
@@ -3285,15 +3291,29 @@ export async function registerRoutes(app: Express): Promise<void> {
         .from(userSkillProgressV3)
         .where(eq(userSkillProgressV3.userId, targetUserId));
 
-      const totalSkills = 10; // Ten Core Skills system
-      const masteredSkills = skillsProgress.filter(sp => (sp.progressPercentage ?? 0) === 100).length;
-      const inProgressSkills = skillsProgress.filter(sp => {
+      let totalSkills = 10; // Ten Core Skills system
+      let masteredSkills = skillsProgress.filter(sp => (sp.progressPercentage ?? 0) === 100).length;
+      let inProgressSkills = skillsProgress.filter(sp => {
         const progress = sp.progressPercentage ?? 0;
         return progress > 0 && progress < 100;
       }).length;
-      const overallProgress = skillsProgress.length > 0
+      let overallProgress = skillsProgress.length > 0
         ? Math.round(skillsProgress.reduce((sum, sp) => sum + (sp.progressPercentage ?? 0), 0) / totalSkills)
         : 0;
+
+      // 🔧 Fallback: 如果用户技能进度表为空，但已有训练记录，则用训练天数推导一个粗略进度，避免仪表板显示0
+      if (skillsProgress.length === 0) {
+        const trainingRecords = await db!
+          .select({ dayNumber: ninetyDayTrainingRecords.dayNumber })
+          .from(ninetyDayTrainingRecords)
+          .where(eq(ninetyDayTrainingRecords.userId, targetUserId));
+        const completedSkillDays = new Set(trainingRecords.map(r => r.dayNumber)).size;
+        if (completedSkillDays > 0) {
+          inProgressSkills = 1;
+          masteredSkills = 0;
+          overallProgress = Math.min(100, Math.round((completedSkillDays / 90) * 100));
+        }
+      }
 
       // === 3. Practice Field Data (Level System) ===
       const currentLevel = user.level || 1;
