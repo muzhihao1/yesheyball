@@ -3128,20 +3128,59 @@ export async function registerRoutes(app: Express): Promise<void> {
         daysSinceStart = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       }
 
-      // Return data from users table (single source of truth)
-      // processTrainingRecord updates users.challenge_current_day and users.challenge_completed_days
+      // Backfill startDate/进度如果用户表为空但已有记录
+      let startDate = user.challengeStartDate ? new Date(user.challengeStartDate) : null;
+      let completedDays = user.challengeCompletedDays || 0;
+      let currentDay = user.challengeCurrentDay || 1;
+
+      if (!startDate || completedDays === 0) {
+        const records = await db!
+          .select({
+            createdAt: ninetyDayTrainingRecords.createdAt,
+            dayNumber: ninetyDayTrainingRecords.dayNumber
+          })
+          .from(ninetyDayTrainingRecords)
+          .where(eq(ninetyDayTrainingRecords.userId, targetUserId))
+          .orderBy(ninetyDayTrainingRecords.createdAt);
+
+        if (records.length > 0) {
+          const firstDate = records[0].createdAt ? new Date(records[0].createdAt) : null;
+          const uniqueDays = new Set(records.map(r => r.dayNumber)).size;
+          const maxDay = Math.max(...records.map(r => r.dayNumber));
+
+          startDate = startDate || firstDate;
+          completedDays = Math.max(completedDays, uniqueDays);
+          currentDay = Math.max(currentDay, maxDay);
+
+          await db!.update(users)
+            .set({
+              challengeStartDate: startDate ?? user.challengeStartDate,
+              challengeCompletedDays: completedDays,
+              challengeCurrentDay: currentDay,
+            })
+            .where(eq(users.id, targetUserId));
+        }
+      }
+
+      // Recompute daysSinceStart after potential backfill
+      daysSinceStart = null;
+      if (startDate) {
+        const now = new Date();
+        daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      }
+
       res.json({
-        challenge_start_date: user.challengeStartDate || null,
-        challenge_current_day: user.challengeCurrentDay || 1,
-        challenge_completed_days: user.challengeCompletedDays || 0,
+        challenge_start_date: startDate,
+        challenge_current_day: currentDay,
+        challenge_completed_days: completedDays,
         accuracy_score: user.accuracyScore || 0,
         spin_score: user.spinScore || 0,
         positioning_score: user.positioningScore || 0,
         power_score: user.powerScore || 0,
         strategy_score: user.strategyScore || 0,
         clearance_score: user.clearanceScore || 0,
-        total_trained_days: user.challengeCompletedDays || 0,
-        successful_days: user.challengeCompletedDays || 0, // Completed days are successful days
+        total_trained_days: completedDays,
+        successful_days: completedDays, // Completed days are successful days
         days_since_start: daysSinceStart,
       });
     } catch (error) {
@@ -3200,20 +3239,38 @@ export async function registerRoutes(app: Express): Promise<void> {
       // === 1. 90-Day Challenge Data (from users table - single source of truth) ===
       // processTrainingRecord updates users.challenge_current_day and users.challenge_completed_days
       let startDate: Date | null = user.challengeStartDate ? new Date(user.challengeStartDate) : null;
+      let completedDaysCount = user.challengeCompletedDays || 0;
+      let currentDay = user.challengeCurrentDay || 1;
 
-      const completedDaysCount = user.challengeCompletedDays || 0;
-
-      // 🔧 Backfill startDate when用户已经有完成记录但challengeStartDate仍为空（历史数据或迁移遗留）
-      // 使用首个训练记录的时间作为挑战开始时间，避免仪表板显示“未开始”
-      if (!startDate && completedDaysCount > 0) {
-        const [firstRecord] = await db!
-          .select({ createdAt: ninetyDayTrainingRecords.createdAt })
+      // 🔧 Backfill startDate/进度，当已有训练记录但用户表为空或滞后
+      if (!startDate || completedDaysCount === 0) {
+        const records = await db!
+          .select({
+            createdAt: ninetyDayTrainingRecords.createdAt,
+            dayNumber: ninetyDayTrainingRecords.dayNumber
+          })
           .from(ninetyDayTrainingRecords)
           .where(eq(ninetyDayTrainingRecords.userId, targetUserId))
-          .orderBy(ninetyDayTrainingRecords.createdAt)
-          .limit(1);
+          .orderBy(ninetyDayTrainingRecords.createdAt);
 
-        startDate = firstRecord?.createdAt ? new Date(firstRecord.createdAt) : null;
+        if (records.length > 0) {
+          const firstDate = records[0].createdAt ? new Date(records[0].createdAt) : null;
+          const uniqueDays = new Set(records.map(r => r.dayNumber)).size;
+          const maxDay = Math.max(...records.map(r => r.dayNumber));
+
+          startDate = startDate || firstDate;
+          completedDaysCount = Math.max(completedDaysCount, uniqueDays);
+          currentDay = Math.max(currentDay, maxDay);
+
+          // Persist backfill to users表，避免下次仍然为空
+          await db!.update(users)
+            .set({
+              challengeStartDate: startDate ?? user.challengeStartDate,
+              challengeCompletedDays: completedDaysCount,
+              challengeCurrentDay: currentDay,
+            })
+            .where(eq(users.id, targetUserId));
+        }
       }
 
       let daysSinceStart: number | null = null;
