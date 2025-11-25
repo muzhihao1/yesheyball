@@ -9,7 +9,8 @@ interface NinetyDayChallengeCardProps {
 
 export function NinetyDayChallengeCard({ data }: NinetyDayChallengeCardProps) {
   const progressPercentage = (data.completedDays / data.totalDays) * 100;
-  const isStarted = data.startDate !== null;
+  // Treat as started if startDate exists OR已有完成天数/当前天数>1（防止缺少startDate时误报未开始）
+  const isStarted = data.startDate !== null || data.completedDays > 0 || data.currentDay > 1;
 
   return (
     <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">

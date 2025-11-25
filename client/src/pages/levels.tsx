@@ -483,74 +483,8 @@ export default function Levels() {
 
   // Auto-scroll to user's current progress on page load
   useEffect(() => {
-    const timeouts: number[] = [];
-
-    if (user && !userLoading && exerciseData) {
-      const scrollToUserProgress = () => {
-        // Calculate user's current group based on completed exercises
-        const userCompletedExercises = (user.completedExercises as Record<string, number>) || {};
-        const currentLevelCompleted = userCompletedExercises[user.level.toString()] || 0;
-        const currentGroup = Math.ceil((currentLevelCompleted + 1) / 5);
-        
-        // Update breadcrumb to user's actual position
-        setCurrentBreadcrumb({ level: user.level, group: currentGroup });
-        
-        // Find the group header for user's current position
-        const targetGroupText = `第${currentGroup}组`;
-        const groupHeaders = Array.from(document.querySelectorAll('*')).filter(el => {
-          const text = el.textContent || '';
-          return text.includes(targetGroupText) && text.trim().length < 10;
-        });
-        
-        // Find the group header in user's current level
-        let targetElement = null;
-        for (const header of groupHeaders) {
-          const levelContainer = header.closest('div[class*="mb-"]');
-          if (levelContainer && levelContainer.textContent?.includes(`等级 ${user.level}`)) {
-            targetElement = header;
-            break;
-          }
-        }
-        
-        if (targetElement) {
-          const rect = targetElement.getBoundingClientRect();
-          const targetPosition = rect.top + window.scrollY - 150;
-          
-          const smoothId = window.setTimeout(() => {
-            window.scrollTo({ 
-              top: Math.max(0, targetPosition), 
-              behavior: 'smooth' 
-            });
-          }, 600);
-          timeouts.push(smoothId);
-        } else {
-          // Fallback to level progress card
-          const levelContainers = Array.from(document.querySelectorAll('div[class*="bg-gradient"]')).filter(div => {
-            const text = div.textContent || '';
-            return text.includes(`等级 ${user.level} •`) && text.includes('进度');
-          });
-          
-          if (levelContainers.length > 0) {
-            const rect = levelContainers[0].getBoundingClientRect();
-            const targetPosition = rect.top + window.scrollY - 120;
-            
-            const smoothId = window.setTimeout(() => {
-              window.scrollTo({ 
-                top: Math.max(0, targetPosition), 
-                behavior: 'smooth' 
-              });
-            }, 600);
-            timeouts.push(smoothId);
-          }
-        }
-      };
-      
-      const initialScrollId = window.setTimeout(scrollToUserProgress, 1200);
-      timeouts.push(initialScrollId);
-    }
-    return () => {
-      timeouts.forEach(id => clearTimeout(id));
-    };
+    // Disable auto-scroll to avoid页面跳到底部
+    return;
   }, [user, userLoading, exerciseData]);
 
   // Load exercise data only when needed (lazy loading)
