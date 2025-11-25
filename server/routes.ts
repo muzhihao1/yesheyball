@@ -3175,14 +3175,28 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // === 1. 90-Day Challenge Data (from users table - single source of truth) ===
       // processTrainingRecord updates users.challenge_current_day and users.challenge_completed_days
-      let daysSinceStart: number | null = null;
-      if (user.challengeStartDate) {
-        const start = new Date(user.challengeStartDate);
-        const now = new Date();
-        daysSinceStart = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-      }
+      let startDate: Date | null = user.challengeStartDate ? new Date(user.challengeStartDate) : null;
 
       const completedDaysCount = user.challengeCompletedDays || 0;
+
+      // 🔧 Backfill startDate when用户已经有完成记录但challengeStartDate仍为空（历史数据或迁移遗留）
+      // 使用首个训练记录的时间作为挑战开始时间，避免仪表板显示“未开始”
+      if (!startDate && completedDaysCount > 0) {
+        const [firstRecord] = await db!
+          .select({ createdAt: ninetyDayTrainingRecords.createdAt })
+          .from(ninetyDayTrainingRecords)
+          .where(eq(ninetyDayTrainingRecords.userId, targetUserId))
+          .orderBy(ninetyDayTrainingRecords.createdAt)
+          .limit(1);
+
+        startDate = firstRecord?.createdAt ? new Date(firstRecord.createdAt) : null;
+      }
+
+      let daysSinceStart: number | null = null;
+      if (startDate) {
+        const now = new Date();
+        daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      }
 
       // === 2. Skills Library Data (Ten Core Skills V3) ===
       const skillsProgress = await db!
@@ -3225,7 +3239,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           currentDay: user.challengeCurrentDay || 1,
           totalDays: 90,
           completedDays: completedDaysCount,
-          startDate: user.challengeStartDate || null,
+          startDate: startDate || null,
           daysSinceStart
         },
         skillsLibrary: {

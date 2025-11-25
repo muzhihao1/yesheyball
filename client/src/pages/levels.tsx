@@ -232,6 +232,8 @@ export default function Levels() {
   useEffect(() => {
     if (!user) return;
 
+    const timeouts: number[] = [];
+
     const createFloatingNavButton = () => {
       // Remove any existing floating buttons
       const existing = document.querySelectorAll('.level-floating-btn');
@@ -317,9 +319,10 @@ export default function Levels() {
         window.scrollTo({ top: finalPosition, behavior: 'smooth' });
 
         // Backup scroll to ensure positioning
-        setTimeout(() => {
+        const backupId = window.setTimeout(() => {
           window.scrollTo({ top: finalPosition, behavior: 'auto' });
         }, 400);
+        timeouts.push(backupId);
       }
     };
 
@@ -328,7 +331,8 @@ export default function Levels() {
       e.stopPropagation();
 
       // Delay execution to override any conflicting scrolls
-      setTimeout(scrollToUserLevel, 50);
+      const clickId = window.setTimeout(scrollToUserLevel, 50);
+      timeouts.push(clickId);
     };
 
     // 更新箭头方向的函数
@@ -377,12 +381,14 @@ export default function Levels() {
     document.body.appendChild(button);
 
     // 初始更新箭头方向
-    setTimeout(updateArrowDirection, 100);
+    const initialArrowId = window.setTimeout(updateArrowDirection, 100);
+    timeouts.push(initialArrowId);
 
     // Cleanup function
     return () => {
       button.remove();
       window.removeEventListener('scroll', handleScroll);
+      timeouts.forEach(id => clearTimeout(id));
     };
   }, [user]);
 
@@ -477,6 +483,8 @@ export default function Levels() {
 
   // Auto-scroll to user's current progress on page load
   useEffect(() => {
+    const timeouts: number[] = [];
+
     if (user && !userLoading && exerciseData) {
       const scrollToUserProgress = () => {
         // Calculate user's current group based on completed exercises
@@ -508,12 +516,13 @@ export default function Levels() {
           const rect = targetElement.getBoundingClientRect();
           const targetPosition = rect.top + window.scrollY - 150;
           
-          setTimeout(() => {
+          const smoothId = window.setTimeout(() => {
             window.scrollTo({ 
               top: Math.max(0, targetPosition), 
               behavior: 'smooth' 
             });
           }, 600);
+          timeouts.push(smoothId);
         } else {
           // Fallback to level progress card
           const levelContainers = Array.from(document.querySelectorAll('div[class*="bg-gradient"]')).filter(div => {
@@ -525,18 +534,23 @@ export default function Levels() {
             const rect = levelContainers[0].getBoundingClientRect();
             const targetPosition = rect.top + window.scrollY - 120;
             
-            setTimeout(() => {
+            const smoothId = window.setTimeout(() => {
               window.scrollTo({ 
                 top: Math.max(0, targetPosition), 
                 behavior: 'smooth' 
               });
             }, 600);
+            timeouts.push(smoothId);
           }
         }
       };
       
-      setTimeout(scrollToUserProgress, 1200);
+      const initialScrollId = window.setTimeout(scrollToUserProgress, 1200);
+      timeouts.push(initialScrollId);
     }
+    return () => {
+      timeouts.forEach(id => clearTimeout(id));
+    };
   }, [user, userLoading, exerciseData]);
 
   // Load exercise data only when needed (lazy loading)
