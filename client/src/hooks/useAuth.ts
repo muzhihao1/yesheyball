@@ -69,16 +69,19 @@ export function useAuth() {
     },
   });
 
-  const { data: user, isLoading, error, isError, isFetching } = queryResult;
+  const { data: user, status, isFetching, isError } = queryResult;
+
+  // Ready means query已成功或失败（401等），不再处于挂起状态
+  const isReady = sessionChecked && (status === 'success' || status === 'error');
 
   useEffect(() => {
-    if (!isLoading && !isFetching) {
+    if (isReady && !isFetching) {
       setIsInitialLoad(false);
     }
-  }, [isLoading, isFetching]);
+  }, [isReady, isFetching]);
 
   // Only show loading during true initial load
-  const shouldShowLoading = isInitialLoad && (isLoading || !sessionChecked);
+  const shouldShowLoading = !isReady || (isInitialLoad && isFetching);
 
   return {
     user,
