@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserStats } from "@/hooks/useUserStats";
+import { supabase } from "@/lib/supabase";
 import {
   Trophy,
   Medal,
@@ -14,7 +17,8 @@ import {
   Flame,
   Calendar,
   Users,
-  Clock
+  Clock,
+  UserPlus
 } from "lucide-react";
 
 // Real user data interface
@@ -32,14 +36,32 @@ interface RankingUser {
 
 export default function Ranking() {
   const { user } = useAuth();
+  const [period, setPeriod] = useState<'week' | 'month' | 'all'>('week');
 
   const { data: userStats } = useUserStats({
     enabled: !!user,
   });
 
-  // Fetch all users for ranking
+  // Fetch all users for ranking with period parameter
   const { data: allUsers } = useQuery({
-    queryKey: ["/api/users/ranking"],
+    queryKey: ["/api/users/ranking", period],
+    queryFn: async () => {
+      // Get auth headers from Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      const response = await fetch(`/api/users/ranking?period=${period}`, {
+        credentials: 'include',
+        headers,
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch rankings');
+      }
+      return response.json();
+    },
     enabled: !!user,
   });
 
@@ -154,20 +176,20 @@ export default function Ranking() {
         </div>
 
         {/* Ranking Tabs */}
-        <Tabs defaultValue="weekly" className="w-full">
+        <Tabs value={period} onValueChange={(value) => setPeriod(value as 'week' | 'month' | 'all')} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="weekly">本周</TabsTrigger>
-            <TabsTrigger value="monthly">本月</TabsTrigger>
-            <TabsTrigger value="alltime">总榜</TabsTrigger>
+            <TabsTrigger value="week">周榜</TabsTrigger>
+            <TabsTrigger value="month">月榜</TabsTrigger>
+            <TabsTrigger value="all">总榜</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="weekly">
+          <TabsContent value="week">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-blue-600" />
-                  本周排行榜
-                  <Badge variant="secondary" className="ml-auto">连胜</Badge>
+                  周榜 - 训练时长
+                  <Badge variant="secondary" className="ml-auto">本周</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -178,14 +200,14 @@ export default function Ranking() {
                         <div className="flex items-center justify-center w-8">
                           {getRankIcon(index + 1)}
                         </div>
-                        
+
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={player.profileImageUrl || undefined} />
                           <AvatarFallback className="bg-green-100 text-green-700">
                             {player.name[0]}
                           </AvatarFallback>
                         </Avatar>
-                        
+
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{player.name}</span>
@@ -194,10 +216,10 @@ export default function Ranking() {
                             </Badge>
                           </div>
                           <p className="text-sm text-gray-600">
-                            连胜 {player.streak} 天 • {player.exp} 经验
+                            训练 {player.totalTime} 分钟 • 连胜 {player.streak} 天
                           </p>
                         </div>
-                        
+
                         <div className="text-right">
                           <Badge variant="secondary">#{index + 1}</Badge>
                         </div>
@@ -205,9 +227,12 @@ export default function Ranking() {
                     ))
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      <Crown className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                      <p>还没有其他用户</p>
-                      <p className="text-sm">邀请朋友一起训练吧！</p>
+                      <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                      <p>暂无数据，邀请好友一起占位</p>
+                      <Button variant="outline" className="mt-4">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        邀请好友
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -215,13 +240,13 @@ export default function Ranking() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="monthly">
+          <TabsContent value="month">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-green-600" />
-                  本月排行榜
-                  <Badge variant="secondary" className="ml-auto">训练时长</Badge>
+                  月榜 - 训练时长
+                  <Badge variant="secondary" className="ml-auto">本月</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -232,14 +257,14 @@ export default function Ranking() {
                         <div className="flex items-center justify-center w-8">
                           {getRankIcon(index + 1)}
                         </div>
-                        
+
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={player.profileImageUrl || undefined} />
                           <AvatarFallback className="bg-green-100 text-green-700">
                             {player.name[0]}
                           </AvatarFallback>
                         </Avatar>
-                        
+
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{player.name}</span>
@@ -251,7 +276,7 @@ export default function Ranking() {
                             训练 {player.totalTime} 分钟 • {player.exp} 经验
                           </p>
                         </div>
-                        
+
                         <div className="text-right">
                           <Badge variant="secondary">#{index + 1}</Badge>
                         </div>
@@ -260,8 +285,11 @@ export default function Ranking() {
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                      <p>还没有训练记录</p>
-                      <p className="text-sm">开始训练来获得排名！</p>
+                      <p>暂无数据，邀请好友一起占位</p>
+                      <Button variant="outline" className="mt-4">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        邀请好友
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -269,13 +297,13 @@ export default function Ranking() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="alltime">
+          <TabsContent value="all">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-yellow-600" />
-                  总排行榜
-                  <Badge variant="secondary" className="ml-auto">成就</Badge>
+                  总榜 - 训练时长
+                  <Badge variant="secondary" className="ml-auto">全部</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -286,14 +314,14 @@ export default function Ranking() {
                         <div className="flex items-center justify-center w-8">
                           {getRankIcon(index + 1)}
                         </div>
-                        
+
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={player.profileImageUrl || undefined} />
                           <AvatarFallback className="bg-green-100 text-green-700">
                             {player.name[0]}
                           </AvatarFallback>
                         </Avatar>
-                        
+
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{player.name}</span>
@@ -302,10 +330,10 @@ export default function Ranking() {
                             </Badge>
                           </div>
                           <p className="text-sm text-gray-600">
-                            {player.achievements} 个成就 • {player.exp} 经验
+                            训练 {player.totalTime} 分钟 • {player.exp} 经验
                           </p>
                         </div>
-                        
+
                         <div className="text-right">
                           <Badge variant="secondary">#{index + 1}</Badge>
                         </div>
@@ -314,8 +342,11 @@ export default function Ranking() {
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <Trophy className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                      <p>还没有成就记录</p>
-                      <p className="text-sm">完成训练来获得成就！</p>
+                      <p>暂无数据，邀请好友一起占位</p>
+                      <Button variant="outline" className="mt-4">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        邀请好友
+                      </Button>
                     </div>
                   )}
                 </div>

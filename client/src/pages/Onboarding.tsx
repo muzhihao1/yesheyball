@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDayCurriculum, useNinetyDayChallengeProgress } from "@/hooks/useNinetyDayTraining";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, ArrowLeft, ArrowRight, Sparkles, Target, Clock, Stars } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 type AnswerMap = Record<string, number | null>;
 
@@ -153,10 +154,50 @@ export default function Onboarding() {
     setAnswers((prev) => ({ ...prev, [id]: score }));
   };
 
-  const handleComplete = () => {
-    localStorage.setItem("onboarding_completed", "true");
-    localStorage.setItem("onboarding_recommended_start", String(recommendedStart));
-    navigate("/ninety-day-challenge");
+  const handleComplete = async () => {
+    try {
+      // Get current Supabase session for Authorization header
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      // Add Authorization header if session exists
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      // Call backend API to save onboarding completion
+      const response = await fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({
+          recommendedStartDay: recommendedStart,
+          answers: answers,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to complete onboarding");
+      }
+
+      const result = await response.json();
+      console.log("Onboarding completed:", result);
+
+      // Also save to localStorage as backup
+      localStorage.setItem("onboarding_completed", "true");
+      localStorage.setItem("onboarding_recommended_start", String(recommendedStart));
+
+      // Navigate to challenge page
+      navigate("/ninety-day-challenge");
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+      // Even if API fails, still proceed (localStorage backup)
+      localStorage.setItem("onboarding_completed", "true");
+      localStorage.setItem("onboarding_recommended_start", String(recommendedStart));
+      navigate("/ninety-day-challenge");
+    }
   };
 
   return (
@@ -179,22 +220,92 @@ export default function Onboarding() {
         </div>
 
         {step === 0 && (
-          <Card className="border-emerald-200 shadow-sm">
-            <CardContent className="p-6 md:p-8 space-y-4">
-              <div className="flex items-center gap-3 text-emerald-700">
-                <Sparkles className="w-5 h-5" />
-                <span className="font-semibold">欢迎来到耶氏台球训练系统</span>
+          <Card className="border-emerald-200 shadow-lg">
+            <CardContent className="p-8 md:p-12 space-y-8">
+              {/* 品牌标题 */}
+              <div className="text-center space-y-3">
+                <div className="flex items-center justify-center gap-3 text-emerald-700">
+                  <Sparkles className="w-6 h-6" />
+                  <span className="text-xl font-bold">欢迎来到三个月一杆清台训练系统</span>
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <p className="text-2xl md:text-3xl font-bold text-foreground">
+                  用 90 天，从新手到一杆清台
+                </p>
+                <p className="text-muted-foreground">
+                  每天只需 30 分钟，跟着练就能进步
+                </p>
               </div>
-              <ul className="space-y-2 text-muted-foreground text-sm">
-                <li>• 90 天主线训练 + 游戏化激励，帮助坚持</li>
-                <li>• 先做一个 1 分钟水平测试，定制你的起步日</li>
-                <li>• 马上给出“接下来 3 天计划”，可直接开始</li>
-              </ul>
-              <div className="flex justify-end">
-                <Button onClick={() => setStep(1)} className="bg-emerald-600 hover:bg-emerald-700">
-                  开始水平测试
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+
+              {/* 痛点共鸣 */}
+              <div className="space-y-4 bg-amber-50 p-6 rounded-lg border border-amber-200">
+                <p className="font-semibold text-amber-900 flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  你是否曾经遇到这些困扰？
+                </p>
+                <ul className="space-y-3 text-sm text-amber-900">
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 font-bold mt-0.5">•</span>
+                    <span>学了一段时间，也不知道自己有没有进步？</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 font-bold mt-0.5">•</span>
+                    <span>不知道该练什么，只会乱打？</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-600 font-bold mt-0.5">•</span>
+                    <span>找不到系统课程或靠谱教练？</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* 价值承诺 */}
+              <div className="space-y-4 bg-emerald-50 p-6 rounded-lg border border-emerald-200">
+                <p className="font-semibold text-emerald-900 flex items-center gap-2">
+                  <Stars className="w-5 h-5" />
+                  别担心，我们为你准备了完整的解决方案
+                </p>
+                <ul className="space-y-3 text-sm text-emerald-900">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong>90 天系统化训练计划</strong>
+                      <p className="text-emerald-700">从基础到进阶，循序渐进提升</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong>个性化起步建议</strong>
+                      <p className="text-emerald-700">根据你的水平，从最适合的地方开始</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong>游戏化激励系统</strong>
+                      <p className="text-emerald-700">连胜打卡、能力提升可视化，帮你坚持</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              {/* CTA区域 */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground justify-center">
+                  <Clock className="w-4 h-4" />
+                  <span>只需 1 分钟，了解你的当前水平</span>
+                </div>
+                <div className="flex justify-center">
+                  <Button
+                    onClick={() => setStep(1)}
+                    size="lg"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all"
+                  >
+                    开始水平测试
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

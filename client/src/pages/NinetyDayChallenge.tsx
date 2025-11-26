@@ -8,6 +8,7 @@ import { getAuthHeaders } from '@/lib/auth-headers';
 import { AdventureMap } from '@/components/ninety-day/AdventureMap';
 import { DayDetailModal } from '@/components/ninety-day/DayDetailModal';
 import { TrainingSubmitModal } from '@/components/ninety-day/TrainingSubmitModal';
+import { ChallengeHero } from '@/components/ninety-day/ChallengeHero';
 import ProgressCalendar, { type DayStatus } from '@/components/ninety-day/ProgressCalendar';
 // Removed StatsPanel import - cumulative statistics moved to ProgressOverviewModal and Profile page
 import WelcomeModal from '@/components/ninety-day/WelcomeModal';
@@ -15,6 +16,7 @@ import TrainingModal from '@/components/ninety-day/TrainingModal';
 import ScoreFeedbackModal from '@/components/ninety-day/ScoreFeedbackModal';
 import { AiFeedbackModal } from '@/components/AiFeedbackModal';
 import ProgressOverviewModal from '@/components/ninety-day/ProgressOverviewModal';
+import { DailyGoalsPanel } from '@/components/DailyGoalsPanel';
 import { useAbilityScores } from '@/hooks/useAbilityScores';
 import {
   useNinetyDayChallengeProgress,
@@ -373,59 +375,16 @@ export default function NinetyDayChallenge() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-green-600 to-amber-600">
-              90天台球挑战
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              系统化训练 · 能力提升 · 成为更强的球手
-            </p>
-          </div>
-          {/* Unified Challenge Progress Card */}
-          <div className="px-6 py-4 bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-50 dark:from-emerald-900/20 dark:via-green-900/20 dark:to-emerald-900/20 rounded-2xl shadow-lg border-2 border-emerald-200 dark:border-emerald-700">
-            <div className="flex items-center gap-3 mb-3">
-              <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-100">90天挑战进度</h3>
-            </div>
+        {/* Hero Section - Value Proposition & Roadmap */}
+        <ChallengeHero
+          currentDay={currentDay}
+          completedDays={challengeProgress?.challenge_completed_days || 0}
+          clearanceScore={abilityScores?.clearance || 0}
+          onStartTraining={handleStartTraining}
+        />
 
-            <div className="space-y-3">
-              {/* Current Day Display */}
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                  第 {currentDay} 天
-                </span>
-                <span className="text-sm text-muted-foreground">/ 共 90 天</span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>完成进度</span>
-                  <span className="font-medium">{((currentDay / 90) * 100).toFixed(1)}%</span>
-                </div>
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-300"
-                    style={{ width: `${(currentDay / 90) * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Clearance Score */}
-              <div className="flex items-center justify-between pt-2 border-t border-emerald-200 dark:border-emerald-800">
-                <span className="text-sm text-muted-foreground">清台能力</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
-                    {abilityScores?.clearance || 0}
-                  </span>
-                  <span className="text-xs text-muted-foreground">/ 500</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Daily Goals Panel - Embedded below hero */}
+        <DailyGoalsPanel />
 
         {/* Current Day Section */}
         <section className="space-y-4">
@@ -648,6 +607,19 @@ export default function NinetyDayChallenge() {
         onNavigateToProfile={handleNavigateToProfile}
         scoreChanges={lastSubmissionResult?.score_changes || null}
         newScores={lastSubmissionResult?.new_scores || null}
+        duration={lastTrainingDuration}
+        rating={Math.min(
+          Math.max(
+            Math.ceil(
+              (lastSubmissionResult?.score_changes
+                ? Object.values(lastSubmissionResult.score_changes).reduce((sum, val) => sum + (val || 0), 0)
+                : 0) / 5
+            ),
+            1
+          ),
+          5
+        )}
+        dayNumber={currentDay}
       />
 
       {/* AI Feedback Modal - Show personalized coaching feedback */}

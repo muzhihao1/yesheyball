@@ -180,6 +180,56 @@ export const users = pgTable("users", {
   // - 计算方式：从 ninety_day_training_records 表中统计 achievedTarget=true 的记录数
   // - 区别说明：与 totalDays 不同，这只统计90天挑战系统内的完成天数
 
+  // ================================================================================
+  // 新手引导系统 (Onboarding System)
+  // ================================================================================
+
+  onboardingCompleted: boolean("onboarding_completed").default(false),
+  // 新手引导是否完成
+  // - 说明：标记用户是否完成了首次登录的新手引导流程
+  // - 更新时机：用户完成水平测试和查看3日计划后设置为true
+  // - 用途：用于App.tsx判断是否需要强制跳转到/onboarding页面
+  // - 相关文件：client/src/App.tsx, client/src/pages/Onboarding.tsx
+
+  recommendedStartDay: integer("recommended_start_day"),
+  // 推荐起始天数
+  // - 说明：根据用户水平测试结果，推荐从90天课程的第几天开始
+  // - 取值范围：1-90
+  // - 更新时机：用户完成新手引导流程时设置
+  // - 用途：作为用户的初始 challengeCurrentDay 参考值
+  // - 相关文件：client/src/pages/Onboarding.tsx (computeRecommendedStart函数)
+
+  onboardingAnswers: jsonb("onboarding_answers"),
+  // 新手引导问卷答案
+  // - 说明：存储用户在水平测试中的答案，用于后续分析和推荐调整
+  // - 格式：{ "accuracy": 2, "positioning": 1, "experience": 0, "time": 1 }
+  // - 更新时机：用户完成新手引导流程时设置
+  // - 用途：可用于后续优化推荐算法或生成个性化训练建议
+
+  // ================================================================================
+  // 邀请系统 (Referral/Invitation System)
+  // ================================================================================
+
+  inviteCode: varchar("invite_code", { length: 16 }).unique(),
+  // 用户的唯一邀请码
+  // - 格式：8位大写字母+数字组合（如 "A1B2C3D4"）
+  // - 用途：用于生成邀请链接和 QR 码
+  // - 生成时机：用户注册成功时自动生成
+  // - 唯一性：全局唯一，用于标识邀请人
+
+  referredByUserId: varchar("referred_by_user_id"),
+  // 推荐人的用户 ID
+  // - 说明：记录谁邀请了这个用户
+  // - 取值：NULL 表示非邀请注册，有值表示通过邀请注册
+  // - 用途：用于邀请奖励发放和邀请关系追踪
+  // - 外键：指向 users 表的 id 字段
+
+  invitedCount: integer("invited_count").notNull().default(0),
+  // 成功邀请的好友数量
+  // - 说明：该用户成功邀请了多少个好友完成注册
+  // - 更新时机：有新用户通过该用户的邀请码注册时递增
+  // - 用途：用于排行榜、成就系统和邀请统计
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastActiveAt: timestamp("last_active_at").notNull().defaultNow(),
 });

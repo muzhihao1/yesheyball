@@ -1,8 +1,15 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
+import { Flame } from "lucide-react";
+import { useDailyGoals } from "@/hooks/useDailyGoals";
 
 export default function Header() {
   const { user, isLoading } = useAuth();
+  const { data: goals = [] } = useDailyGoals();
+
+  // Check if any training completed today (at least one goal completed)
+  const hasTrainedToday = goals.some((goal) => goal.isCompleted);
+  const currentStreak = user?.streak || 0;
 
   if (isLoading) {
     return (
@@ -67,7 +74,30 @@ export default function Header() {
           </Link>
           
           <div className="flex items-center space-x-3 sm:space-x-5 lg:space-x-8 flex-shrink-0">
-            {/* Removed consecutive days - moved to Profile page only to reduce information duplication */}
+            {/* Streak Fire Indicator */}
+            <div className="text-center relative group cursor-pointer">
+              <div className={`text-lg sm:text-xl lg:text-2xl font-bold flex items-center justify-center transition-all duration-300 ${
+                hasTrainedToday
+                  ? 'text-orange-500 dark:text-orange-400 scale-110'
+                  : 'text-gray-400 dark:text-gray-600'
+              }`}>
+                <Flame className={`w-6 h-6 sm:w-7 sm:h-7 ${hasTrainedToday ? 'animate-pulse' : ''}`} />
+                <span className="ml-1">{currentStreak}</span>
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
+                {hasTrainedToday ? '连胜' : '断档'}
+              </div>
+
+              {/* Tooltip */}
+              {!hasTrainedToday && currentStreak > 0 && (
+                <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white text-xs py-2 px-3 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                  今天还没训练，别断档！
+                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
+                </div>
+              )}
+            </div>
+
+            {/* EXP Display */}
             <div className="text-center">
               <div className="text-lg sm:text-xl lg:text-2xl font-bold text-trophy-gold dark:text-yellow-400 flex items-center justify-center">
                 <span className="mr-1 text-xl">⭐</span>
@@ -75,6 +105,8 @@ export default function Header() {
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">经验值</div>
             </div>
+
+            {/* Level and Username */}
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 gradient-billiards rounded-full flex items-center justify-center shadow-lg">
                 <span className="text-white text-sm sm:text-base lg:text-lg font-bold">{user?.level ?? 1}</span>

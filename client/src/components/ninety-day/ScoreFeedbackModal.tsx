@@ -1,10 +1,14 @@
+import { useRef } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, TrendingUp, Target, Zap, GitBranch, Flame, Brain, Sparkles } from 'lucide-react';
+import { Trophy, TrendingUp, Target, Zap, GitBranch, Flame, Brain, Sparkles, Share2, Loader2 } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/useAuth';
+import { useShareTraining } from '@/hooks/useShareTraining';
+import ShareCard from './ShareCard';
 import type { ScoreChanges, AbilityScores } from '@/hooks/useNinetyDayTraining';
 
 /**
@@ -32,6 +36,10 @@ interface ScoreFeedbackModalProps {
   scoreChanges: ScoreChanges | null;
   newScores: AbilityScores | null;
   onNavigateToProfile?: () => void;
+  // For share functionality
+  duration?: number; // Training duration in minutes
+  rating?: number; // Training rating (1-5 stars)
+  dayNumber?: number; // Current day number in challenge
 }
 
 interface ScoreChangeItem {
@@ -49,9 +57,17 @@ export default function ScoreFeedbackModal({
   scoreChanges,
   newScores,
   onNavigateToProfile,
+  duration,
+  rating,
+  dayNumber,
 }: ScoreFeedbackModalProps) {
   const { width, height } = useWindowSize();
   const [, navigate] = useLocation();
+  const { user } = useAuth();
+
+  // Share functionality
+  const shareCardRef = useRef<HTMLDivElement>(null);
+  const { shareTraining, isSharing, shareError } = useShareTraining();
 
   const handleNavigateToProfile = () => {
     if (onNavigateToProfile) {
@@ -60,6 +76,16 @@ export default function ScoreFeedbackModal({
       onClose();
       navigate('/profile');
     }
+  };
+
+  const handleShare = async () => {
+    if (!user) return;
+
+    await shareTraining(shareCardRef, {
+      userName: user.username || user.firstName || '用户',
+      title: `${user.username}的训练成果`,
+      text: `我在"三个月一杆清台"完成了第${dayNumber || ''}天的训练！💪`,
+    });
   };
 
   if (!scoreChanges || !newScores) {
@@ -245,27 +271,73 @@ export default function ScoreFeedbackModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
-            className="flex flex-col sm:flex-row gap-3"
+            className="flex flex-col gap-3"
           >
-            <Button
-              onClick={onClose}
-              size="lg"
-              variant="outline"
-              className="flex-1 font-semibold"
-            >
-              继续训练
-            </Button>
-            <Button
-              onClick={handleNavigateToProfile}
-              size="lg"
-              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold"
-            >
-              <Target className="w-4 h-4 mr-2" />
-              查看完整能力分析
-            </Button>
+            {/* Share Button */}
+            {duration && rating && (
+              <Button
+                onClick={handleShare}
+                size="lg"
+                disabled={isSharing}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold"
+              >
+                {isSharing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    生成分享图片中...
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-4 h-4 mr-2" />
+                    分享成绩
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* Share Error Message */}
+            {shareError && (
+              <p className="text-sm text-red-600 text-center">{shareError}</p>
+            )}
+
+            {/* Other Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={onClose}
+                size="lg"
+                variant="outline"
+                className="flex-1 font-semibold"
+              >
+                继续训练
+              </Button>
+              <Button
+                onClick={handleNavigateToProfile}
+                size="lg"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold"
+              >
+                <Target className="w-4 h-4 mr-2" />
+                查看完整能力分析
+              </Button>
+            </div>
           </motion.div>
         </div>
       </DialogContent>
+
+      {/* Hidden ShareCard for html2canvas */}
+      {duration && rating && user && (
+        <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none">
+          <ShareCard
+            ref={shareCardRef}
+            userName={user.username || user.firstName || '用户'}
+            userAvatar={user.profileImageUrl || undefined}
+            duration={duration}
+            rating={rating}
+            scoreChanges={scoreChanges}
+            clearanceScore={newScores.clearance_score}
+            dayNumber={dayNumber}
+          />
+        </div>
+      )}
     </Dialog>
   );
 }

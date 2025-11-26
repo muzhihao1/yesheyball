@@ -278,7 +278,7 @@ export function setupAuth(app: Express) {
     }
 
     try {
-      const { email, password, firstName, lastName } = req.body ?? {};
+      const { email, password, firstName, lastName, inviteCode } = req.body ?? {};
 
       // Validate required fields
       if (!email || typeof email !== "string") {
@@ -312,11 +312,29 @@ export function setupAuth(app: Express) {
         return res.status(409).json({ message: "User with this email already exists" });
       }
 
+      // Validate invite code if provided
+      let referrerUserId: string | null = null;
+      if (inviteCode && typeof inviteCode === "string" && inviteCode.trim() !== "") {
+        const referrer = await storage.getUserByInviteCode(inviteCode.trim().toUpperCase());
+
+        if (!referrer) {
+          return res.status(400).json({ message: "Invalid invite code" });
+        }
+
+        // Ensure user is not inviting themselves (edge case prevention)
+        if (referrer.email === normalizedEmail) {
+          return res.status(400).json({ message: "You cannot use your own invite code" });
+        }
+
+        referrerUserId = referrer.id;
+        console.log(`Valid invite code ${inviteCode} from user ${referrer.email}`);
+      }
+
       // Hash password
       const { hashPassword } = await import("./passwordService.js");
       const passwordHash = await hashPassword(password);
 
-      // Create new user
+      // Create new user with referral information
       const generatedId = randomUUID();
       const user = await storage.upsertUser({
         id: generatedId,
@@ -325,9 +343,27 @@ export function setupAuth(app: Express) {
         firstName: firstName.trim(),
         lastName: lastName?.trim() || null,
         username: sanitizeUsername(normalizedEmail),
+        referredByUserId: referrerUserId,
       });
 
-      console.log(`New user registered: ${user.email} (ID: ${user.id})`);
+      console.log(`New user registered: ${user.email} (ID: ${user.id})${referrerUserId ? ` via referral from ${referrerUserId}` : ''}`);
+
+      // Update referrer's invitedCount if this is a referral
+      if (referrerUserId) {
+        try {
+          const referrer = await storage.getUser(referrerUserId);
+          if (referrer) {
+            const newInvitedCount = (referrer.invitedCount || 0) + 1;
+            await storage.updateUser(referrerUserId, {
+              invitedCount: newInvitedCount,
+            });
+            console.log(`Updated referrer ${referrerUserId} invitedCount to ${newInvitedCount}`);
+          }
+        } catch (updateError) {
+          // Log error but don't fail registration
+          console.error("Failed to update referrer invitedCount:", updateError);
+        }
+      }
 
       res.status(201).json({
         message: "Registration successful",
@@ -337,6 +373,10 @@ export function setupAuth(app: Express) {
           firstName: user.firstName,
           lastName: user.lastName,
         },
+        referral: referrerUserId ? {
+          wasReferred: true,
+          message: "You were invited by a friend! Bonuses will be awarded after your first training session."
+        } : undefined,
       });
     } catch (error) {
       console.error("Registration error:", error);

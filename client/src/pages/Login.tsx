@@ -35,7 +35,8 @@ export default function Login() {
       console.log('[Login] User already authenticated, redirecting to home...');
       setLocation('/');
     }
-  }, [isAuthenticated, isLoading, setLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isLoading]);
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {

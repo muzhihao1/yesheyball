@@ -16,6 +16,8 @@ import { useDashboardSummary } from "@/hooks/useDashboardSummary";
 import { NinetyDayChallengeCard } from "@/components/dashboard/NinetyDayChallengeCard";
 import { SkillsLibraryCard } from "@/components/dashboard/SkillsLibraryCard";
 import { PracticeFieldCard } from "@/components/dashboard/PracticeFieldCard";
+import { InviteCard } from "@/components/InviteCard";
+import { WeaknessRecommendation } from "@/components/WeaknessRecommendation";
 import {
   Settings,
   Trophy,
@@ -217,7 +219,7 @@ export default function Profile() {
             能力分析
           </h2>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Left: Radar Chart - Hidden on mobile */}
             <div className="hidden lg:block">
               <AbilityRadarChart
@@ -234,6 +236,9 @@ export default function Profile() {
               />
             </div>
           </div>
+
+          {/* Weakness Recommendation */}
+          <WeaknessRecommendation abilityScores={abilityScores} />
         </div>
 
         {/* Data Visualization Section */}
@@ -417,6 +422,11 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
+
+        {/* Invite Friends Card */}
+        <div className="mb-6">
+          <InviteCard />
+        </div>
 
         {/* Settings */}
         <Card>

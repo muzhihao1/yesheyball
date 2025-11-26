@@ -22,6 +22,7 @@ import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
 import NinetyDayChallenge from "@/pages/NinetyDayChallenge";
 import Onboarding from "@/pages/Onboarding";
+import LevelAssessment from "@/components/LevelAssessment";
 
 import NotFound from "@/pages/not-found";
 import { useNinetyDayChallengeProgress } from "@/hooks/useNinetyDayTraining";
@@ -48,9 +49,11 @@ function Router({ isAuthenticated, isLoading }: { isAuthenticated: boolean; isLo
       <Route path="/" component={isAuthenticated ? NinetyDayChallenge : Login} />
       <Route path="/training" component={isAuthenticated ? Tasks : Login} />
       <Route path="/ninety-day-challenge" component={isAuthenticated ? NinetyDayChallenge : Login} />
-      <Route path="/onboarding" component={isAuthenticated ? Onboarding : Login} />
+      <Route path="/onboarding" component={isAuthenticated ? LevelAssessment : Login} />
+      <Route path="/level-assessment" component={isAuthenticated ? LevelAssessment : Login} />
       <Route path="/levels" component={isAuthenticated ? Levels : Login} />
       <Route path="/tasks" component={isAuthenticated ? Tasks : Login} />
+      <Route path="/ranking" component={isAuthenticated ? Ranking : Login} />
       <Route path="/growth" component={isAuthenticated ? Ranking : Login} />
       <Route path="/diary" component={isAuthenticated ? Diary : Login} />
       <Route path="/profile" component={isAuthenticated ? Profile : Login} />
@@ -64,23 +67,9 @@ function AppContent() {
   const [location, navigate] = useLocation();
 
   // Fetch challenge progress to decide onboarding redirect
-  const { data: challengeProgress } = useNinetyDayChallengeProgress(user?.id || '');
-
-  // Read onboarding completion from localStorage
-  useEffect(() => {
-    // Only enforce onboarding for authenticated users who haven't started the challenge
-    if (!isLoading && isAuthenticated) {
-      const onboardingDone = localStorage.getItem('onboarding_completed') === 'true';
-      const hasChallengeStart = !!challengeProgress?.challenge_start_date;
-
-      // Avoid redirect loop when already on onboarding
-      const onOnboardingPage = location === '/onboarding';
-
-      if (!onboardingDone && !hasChallengeStart && !onOnboardingPage) {
-        navigate('/onboarding');
-      }
-    }
-  }, [isAuthenticated, isLoading, challengeProgress?.challenge_start_date, location, navigate]);
+  const { data: challengeProgress } = useNinetyDayChallengeProgress(user?.id || '', {
+    enabled: !!user?.id && isAuthenticated,
+  });
 
   // CRITICAL: Clean up legacy/corrupted tokens on app start
   // This prevents infinite loading caused by mixed token storage formats
@@ -104,6 +93,27 @@ function AppContent() {
 
     cleanupLegacyTokens();
   }, []); // Run once on mount
+
+  // Enforce onboarding for new users (check both backend and localStorage)
+  useEffect(() => {
+    const authPages = ['/login', '/register', '/forgot-password', '/reset-password'];
+    // Only enforce onboarding for authenticated users who haven't started the challenge
+    if (!isLoading && isAuthenticated && user && !authPages.includes(location)) {
+      // Check backend onboardingCompleted field first, fallback to localStorage
+      const onboardingDone = user.onboardingCompleted || localStorage.getItem('onboarding_completed') === 'true';
+      const hasChallengeStart = !!challengeProgress?.challenge_start_date;
+
+      // Avoid redirect loop when already on onboarding
+      const onOnboardingPage = location === '/onboarding';
+
+      // Redirect to onboarding if user hasn't completed it and hasn't started challenge
+      if (!onboardingDone && !hasChallengeStart && !onOnboardingPage) {
+        console.log('[Onboarding] Redirecting to onboarding page');
+        navigate('/onboarding');
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isLoading, user?.id, user?.onboardingCompleted, challengeProgress?.challenge_start_date, location]);
 
   // Listen to Supabase auth state changes to synchronize React Query state
   // This ensures the app UI updates when Supabase automatically logs out users

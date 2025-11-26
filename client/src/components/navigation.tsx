@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BookOpen, Calendar, Target, User, Rocket } from "lucide-react";
+import { BookOpen, Calendar, Target, User, Rocket, Trophy } from "lucide-react";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -7,7 +7,7 @@ export default function Navigation() {
   const navItems = [
     { path: "/ninety-day-challenge", label: "挑战", icon: Rocket },
     { path: "/tasks", label: "技能库", icon: BookOpen },
-    { path: "/levels", label: "练习场", icon: Target },
+    { path: "/ranking", label: "排行榜", icon: Trophy },
     { path: "/profile", label: "我的", icon: User },
   ];
 

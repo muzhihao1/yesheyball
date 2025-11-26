@@ -516,7 +516,7 @@ export function useDayCurriculum(dayNumber: number) {
  * @param userId - User ID
  * @returns Query result with challenge progress and ability scores
  */
-export function useNinetyDayChallengeProgress(userId: string) {
+export function useNinetyDayChallengeProgress(userId: string, options?: { enabled?: boolean }) {
   return useQuery<{
     challenge_start_date: string | null;
     challenge_current_day: number;
@@ -545,7 +545,7 @@ export function useNinetyDayChallengeProgress(userId: string) {
 
       return response.json();
     },
-    enabled: !!userId,
+    enabled: options?.enabled ?? !!userId,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }

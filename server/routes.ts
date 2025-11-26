@@ -4,7 +4,7 @@ import { db } from "./db.js";
 import { setupAuth, isAuthenticated, getSessionUser, authDisabled, hasDatabase, demoUserResponse, demoUserProfile } from "./auth.js";
 import { generateCoachingFeedback, generateDiaryInsights } from "./openai.js";
 import { upload, persistUploadedImage } from "./upload.js";
-import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema, trainingSkills, subSkills, trainingUnits, trainingLevels, userTrainingProgress, users, userSkillProgressV3, userNinetyDayProgress, ninetyDayTrainingRecords, submitNinetyDayTrainingRecordSchema } from "../shared/schema.js";
+import { insertDiaryEntrySchema, insertUserTaskSchema, insertTrainingSessionSchema, insertTrainingNoteSchema, trainingSkills, subSkills, trainingUnits, trainingLevels, userTrainingProgress, users, userSkillProgressV3, userNinetyDayProgress, ninetyDayTrainingRecords, submitNinetyDayTrainingRecordSchema, trainingSessions } from "../shared/schema.js";
 import { getTodaysCourse, getCourseByDay, DAILY_COURSES } from "./dailyCourses.js";
 import { analyzeExerciseImage, batchAnalyzeExercises } from "./imageAnalyzer.js";
 import { adaptiveLearning } from "./adaptiveLearning.js";
@@ -23,7 +23,7 @@ import { z } from "zod";
 import OpenAI from "openai";
 import path from "path";
 import fs from "fs";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, gte } from "drizzle-orm";
 import {
   processTrainingRecord,
   getUserAbilityScores,
@@ -240,6 +240,76 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  /**
+   * GET /api/user/invite-code - Get or Generate User Invite Code
+   *
+   * Returns the current user's invite code or generates one if it doesn't exist.
+   * The invite code can be shared to invite friends to register.
+   *
+   * Response:
+   * {
+   *   inviteCode: string,        // e.g., "A1B2C3D4"
+   *   inviteUrl: string,         // Full registration URL with invite code
+   *   rewards: {
+   *     referrer: number,        // XP reward for referrer (500)
+   *     referee: number          // XP reward for new user (300)
+   *   }
+   * }
+   */
+  app.get("/api/user/invite-code", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+
+      // Demo mode: return mock invite code
+      if (!hasDatabase) {
+        return res.json({
+          inviteCode: "DEMO1234",
+          inviteUrl: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/register?invite=DEMO1234`,
+          rewards: {
+            referrer: 500,
+            referee: 300
+          }
+        });
+      }
+
+      // Get user from database
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      let inviteCode = user.inviteCode;
+
+      // Generate invite code if user doesn't have one
+      if (!inviteCode) {
+        const { generateInviteCode } = await import("./utils/inviteCodeGenerator.js");
+        inviteCode = await generateInviteCode();
+
+        // Save invite code to user record
+        await storage.updateUser(userId, { inviteCode });
+
+        console.log(`Generated invite code for user ${userId}: ${inviteCode}`);
+      }
+
+      // Build invite URL
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+      const inviteUrl = `${frontendUrl}/register?invite=${inviteCode}`;
+
+      res.json({
+        inviteCode,
+        inviteUrl,
+        rewards: {
+          referrer: 500,  // XP reward for the referrer
+          referee: 300    // XP reward for the new user
+        }
+      });
+
+    } catch (error) {
+      console.error("Get invite code error:", error);
+      res.status(500).json({ message: "Failed to get invite code" });
+    }
+  });
+
   // Recalculate user experience points
   app.post("/api/recalculate-experience", isAuthenticated, async (req, res) => {
     try {
@@ -252,28 +322,133 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Get users ranking (all users sorted by experience)
+  // Complete onboarding and save user's initial assessment
+  app.post("/api/onboarding/complete", isAuthenticated, async (req, res) => {
+    try {
+      const userId = requireSessionUserId(req);
+      const { recommendedStartDay, answers } = req.body;
+
+      // Validate input
+      if (!recommendedStartDay || typeof recommendedStartDay !== 'number' || recommendedStartDay < 1 || recommendedStartDay > 90) {
+        return res.status(400).json({ message: "Invalid recommended start day" });
+      }
+
+      if (!answers || typeof answers !== 'object') {
+        return res.status(400).json({ message: "Invalid answers format" });
+      }
+
+      // Check database availability
+      if (!db) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      // Update user with onboarding completion data
+      const updatedUser = await db.update(users)
+        .set({
+          onboardingCompleted: true,
+          recommendedStartDay: recommendedStartDay,
+          onboardingAnswers: answers,
+          // Optionally set challengeCurrentDay if not already started
+          challengeCurrentDay: sql`COALESCE(${users.challengeCurrentDay}, ${recommendedStartDay})`,
+        })
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!updatedUser || updatedUser.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      console.log(`Onboarding completed for user ${userId}: start day ${recommendedStartDay}`);
+
+      res.json({
+        success: true,
+        user: updatedUser[0],
+        message: "Onboarding completed successfully"
+      });
+    } catch (error) {
+      console.error("Onboarding completion error:", error);
+      res.status(500).json({ message: "Failed to complete onboarding" });
+    }
+  });
+
+  // Get users ranking (all users sorted by training time for specified period)
   app.get("/api/users/ranking", isAuthenticated, async (req, res) => {
     try {
-      // Get all users and sort by experience
+      const period = (req.query.period as string) || 'week';
+
+      // Calculate date range based on period
+      let startDate: Date;
+      const now = new Date();
+
+      switch (period) {
+        case 'week':
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - 30);
+          break;
+        case 'all':
+          startDate = new Date(0); // Beginning of time
+          break;
+        default:
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - 7);
+      }
+
+      // Get all users
       const allUsers = await storage.getAllUsers();
 
       if (!allUsers || allUsers.length === 0) {
         return res.json([]);
       }
 
-      // Transform users to ranking format with rank numbers
-      const rankings = allUsers.map((user, index) => ({
-        id: user.id,
-        name: user.firstName || user.email?.split('@')[0] || 'User',
-        level: user.level || 1,
-        exp: user.exp || 0,
-        streak: user.streak || 0,
-        totalTime: user.totalTime || 0,
-        achievements: 0, // TODO: Calculate actual achievements count
-        profileImageUrl: user.profileImageUrl,
-        rank: index + 1
-      }));
+      // Check if database is available
+      if (!db) {
+        return res.status(500).json({ message: "Database not available" });
+      }
+
+      // Get training sessions for each user within the period
+      const usersWithTrainingTime = await Promise.all(
+        allUsers.map(async (user) => {
+          // Get user's training sessions within the period
+          const sessions = await db!
+            .select()
+            .from(trainingSessions)
+            .where(
+              and(
+                eq(trainingSessions.userId, user.id),
+                eq(trainingSessions.completed, true),
+                gte(trainingSessions.completedAt, startDate)
+              )
+            );
+
+          // Calculate total training time for the period
+          const periodTrainingTime = sessions.reduce((total, session) => {
+            return total + (session.duration || 0);
+          }, 0);
+
+          return {
+            id: user.id,
+            name: user.firstName || user.email?.split('@')[0] || 'User',
+            level: user.level || 1,
+            exp: user.exp || 0,
+            streak: user.streak || 0,
+            totalTime: periodTrainingTime,
+            achievements: 0, // TODO: Calculate actual achievements count
+            profileImageUrl: user.profileImageUrl,
+          };
+        })
+      );
+
+      // Sort by training time (descending) and add rank
+      const rankings = usersWithTrainingTime
+        .sort((a, b) => b.totalTime - a.totalTime)
+        .map((user, index) => ({
+          ...user,
+          rank: index + 1
+        }));
 
       res.json(rankings);
     } catch (error) {
@@ -909,37 +1084,104 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.patch("/api/training-sessions/:id", async (req, res) => {
+  /**
+   * PATCH /api/training-sessions/:id
+   * Update a legacy training session (duration, rating, notes)
+   *
+   * Security:
+   * - Requires authentication
+   * - Users can only edit their own training sessions
+   *
+   * Request body: Partial<TrainingSession>
+   * - duration: number (optional) - in minutes
+   * - rating: number (optional) - 1-5 stars
+   * - notes: string (optional)
+   *
+   * Note: For 90-day challenge records, use PATCH /api/ninety-day/records/:id instead
+   */
+  app.patch("/api/training-sessions/:id", isAuthenticated, async (req, res) => {
     try {
-      const session = await storage.updateTrainingSession(parseInt(req.params.id), req.body);
-      res.json(session);
+      const sessionId = parseInt(req.params.id);
+      const userId = requireSessionUserId(req);
+
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ message: "Invalid session ID" });
+      }
+
+      // Verify ownership: user can only edit their own sessions
+      const existingSession = await storage.getTrainingSession(sessionId);
+      if (!existingSession) {
+        return res.status(404).json({ message: "训练记录不存在" });
+      }
+
+      if (existingSession.userId !== userId) {
+        return res.status(403).json({ message: "无权限编辑此记录" });
+      }
+
+      // Update allowed fields only
+      const { duration, notes, rating } = req.body;
+      const updates: Partial<typeof existingSession> = {};
+
+      if (duration !== undefined) updates.duration = duration;
+      if (notes !== undefined) updates.notes = notes;
+      if (rating !== undefined) updates.rating = rating;
+
+      const updatedSession = await storage.updateTrainingSession(sessionId, updates);
+
+      console.log(`[Training Session Update] User ${userId} updated session ${sessionId}`);
+      res.json(updatedSession);
     } catch (error) {
+      console.error('Failed to update training session:', error);
       res.status(500).json({ message: "Failed to update training session" });
     }
   });
 
-  app.delete("/api/training-sessions/:id", async (req, res) => {
+  /**
+   * DELETE /api/training-sessions/:id
+   * Delete a training session
+   *
+   * Security:
+   * - Requires authentication
+   * - Users can only delete their own training sessions
+   *
+   * Side effects:
+   * - Updates program progress if this was a guided session
+   * - Recalculates user experience/level
+   */
+  app.delete("/api/training-sessions/:id", isAuthenticated, async (req, res) => {
     try {
       const sessionId = parseInt(req.params.id);
-      
-      // Get session details before deletion to check if we need to update program progress
+      const userId = requireSessionUserId(req);
+
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ message: "Invalid session ID" });
+      }
+
+      // Get session details before deletion
       const sessionDetails = await storage.getTrainingSession(sessionId);
-      
+      if (!sessionDetails) {
+        return res.status(404).json({ message: "训练记录不存在" });
+      }
+
+      // Verify ownership: user can only delete their own sessions
+      if (sessionDetails.userId !== userId) {
+        return res.status(403).json({ message: "无权限删除此记录" });
+      }
+
       await storage.deleteTrainingSession(sessionId);
-      
+
       // Update training program progress if this was a guided session
-      if (sessionDetails && sessionDetails.programId && sessionDetails.sessionType === "guided") {
-        const userId = sessionDetails.userId;
+      if (sessionDetails.programId && sessionDetails.sessionType === "guided") {
         const programId = sessionDetails.programId;
-        
+
         // Get all remaining completed guided sessions for this program
         const allSessions = await storage.getUserTrainingSessions(userId);
-        const completedGuidedSessions = allSessions.filter(s => 
-          s.completed && 
-          s.sessionType === "guided" && 
+        const completedGuidedSessions = allSessions.filter(s =>
+          s.completed &&
+          s.sessionType === "guided" &&
           s.programId === programId
         );
-        
+
         // Find the highest completed day, or reset to day 1 if no sessions remain
         let maxCompletedDay = 0;
         completedGuidedSessions.forEach(session => {
@@ -947,15 +1189,16 @@ export async function registerRoutes(app: Express): Promise<void> {
             maxCompletedDay = session.dayId;
           }
         });
-        
+
         // Set current day to the next day after the highest completed day
         const newCurrentDay = maxCompletedDay + 1;
         await storage.updateTrainingProgram(programId, { currentDay: newCurrentDay });
-        
+
         console.log(`Updated training program ${programId} current day to ${newCurrentDay} after session deletion`);
       }
-      
-      res.json({ message: "Training session deleted successfully" });
+
+      console.log(`[Training Session Delete] User ${userId} deleted session ${sessionId}`);
+      res.json({ success: true, message: "训练记录已删除" });
     } catch (error) {
       console.error("Delete session error:", error);
       res.status(500).json({ message: "Failed to delete training session" });
@@ -2517,6 +2760,141 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       console.error("Error creating 90-day training record:", error);
       res.status(500).json({ message: "Failed to create training record" });
+    }
+  });
+
+  /**
+   * PATCH /api/ninety-day/records/:id
+   * Update a 90-day training record
+   *
+   * Security:
+   * - Requires authentication
+   * - Users can only edit their own training records
+   *
+   * Request body:
+   * - durationMinutes: number (optional)
+   * - trainingStats: object (optional) - { total_attempts, successful_shots, etc. }
+   * - notes: string (optional)
+   */
+  app.patch("/api/ninety-day/records/:id", isAuthenticated, async (req, res) => {
+    try {
+      const recordId = parseInt(req.params.id);
+      const userId = requireSessionUserId(req);
+
+      if (isNaN(recordId)) {
+        return res.status(400).json({ message: "Invalid record ID" });
+      }
+
+      if (!hasDatabase || !db) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      // Verify ownership: user can only edit their own records
+      const [existingRecord] = await db
+        .select()
+        .from(ninetyDayTrainingRecords)
+        .where(eq(ninetyDayTrainingRecords.id, recordId));
+
+      if (!existingRecord) {
+        return res.status(404).json({ message: "训练记录不存在" });
+      }
+
+      if (existingRecord.userId !== userId) {
+        return res.status(403).json({ message: "无权限编辑此记录" });
+      }
+
+      // Update allowed fields only
+      const { durationMinutes, trainingStats, notes } = req.body;
+      const updates: any = {};
+
+      if (durationMinutes !== undefined) updates.durationMinutes = durationMinutes;
+      if (trainingStats !== undefined) updates.trainingStats = trainingStats;
+      if (notes !== undefined) updates.notes = notes;
+
+      const [updatedRecord] = await db
+        .update(ninetyDayTrainingRecords)
+        .set(updates)
+        .where(eq(ninetyDayTrainingRecords.id, recordId))
+        .returning();
+
+      console.log(`[90-Day Training Update] User ${userId} updated record ${recordId}`);
+      res.json({ data: updatedRecord });
+    } catch (error) {
+      console.error('Failed to update 90-day training record:', error);
+      res.status(500).json({ message: "Failed to update training record" });
+    }
+  });
+
+  /**
+   * DELETE /api/ninety-day/records/:id
+   * Delete a 90-day training record
+   *
+   * Security:
+   * - Requires authentication
+   * - Users can only delete their own training records
+   *
+   * Side effects:
+   * - Recalculates user's 90-day progress
+   * - Updates ability scores (removes the score changes from this record)
+   */
+  app.delete("/api/ninety-day/records/:id", isAuthenticated, async (req, res) => {
+    try {
+      const recordId = parseInt(req.params.id);
+      const userId = requireSessionUserId(req);
+
+      if (isNaN(recordId)) {
+        return res.status(400).json({ message: "Invalid record ID" });
+      }
+
+      if (!hasDatabase || !db) {
+        return res.status(503).json({ message: "Database not available" });
+      }
+
+      // Get record details before deletion
+      const [existingRecord] = await db
+        .select()
+        .from(ninetyDayTrainingRecords)
+        .where(eq(ninetyDayTrainingRecords.id, recordId));
+
+      if (!existingRecord) {
+        return res.status(404).json({ message: "训练记录不存在" });
+      }
+
+      // Verify ownership: user can only delete their own records
+      if (existingRecord.userId !== userId) {
+        return res.status(403).json({ message: "无权限删除此记录" });
+      }
+
+      // Delete the record
+      await db
+        .delete(ninetyDayTrainingRecords)
+        .where(eq(ninetyDayTrainingRecords.id, recordId));
+
+      // Recalculate user's 90-day progress after deletion
+      const allRecords = await db
+        .select()
+        .from(ninetyDayTrainingRecords)
+        .where(eq(ninetyDayTrainingRecords.userId, userId))
+        .orderBy(ninetyDayTrainingRecords.dayNumber);
+
+      const completedDaysArray = Array.from(new Set(allRecords.map(r => r.dayNumber))).sort((a, b) => a - b);
+      const maxDayNumber = completedDaysArray.length > 0
+        ? Math.max(...completedDaysArray)
+        : 1;
+
+      await db
+        .update(userNinetyDayProgress)
+        .set({
+          completedDays: completedDaysArray,
+          currentDay: maxDayNumber,
+        })
+        .where(eq(userNinetyDayProgress.userId, userId));
+
+      console.log(`[90-Day Training Delete] User ${userId} deleted record ${recordId}, recalculated progress: ${completedDaysArray.length} days`);
+      res.json({ success: true, message: "训练记录已删除" });
+    } catch (error) {
+      console.error('Failed to delete 90-day training record:', error);
+      res.status(500).json({ message: "Failed to delete training record" });
     }
   });
 

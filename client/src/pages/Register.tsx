@@ -42,6 +42,11 @@ export default function Register() {
     }
   }, [isAuthenticated, isLoading, setLocation]);
 
+  // Avoid flashing form for authenticated users
+  if (isAuthenticated) {
+    return null;
+  }
+
   const registerMutation = useMutation({
     mutationFn: async (data: Omit<RegisterForm, "confirmPassword">) => {
       // Register user directly with Supabase Auth
