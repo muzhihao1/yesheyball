@@ -71,17 +71,19 @@ export default function Header() {
             <div className="text-center">
               <div className="text-lg sm:text-xl lg:text-2xl font-bold text-trophy-gold dark:text-yellow-400 flex items-center justify-center">
                 <span className="mr-1 text-xl">⭐</span>
-                {user.exp}
+                {user?.exp ?? 0}
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">经验值</div>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 gradient-billiards rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white text-sm sm:text-base lg:text-lg font-bold">{user.level}</span>
+                <span className="text-white text-sm sm:text-base lg:text-lg font-bold">{user?.level ?? 1}</span>
               </div>
               <div className="text-left hidden sm:block">
-                <div className="text-base lg:text-lg font-medium text-green-700 dark:text-green-400">{user.username}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">{getLevelName(user.level)}</div>
+                <div className="text-base lg:text-lg font-medium text-green-700 dark:text-green-400">
+                  {user?.username || user?.email || "学员"}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{getLevelName(user?.level ?? 1)}</div>
               </div>
             </div>
           </div>

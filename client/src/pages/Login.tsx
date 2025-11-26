@@ -112,9 +112,9 @@ export default function Login() {
         description,
       });
 
-      // Redirect to levels page after auth state is updated
-      console.log('[Login] Redirecting to /levels...');
-      setLocation("/levels");
+      // Redirect to home (onboarding/挑战由守卫决定)
+      console.log('[Login] Redirecting to home...');
+      setLocation("/");
     },
     onError: (error: Error) => {
       toast({

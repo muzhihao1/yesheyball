@@ -3,6 +3,20 @@ import { useState, useEffect } from "react";
 import type { User } from "@shared/schema";
 import { supabase } from "@/lib/supabase";
 
+// Frontend-friendly user shape (允许后端缺省部分字段，但字段存在于类型中，便于消费端使用)
+type AuthUser = {
+  id: string;
+  email: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  username?: string | null;
+  level?: number | null;
+  exp?: number | null;
+  streak?: number | null;
+  longestStreak?: number | null;
+};
+
 export function useAuth() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -44,9 +58,16 @@ export function useAuth() {
     return () => clearTimeout(timer);
   }, []);
 
-  const queryResult = useQuery<User>({
+  const queryResult = useQuery<AuthUser>({
     queryKey: ["/api/auth/user"],
     enabled: sessionChecked, // 等待Supabase session确定后再发请求
+    queryFn: async () => {
+      const res = await fetch("/api/auth/user", { credentials: "include" });
+      if (!res.ok) {
+        throw new Error(`Auth fetch failed: ${res.status}`);
+      }
+      return res.json();
+    },
     // 🔒 No retry on 401 - let it fail immediately and show login page
     retry: (failureCount, error: any) => {
       // Don't retry on 401 authentication errors
@@ -64,9 +85,6 @@ export function useAuth() {
     refetchOnWindowFocus: true, // ✅ Enable to check auth on focus (important for mobile)
     refetchOnMount: true,
     refetchInterval: false,
-    onError: () => {
-      setIsInitialLoad(false);
-    },
   });
 
   const { data: user, status, isFetching, isError } = queryResult;

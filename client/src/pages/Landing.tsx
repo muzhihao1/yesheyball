@@ -46,7 +46,7 @@ export default function Landing() {
         description: "正在进入训练平台…",
       });
 
-      setLocation("/levels");
+      setLocation("/");
     } catch (error: any) {
       toast({
         title: "无法登录",

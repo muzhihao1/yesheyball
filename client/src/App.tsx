@@ -9,11 +9,11 @@ import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 import { RouteDebugger } from "@/components/RouteDebugger";
 import { supabase } from "@/lib/supabase";
-import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import Landing from "@/pages/Landing";
 
 import Levels from "@/pages/levels";
 import Tasks from "@/pages/tasks";
@@ -21,11 +21,12 @@ import Ranking from "@/pages/ranking";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
 import NinetyDayChallenge from "@/pages/NinetyDayChallenge";
+import Onboarding from "@/pages/Onboarding";
 
 import NotFound from "@/pages/not-found";
+import { useNinetyDayChallengeProgress } from "@/hooks/useNinetyDayTraining";
 
-function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+function Router({ isAuthenticated, isLoading }: { isAuthenticated: boolean; isLoading: boolean }) {
 
   if (isLoading) {
     return (
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/" component={isAuthenticated ? NinetyDayChallenge : Login} />
       <Route path="/training" component={isAuthenticated ? Tasks : Login} />
       <Route path="/ninety-day-challenge" component={isAuthenticated ? NinetyDayChallenge : Login} />
+      <Route path="/onboarding" component={isAuthenticated ? Onboarding : Login} />
       <Route path="/levels" component={isAuthenticated ? Levels : Login} />
       <Route path="/tasks" component={isAuthenticated ? Tasks : Login} />
       <Route path="/growth" component={isAuthenticated ? Ranking : Login} />
@@ -58,7 +60,27 @@ function Router() {
 }
 
 function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const [location, navigate] = useLocation();
+
+  // Fetch challenge progress to decide onboarding redirect
+  const { data: challengeProgress } = useNinetyDayChallengeProgress(user?.id || '');
+
+  // Read onboarding completion from localStorage
+  useEffect(() => {
+    // Only enforce onboarding for authenticated users who haven't started the challenge
+    if (!isLoading && isAuthenticated) {
+      const onboardingDone = localStorage.getItem('onboarding_completed') === 'true';
+      const hasChallengeStart = !!challengeProgress?.challenge_start_date;
+
+      // Avoid redirect loop when already on onboarding
+      const onOnboardingPage = location === '/onboarding';
+
+      if (!onboardingDone && !hasChallengeStart && !onOnboardingPage) {
+        navigate('/onboarding');
+      }
+    }
+  }, [isAuthenticated, isLoading, challengeProgress?.challenge_start_date, location, navigate]);
 
   // CRITICAL: Clean up legacy/corrupted tokens on app start
   // This prevents infinite loading caused by mixed token storage formats
@@ -156,7 +178,7 @@ function AppContent() {
         {isAuthenticated && !isLoading && <Header />}
         
         <main className="pb-4">
-          <Router />
+          <Router isAuthenticated={isAuthenticated} isLoading={isLoading} />
         </main>
         
         {isAuthenticated && !isLoading && <Navigation />}

@@ -77,10 +77,10 @@ export default function Register() {
           : "您的账号已创建，请登录",
       });
 
-      // If session exists, user is automatically logged in, redirect to levels
+      // If session exists, user is automatically logged in, redirect home (守卫会决定挑战/引导)
       // Otherwise, redirect to login page
       if (data.session) {
-        setLocation("/levels");
+        setLocation("/");
       } else {
         setLocation("/login");
       }
