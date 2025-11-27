@@ -8,6 +8,7 @@ export default function Navigation() {
     { path: "/ninety-day-challenge", label: "挑战", icon: Rocket },
     { path: "/tasks", label: "技能库", icon: BookOpen },
     { path: "/levels", label: "练习场", icon: Target },
+    { path: "/ranking", label: "排行榜", icon: Trophy },
     { path: "/profile", label: "我的", icon: User },
   ];
 
