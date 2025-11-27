@@ -224,14 +224,24 @@ export async function processTrainingRecord(
     }
 
     const curriculumRow = curriculum[0] as Record<string, any>;
-    const primarySkill = String(curriculumRow.primary_skill);
-    const difficulty = String(curriculumRow.difficulty);
-    const scoringMethod = String(curriculumRow.scoring_method);
+    const primarySkillRaw = curriculumRow.primary_skill;
+    const difficulty = String(curriculumRow.difficulty || '初级');
+    const scoringMethod = String(curriculumRow.scoring_method || 'completion');
+
+    // Handle NULL primary_skill: use default based on scoring_method
+    let primarySkill: AbilityDimension;
+    if (!primarySkillRaw || primarySkillRaw === 'null' || String(primarySkillRaw).trim() === '') {
+      // Default to 'accuracy' for success_rate, 'spin' for completion
+      primarySkill = scoringMethod === 'success_rate' ? 'accuracy' : 'spin';
+      console.log(`⚠️ Day ${day_number} has NULL primary_skill, using default: ${primarySkill}`);
+    } else {
+      primarySkill = String(primarySkillRaw) as AbilityDimension;
+    }
 
     // 2. Calculate session score change
     const sessionResult = calculateSessionScoreChange(
       scoringMethod,
-      primarySkill as AbilityDimension,
+      primarySkill,
       difficulty,
       training_stats
     );
@@ -239,7 +249,12 @@ export async function processTrainingRecord(
     // 3. Update user's raw cumulative data
     const { dimension, pointsGained, achievedTarget } = sessionResult;
 
-    if (scoringMethod === 'success_rate') {
+    // Validate dimension before using it in SQL
+    const validDimensions = ['accuracy', 'spin', 'positioning', 'power', 'strategy'];
+    if (!validDimensions.includes(dimension)) {
+      console.error(`❌ Invalid dimension: ${dimension}, skipping stats update`);
+      // Still insert training record but skip stats update
+    } else if (scoringMethod === 'success_rate') {
       // Update accuracy raw data
       const totalAttempts = training_stats.total_attempts || 0;
       const successfulShots = training_stats.successful_shots || 0;
