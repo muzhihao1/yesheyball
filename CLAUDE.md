@@ -61,31 +61,45 @@ client/src/
 **Page Structure**:
 - `Landing.tsx` — Marketing landing page
 - `Login.tsx` / `Register.tsx` — Supabase Auth with email/password migration support
-- `levels.tsx` — Main training interface with 8-level growth path system
-- `tasks.tsx` — Daily training tasks interface
+- `NinetyDayChallenge.tsx` — 90-day structured training challenge with daily goals
+- `levels.tsx` — 8-level growth path system (练习场)
+- `tasks.tsx` — Skills library training interface (技能库)
 - `profile.tsx` — User profile with stats and progress tracking
-- `training.tsx` — System training (30-day curriculum)
+- `training.tsx` — System training (30-day curriculum, legacy)
 - `growth.tsx` — Growth path visualization
 - `diary.tsx` — Training diary with AI insights
 - `ranking.tsx` — Leaderboard
 
+**Navigation Structure** (5 items, updated 2025-11-27):
+```typescript
+const navItems = [
+  { path: "/ninety-day-challenge", label: "挑战", icon: Rocket },
+  { path: "/tasks", label: "技能库", icon: BookOpen },
+  { path: "/levels", label: "练习场", icon: Target },
+  { path: "/ranking", label: "排行榜", icon: Trophy },
+  { path: "/profile", label: "我的", icon: User },
+];
+```
+
 ### Server Architecture (Express + Serverless)
 ```
 server/
-├── index.ts              # createApp() — Express setup, middleware, error handler
-├── devServer.ts          # Development entry point
-├── routes.ts             # API route definitions (registerRoutes)
-├── auth.ts               # Supabase Auth integration, session management, demo mode
-├── storage.ts            # Database operation interface (Drizzle)
-├── db.ts                 # Database connection (Neon/Vercel Postgres/Supabase)
-├── experienceSystem.ts   # EXP calculation, level-up logic
-├── adaptiveLearning.ts   # Exercise progression engine
-├── openai.ts             # AI feedback generation (GPT-4o)
-├── imageAnalyzer.ts      # Exercise validation via AI vision
-├── dailyCourses.ts       # 30-day structured curriculum data
-├── passwordService.ts    # Password hashing for legacy auth
-├── supabaseAdmin.ts      # Supabase Admin client for migrations
-└── migrateAuth.ts        # Auth migration utilities
+├── index.ts                  # createApp() — Express setup, middleware, error handler
+├── devServer.ts              # Development entry point
+├── routes.ts                 # API route definitions (registerRoutes)
+├── auth.ts                   # Supabase Auth integration, session management, demo mode
+├── storage.ts                # Database operation interface (Drizzle)
+├── db.ts                     # Database connection (Neon/Vercel Postgres/Supabase)
+├── experienceSystem.ts       # EXP calculation, level-up logic
+├── adaptiveLearning.ts       # Exercise progression engine
+├── openai.ts                 # AI feedback generation (GPT-4o)
+├── imageAnalyzer.ts          # Exercise validation via AI vision
+├── dailyCourses.ts           # 30-day structured curriculum data (legacy)
+├── ninetyDayScoreCalculator.ts  # 90-day challenge ability score calculation
+├── abilityScoreEngine.ts     # Unified ability score system
+├── passwordService.ts        # Password hashing for legacy auth
+├── supabaseAdmin.ts          # Supabase Admin client for migrations
+└── migrateAuth.ts            # Auth migration utilities
 ```
 
 **Key Patterns**:
@@ -165,6 +179,61 @@ import { users } from "@shared/schema";
 ### sessions
 - Express session storage for legacy auth
 - Used during transition period before full Supabase migration
+
+### ninety_day_curriculum
+- 90-day structured training curriculum (90天挑战系统)
+- Maps Fu Jiajun's ten core skills to daily training
+- Fields: day_number (1-90), title, primary_skill, tencore_skill_id, scoring_method
+- Links to ten_core_skills system
+- Reference: `docs/90天挑战课程映射方案.md`
+
+### ninety_day_training_records
+- User training records for 90-day challenge
+- Tracks daily completion, time spent, achieved targets
+- Links to ninety_day_curriculum and users
+- Feeds into unified streak calculation
+
+### user_ninety_day_progress
+- Overall progress tracking for 90-day challenge
+- Fields: current_day, completed_days, start_date, last_training_date
+- Ability scores: accuracy_score, spin_score, positioning_score, power_score, strategy_score, clearance_score
+
+### ten_core_skills
+- Fu Jiajun's ten core billiard skills framework (傅家俊十大招)
+- Skills 1-10: basics, power, stability, accuracy, technique, separation angles, positioning, clearance, special skills, strategy
+- Each skill has multiple sub-skills and training units
+- Reference: `docs/api/ten-core-skills.md`
+
+### sub_skills & training_units
+- Hierarchical training structure for ten core skills
+- Training units include theory, practice, and challenge types
+- JSONB content with text, images, videos, key points, steps
+
+## Training Systems Overview
+
+The application now features **three integrated training systems**:
+
+1. **Skills Library (技能库)**: Original 8-level growth path system
+   - Sequential progression through 8 skill levels
+   - Exercises unlock one by one within each level
+   - Progress tracked via `currentLevel`, `currentExercise`, `completedExercises`
+
+2. **90-Day Challenge (90天挑战)**: Structured daily training program
+   - 90 days mapped to Fu Jiajun's ten core skills
+   - Daily goals with specific skill focus (accuracy, spin, positioning, power, strategy)
+   - Ability score calculation based on training performance
+   - Scoring methods: `success_rate`, `total_score`, or `clearance_ability`
+
+3. **Ten Core Skills (十大招系统)**: Comprehensive skill framework
+   - 10 major skills → sub-skills → training units (theory/practice/challenge)
+   - Detailed content with videos, key points, step-by-step instructions
+   - Hierarchical progression with unlock conditions
+   - API documented in `docs/api/ten-core-skills.md`
+
+**Data Integration**:
+- Training streak merges data from both Skills Library (`training_sessions`) and 90-Day Challenge (`ninety_day_training_records`)
+- Ability scores unified through `/api/v1/dashboard/summary` endpoint
+- All systems contribute to user's overall progress and statistics
 
 ## Experience System Logic
 
@@ -425,6 +494,34 @@ Since automated tests are minimal, manually verify:
 - [ ] Server logs show no errors on key operations
 - [ ] Database schema pushes without conflicts
 - [ ] **No deprecated API warnings in console**
+
+## Recent Production Fixes (2025-11-27)
+
+**Critical fixes deployed** (Reference: `docs/planning/PRODUCTION_FIXES_REPORT.md`):
+
+### Fix #1: Navigation Bar - Practice Levels Restored
+**Problem**: Practice levels (练习场) entry was removed from navigation, replaced by ranking page
+**Solution**: Expanded navigation from 4 to 5 items, now includes both练习场 and 排行榜
+**Impact**: Users can now access all major features from bottom navigation
+
+### Fix #2: Training Record Submission Failure
+**Problem**: 90-day challenge training submission failed with "column null_total_difficulty_points does not exist"
+**Root Cause**: `primary_skill` was NULL in `ninety_day_curriculum` table for all 90 days
+**Solution**:
+- Added NULL check with default value handling in `abilityScoreEngine.ts`
+- When `primary_skill` is NULL, uses default based on `scoring_method`:
+  - `success_rate` → defaults to 'accuracy'
+  - `total_score` or other → defaults to 'spin'
+**Code Location**: `server/abilityScoreEngine.ts:257-268`
+
+**Verification**:
+```bash
+# Check if fix is working
+npm run dev
+# Navigate to /ninety-day-challenge
+# Submit a training record
+# Should succeed without NULL column error
+```
 
 ## Common Gotchas
 

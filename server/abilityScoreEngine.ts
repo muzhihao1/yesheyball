@@ -212,7 +212,7 @@ export async function processTrainingRecord(
     // 1. Get curriculum information
     const curriculum = await tx.execute(
       rawSql`
-        SELECT primary_skill, difficulty, scoring_method
+        SELECT primary_skill, difficulty, scoring_method, training_type
         FROM ninety_day_curriculum
         WHERE day_number = ${day_number}
         LIMIT 1
@@ -227,6 +227,7 @@ export async function processTrainingRecord(
     const primarySkillRaw = curriculumRow.primary_skill;
     const difficulty = String(curriculumRow.difficulty || '初级');
     const scoringMethod = String(curriculumRow.scoring_method || 'completion');
+    const trainingType = String(curriculumRow.training_type || '系统');
 
     // Handle NULL primary_skill: use default based on scoring_method
     let primarySkill: AbilityDimension;
@@ -269,18 +270,65 @@ export async function processTrainingRecord(
       );
     } else {
       // Update difficulty points for the specific dimension
-      const columnPrefix = `${dimension}_`;
-      const totalPointsColumn = `${columnPrefix}total_difficulty_points`;
-      const completedPointsColumn = `${columnPrefix}completed_difficulty_points`;
+      // Fetch current values, calculate new values in JS, then update
+      // This avoids SQL template literal issues with Drizzle
+      const multiplier = getDifficultyMultiplier(difficulty);
+      const totalPointsToAdd = 100 * multiplier;
 
-      await tx.execute(
-        rawSql`
-          UPDATE users
-          SET ${rawSql.raw(totalPointsColumn)} = ${rawSql.raw(totalPointsColumn)} + ${100 * getDifficultyMultiplier(difficulty)},
-              ${rawSql.raw(completedPointsColumn)} = ${rawSql.raw(completedPointsColumn)} + ${pointsGained}
-          WHERE id = ${user_id}
-        `
-      );
+      console.log(`🔧 Updating ${dimension} scores: total +${totalPointsToAdd}, completed +${pointsGained}`);
+
+      // Fetch current values for this dimension
+      const currentUser = await tx.query.users.findFirst({
+        where: eq(users.id, user_id),
+        columns: {
+          spinTotalDifficultyPoints: true,
+          spinCompletedDifficultyPoints: true,
+          positioningTotalDifficultyPoints: true,
+          positioningCompletedDifficultyPoints: true,
+          powerTotalDifficultyPoints: true,
+          powerCompletedDifficultyPoints: true,
+          strategyTotalDifficultyPoints: true,
+          strategyCompletedDifficultyPoints: true,
+        }
+      });
+
+      if (!currentUser) {
+        throw new Error(`User not found: ${user_id}`);
+      }
+
+      // Calculate new values in JavaScript and update
+      if (dimension === 'spin') {
+        await tx.update(users)
+          .set({
+            spinTotalDifficultyPoints: (currentUser.spinTotalDifficultyPoints || 0) + totalPointsToAdd,
+            spinCompletedDifficultyPoints: (currentUser.spinCompletedDifficultyPoints || 0) + pointsGained
+          })
+          .where(eq(users.id, user_id));
+      } else if (dimension === 'positioning') {
+        await tx.update(users)
+          .set({
+            positioningTotalDifficultyPoints: (currentUser.positioningTotalDifficultyPoints || 0) + totalPointsToAdd,
+            positioningCompletedDifficultyPoints: (currentUser.positioningCompletedDifficultyPoints || 0) + pointsGained
+          })
+          .where(eq(users.id, user_id));
+      } else if (dimension === 'power') {
+        await tx.update(users)
+          .set({
+            powerTotalDifficultyPoints: (currentUser.powerTotalDifficultyPoints || 0) + totalPointsToAdd,
+            powerCompletedDifficultyPoints: (currentUser.powerCompletedDifficultyPoints || 0) + pointsGained
+          })
+          .where(eq(users.id, user_id));
+      } else if (dimension === 'strategy') {
+        await tx.update(users)
+          .set({
+            strategyTotalDifficultyPoints: (currentUser.strategyTotalDifficultyPoints || 0) + totalPointsToAdd,
+            strategyCompletedDifficultyPoints: (currentUser.strategyCompletedDifficultyPoints || 0) + pointsGained
+          })
+          .where(eq(users.id, user_id));
+      } else if (dimension === 'accuracy') {
+        // Accuracy already handled in the if branch above, but include for completeness
+        console.warn(`⚠️ Unexpected accuracy dimension in else branch`);
+      }
     }
 
     // 4. Recalculate ALL ability scores from updated raw data
@@ -342,20 +390,19 @@ export async function processTrainingRecord(
     // Calculate clearance score
     newScores.clearance_score = calculateClearanceScore(newScores);
 
-    // 5. Update user's ability scores
-    await tx.execute(
-      rawSql`
-        UPDATE users
-        SET
-          accuracy_score = ${newScores.accuracy_score},
-          spin_score = ${newScores.spin_score},
-          positioning_score = ${newScores.positioning_score},
-          power_score = ${newScores.power_score},
-          strategy_score = ${newScores.strategy_score},
-          clearance_score = ${newScores.clearance_score}
-        WHERE id = ${user_id}
-      `
-    );
+    console.log(`📊 New ability scores: accuracy=${newScores.accuracy_score}, spin=${newScores.spin_score}, positioning=${newScores.positioning_score}, power=${newScores.power_score}, strategy=${newScores.strategy_score}, clearance=${newScores.clearance_score}`);
+
+    // 5. Update user's ability scores using Drizzle's update builder
+    await tx.update(users)
+      .set({
+        accuracyScore: newScores.accuracy_score,
+        spinScore: newScores.spin_score,
+        positioningScore: newScores.positioning_score,
+        powerScore: newScores.power_score,
+        strategyScore: newScores.strategy_score,
+        clearanceScore: newScores.clearance_score
+      })
+      .where(eq(users.id, user_id));
 
     // 6. Calculate score changes (for display purposes)
     const scoreChanges: ScoreChanges = {
@@ -373,43 +420,45 @@ export async function processTrainingRecord(
       successRate = totalAttempts > 0 ? Math.round((successfulShots / totalAttempts) * 100) : undefined;
     }
 
-    // 8. Insert training record
-    await tx.execute(
-      rawSql`
-        INSERT INTO ninety_day_training_records (
-          user_id, day_number, started_at, completed_at,
-          duration_minutes, training_stats, success_rate,
-          achieved_target, score_changes, notes
-        )
-        VALUES (
-          ${user_id}, ${day_number}, NOW(), NOW(),
-          ${duration_minutes}, ${JSON.stringify(training_stats)}::jsonb,
-          ${successRate}, ${achievedTarget}, ${JSON.stringify(scoreChanges)}::jsonb,
-          ${notes || null}
-        )
-      `
-    );
+    // 8. Insert training record using Drizzle's insert builder
+    await tx.insert(ninetyDayTrainingRecords).values({
+      userId: user_id,
+      dayNumber: day_number,
+      startedAt: new Date(),
+      completedAt: new Date(),
+      durationMinutes: duration_minutes,
+      trainingStats: training_stats,
+      trainingType: trainingType,
+      successRate: successRate,
+      achievedTarget: achievedTarget,
+      scoreChanges: scoreChanges,
+      notes: notes || null
+    });
 
-    // 9. Update challenge progress (auto-advance to next day)
+    // 9. Update challenge progress (auto-advance to next day) using Drizzle's update builder
     // Only update if this is the current day being completed
     // Handle NULL values for users who haven't started the challenge yet
     // Also set challenge_start_date if this is the first training
-    const progressUpdate = await tx.execute(
-      rawSql`
-        UPDATE users
-        SET
-          challenge_current_day = LEAST(COALESCE(challenge_current_day, 0) + 1, 90),
-          challenge_completed_days = COALESCE(challenge_completed_days, 0) + 1,
-          challenge_start_date = CASE WHEN challenge_start_date IS NULL THEN NOW() ELSE challenge_start_date END
-        WHERE id = ${user_id}
-          AND (challenge_current_day = ${day_number} OR (challenge_current_day IS NULL AND ${day_number} = 1))
-        RETURNING challenge_current_day, challenge_completed_days
-      `
-    );
+    const progressUpdate = await tx.update(users)
+      .set({
+        challengeCurrentDay: rawSql`LEAST(COALESCE(challenge_current_day, 0) + 1, 90)`,
+        challengeCompletedDays: rawSql`COALESCE(challenge_completed_days, 0) + 1`,
+        challengeStartDate: rawSql`CASE WHEN challenge_start_date IS NULL THEN NOW() ELSE challenge_start_date END`
+      })
+      .where(
+        and(
+          eq(users.id, user_id),
+          rawSql`(challenge_current_day = ${day_number} OR (challenge_current_day IS NULL AND ${day_number} = 1))`
+        )
+      )
+      .returning({
+        challengeCurrentDay: users.challengeCurrentDay,
+        challengeCompletedDays: users.challengeCompletedDays
+      });
 
     if (progressUpdate && progressUpdate.length > 0) {
-      const progress = progressUpdate[0] as Record<string, any>;
-      console.log(`✅ Updated challenge progress for user ${user_id}: Day ${day_number} completed → Now on Day ${progress.challenge_current_day} (Total completed: ${progress.challenge_completed_days})`);
+      const progress = progressUpdate[0];
+      console.log(`✅ Updated challenge progress for user ${user_id}: Day ${day_number} completed → Now on Day ${progress.challengeCurrentDay} (Total completed: ${progress.challengeCompletedDays})`);
     }
 
     return {

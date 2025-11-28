@@ -1,58 +1,145 @@
+# ========================================
 # Dependencies
-node_modules
+# ========================================
+node_modules/
 
-# Build output
-dist
+# ========================================
+# Build Output
+# ========================================
+dist/
 *.tsbuildinfo
+.next/
+out/
 
-# Environment variables
+# ========================================
+# Environment Variables & Secrets
+# ========================================
 .env
 .env.*
 !.env.example
 .env.local
+.env.production
 
-# OS files
+# ========================================
+# OS Files
+# ========================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+*~
 
-# Editor directories
+# ========================================
+# Editor & IDE
+# ========================================
+# VSCode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-.idea
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Vim
 *.swp
 *.swo
 *~
 
-# Vercel
-.vercel
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
 
-# Local data
+# ========================================
+# Deployment & Cloud
+# ========================================
+.vercel/
+.netlify/
+
+# ========================================
+# Local Development
+# ========================================
 .local/
+.config/
+.replit
+replit.nix
+
+# Uploads directory (user-generated content)
 uploads/
-server/public
+server/public/
 
-# Development reference materials (large binary files)
-练球软件开发/
-
-# Logs
-*.log
-logs_result.json
-
-# Testing
+# ========================================
+# Testing & Debugging
+# ========================================
+# Playwright screenshots and videos (100+ PNG files)
 .playwright-mcp/
+playwright-report/
+test-results/
+
+# Coverage reports
 coverage/
 *.lcov
+.nyc_output/
+
+# Test credentials
 .test-credentials.json
 
-# Temporary files
+# ========================================
+# Logs
+# ========================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs_result.json
+
+# ========================================
+# Temporary Files
+# ========================================
 *.tmp
 *.temp
+*.swp
+*.swo
 vite.config.ts.*
 *.tar.gz
+*.zip
 
+# ========================================
+# Documentation & Reports
+# ========================================
+# Large binary files in early design folder (25MB+)
+docs/archive/early-design/
+
+# Temporary cleanup reports (one-time generated)
+DOCUMENTATION_CLEANUP_REPORT.md
+*_CLEANUP_REPORT.md
+
+# ========================================
+# Scripts & Utilities
+# ========================================
+# Temporary scripts directory
+scripts/temp/
+
+# ========================================
 # Database
+# ========================================
 *.db
+*.db-journal
 *.sqlite
+*.sqlite3
+
+# ========================================
+# Lock Files (optional)
+# ========================================
+# Uncomment if you don't want to track lock files
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
