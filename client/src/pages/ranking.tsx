@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { InviteDialog } from "@/components/InviteDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserStats } from "@/hooks/useUserStats";
 import { supabase } from "@/lib/supabase";
@@ -37,6 +38,7 @@ interface RankingUser {
 export default function Ranking() {
   const { user } = useAuth();
   const [period, setPeriod] = useState<'week' | 'month' | 'all'>('week');
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   const { data: userStats } = useUserStats({
     enabled: !!user,
@@ -229,7 +231,11 @@ export default function Ranking() {
                     <div className="text-center py-8 text-gray-500">
                       <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                       <p>暂无数据，邀请好友一起占位</p>
-                      <Button variant="outline" className="mt-4">
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => setInviteDialogOpen(true)}
+                      >
                         <UserPlus className="h-4 w-4 mr-2" />
                         邀请好友
                       </Button>
@@ -286,7 +292,11 @@ export default function Ranking() {
                     <div className="text-center py-8 text-gray-500">
                       <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                       <p>暂无数据，邀请好友一起占位</p>
-                      <Button variant="outline" className="mt-4">
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => setInviteDialogOpen(true)}
+                      >
                         <UserPlus className="h-4 w-4 mr-2" />
                         邀请好友
                       </Button>
@@ -343,7 +353,11 @@ export default function Ranking() {
                     <div className="text-center py-8 text-gray-500">
                       <Trophy className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                       <p>暂无数据，邀请好友一起占位</p>
-                      <Button variant="outline" className="mt-4">
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => setInviteDialogOpen(true)}
+                      >
                         <UserPlus className="h-4 w-4 mr-2" />
                         邀请好友
                       </Button>
@@ -392,6 +406,12 @@ export default function Ranking() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Invite Dialog */}
+      <InviteDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+      />
     </div>
   );
 }

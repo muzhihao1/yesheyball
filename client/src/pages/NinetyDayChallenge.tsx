@@ -479,39 +479,41 @@ export default function NinetyDayChallenge() {
                   查看完整能力分析
                 </Button>
 
-                {/* Unified Card-Style Guide Area (Problem 4 Fix) */}
-                <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-emerald-200 dark:border-emerald-800 shadow-md">
-                  <CardContent className="p-6">
-                    <h3 className="text-center text-lg font-bold text-emerald-700 dark:text-emerald-300 mb-2">
-                      🎉 太棒了！今日训练已完成
-                    </h3>
-                    <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      接下来你可以：
-                    </p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <Link href="/tasks" className="block">
-                        <Button
-                          variant="default"
-                          className="w-full h-auto flex flex-col items-center gap-2 py-4 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white rounded-xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300"
-                        >
-                          <span className="text-2xl">📚</span>
-                          <span className="font-semibold">技能库</span>
-                          <span className="text-xs opacity-90">复习理论知识</span>
-                        </Button>
-                      </Link>
-                      <Link href="/levels" className="block">
-                        <Button
-                          variant="outline"
-                          className="w-full h-auto flex flex-col items-center gap-2 py-4 bg-white dark:bg-gray-900 border-2 border-emerald-600 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 rounded-xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300"
-                        >
-                          <span className="text-2xl">🎮</span>
-                          <span className="font-semibold">练习场</span>
-                          <span className="text-xs opacity-90">做题巩固</span>
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Unified Card-Style Guide Area - Only show when training is completed */}
+                {trainingRecordsMap.has(currentDay) && (
+                  <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-emerald-200 dark:border-emerald-800 shadow-md">
+                    <CardContent className="p-6">
+                      <h3 className="text-center text-lg font-bold text-emerald-700 dark:text-emerald-300 mb-2">
+                        🎉 太棒了！今日训练已完成
+                      </h3>
+                      <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        接下来你可以：
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Link href="/tasks" className="block">
+                          <Button
+                            variant="default"
+                            className="w-full h-auto flex flex-col items-center gap-2 py-4 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white rounded-xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300"
+                          >
+                            <span className="text-2xl">📚</span>
+                            <span className="font-semibold">技能库</span>
+                            <span className="text-xs opacity-90">复习理论知识</span>
+                          </Button>
+                        </Link>
+                        <Link href="/levels" className="block">
+                          <Button
+                            variant="outline"
+                            className="w-full h-auto flex flex-col items-center gap-2 py-4 bg-white dark:bg-gray-900 border-2 border-emerald-600 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 rounded-xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300"
+                          >
+                            <span className="text-2xl">🎮</span>
+                            <span className="font-semibold">练习场</span>
+                            <span className="text-xs opacity-90">做题巩固</span>
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </CardContent>
           </Card>

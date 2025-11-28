@@ -72,7 +72,7 @@ export function ChallengeHero({
     },
   ];
 
-  // How to start steps
+  // How to start steps (removed step 3 to avoid duplicate training button)
   const steps = [
     {
       icon: <Target className="w-6 h-6" />,
@@ -88,13 +88,6 @@ export function ChallengeHero({
       link: '#',
       linkText: '查看计划',
       isDisabled: true,
-    },
-    {
-      icon: <TrendingUp className="w-6 h-6" />,
-      title: '完成今日训练',
-      description: '每天 30 分钟进步',
-      action: onStartTraining,
-      linkText: '开始训练',
     },
   ];
 
@@ -235,14 +228,14 @@ export function ChallengeHero({
             </div>
           </Card>
 
-          {/* How to Start - 3 Steps */}
+          {/* How to Start - 2 Steps */}
           <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-xl">
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">
                 如何开始您的清台之旅？
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                 {steps.map((step, index) => (
                   <div
                     key={index}

@@ -406,7 +406,7 @@ export default function TrainingForm({
 
           <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
             <p className="text-sm text-purple-800 dark:text-purple-200">
-              💡 <strong>技能训练提示：</strong>记录您实际完成的数量和目标数量。完成度越高，对应技能分提升越多。难度越高（{difficulty}），得分权重越大。
+              💡 <strong>技能训练提示：</strong>记录您实际完成的数量和目标数量。完成度越高，对应技能分提升越多。难度越高，得分权重越大。
             </p>
           </div>
         </>
