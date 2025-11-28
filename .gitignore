@@ -122,6 +122,10 @@ docs/archive/early-design/
 DOCUMENTATION_CLEANUP_REPORT.md
 *_CLEANUP_REPORT.md
 
+# Test reports (Chinese filenames, temporary)
+*测试报告.md
+*问题*.md
+
 # ========================================
 # Scripts & Utilities
 # ========================================
