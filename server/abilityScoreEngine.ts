@@ -13,6 +13,16 @@
 import { db } from "./db.js";
 import { users, ninetyDayCurriculum, ninetyDayTrainingRecords } from "../shared/schema.js";
 import { eq, and, sql as rawSql } from "drizzle-orm";
+import type { ExtractTablesWithRelations } from "drizzle-orm";
+import type { PgTransaction } from "drizzle-orm/pg-core";
+import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
+import * as schema from "../shared/schema.js";
+
+type DbTransaction = PgTransaction<
+  PostgresJsQueryResultHKT,
+  typeof schema,
+  ExtractTablesWithRelations<typeof schema>
+>;
 
 // ============================================================================
 // Types
@@ -208,7 +218,7 @@ export async function processTrainingRecord(
   }
 
   // Start transaction
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: DbTransaction) => {
     // 1. Get curriculum information
     const curriculum = await tx.execute(
       rawSql`
