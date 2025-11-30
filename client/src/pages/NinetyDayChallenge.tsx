@@ -119,18 +119,15 @@ export default function NinetyDayChallenge() {
   // The AdventureMap component will display stars for completed training days
 
   // Check if user is first-time (no challenge start date)
-  // Use localStorage to prevent repeated showing of welcome modal
+  // Only rely on database state (challenge_start_date), not localStorage
   useEffect(() => {
     if (!isLoading && challengeProgress) {
-      const hasStartedBefore = localStorage.getItem('ninety_day_challenge_started');
-
       // Show welcome modal only if:
       // 1. No challenge_start_date AND
-      // 2. No localStorage flag AND
-      // 3. No completed days (hasn't actually trained yet)
+      // 2. No completed days (hasn't actually trained yet)
+      // NOTE: Removed localStorage check - trust database as single source of truth
       const shouldShowWelcome =
         !challengeProgress.challenge_start_date &&
-        !hasStartedBefore &&
         (challengeProgress.challenge_completed_days || 0) === 0;
 
       if (shouldShowWelcome) {
@@ -185,7 +182,7 @@ export default function NinetyDayChallenge() {
         if (response.status === 400) {
           console.log('Challenge already started, refreshing data...');
           await refetchProgress();
-          localStorage.setItem('ninety_day_challenge_started', 'true');
+          // Database state will be automatically reflected in UI
           setShowWelcomeModal(false);
           setIsStartingChallenge(false);
           return;
@@ -195,13 +192,12 @@ export default function NinetyDayChallenge() {
         throw new Error(errorData.message || 'Failed to start challenge');
       }
 
-      // Refresh progress data
+      // Refresh progress data from server
+      // This will update challenge_start_date in the database
       await refetchProgress();
 
-      // Mark challenge as started in localStorage
-      localStorage.setItem('ninety_day_challenge_started', 'true');
-
       // Close welcome modal
+      // Modal won't show again because challenge_start_date is now set in database
       setShowWelcomeModal(false);
     } catch (error) {
       console.error('Error starting challenge:', error);
