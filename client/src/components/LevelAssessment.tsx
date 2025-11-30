@@ -235,13 +235,20 @@ export default function LevelAssessment() {
 
   /**
    * Submit assessment results to backend and navigate to challenge
+   * Includes timeout protection and comprehensive error handling
    */
   const handleComplete = async () => {
+    const TIMEOUT_MS = 15000; // 15 second timeout
+    let timeoutId: NodeJS.Timeout | null = null;
+
     try {
       setIsSubmitting(true);
+      console.log("[LevelAssessment] Starting assessment submission...");
 
       // Get current Supabase session for Authorization header
+      console.log("[LevelAssessment] Fetching Supabase session...");
       const { data: { session } } = await supabase.auth.getSession();
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
@@ -249,10 +256,20 @@ export default function LevelAssessment() {
       // Add Authorization header if session exists
       if (session?.access_token) {
         headers["Authorization"] = `Bearer ${session.access_token}`;
+        console.log("[LevelAssessment] Session found, adding Authorization header");
+      } else {
+        console.warn("[LevelAssessment] No Supabase session found");
       }
 
-      // Call backend API to save assessment completion
-      const response = await fetch("/api/onboarding/complete", {
+      // Create timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("API request timeout after 15 seconds"));
+        }, TIMEOUT_MS);
+      });
+
+      // Create fetch promise
+      const fetchPromise = fetch("/api/onboarding/complete", {
         method: "POST",
         headers,
         credentials: "include",
@@ -263,28 +280,52 @@ export default function LevelAssessment() {
         }),
       });
 
+      console.log("[LevelAssessment] Sending POST request to /api/onboarding/complete");
+
+      // Race between fetch and timeout
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+
+      // Clear timeout if fetch succeeded
+      if (timeoutId) clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error("Failed to complete assessment");
+        const errorBody = await response.text();
+        console.error(`[LevelAssessment] API returned status ${response.status}:`, errorBody);
+        throw new Error(`API Error: ${response.status} - ${errorBody}`);
       }
 
-      console.log("[LevelAssessment] Assessment completed successfully");
+      console.log("[LevelAssessment] Assessment API call succeeded");
+      const responseData = await response.json();
+      console.log("[LevelAssessment] Response data:", responseData);
 
       // Save to localStorage as backup
       localStorage.setItem("level_assessment_completed", "true");
       localStorage.setItem("onboarding_completed", "true");
       localStorage.setItem("recommended_start_day", String(recommendedStartDay));
+      console.log("[LevelAssessment] Saved assessment data to localStorage");
 
       // Navigate to 90-day challenge
+      console.log("[LevelAssessment] Navigation to /ninety-day-challenge");
       navigate("/ninety-day-challenge");
     } catch (error) {
-      console.error("[LevelAssessment] Error completing assessment:", error);
+      // Clear timeout on error
+      if (timeoutId) clearTimeout(timeoutId);
 
-      // Even if API fails, still proceed with localStorage backup
-      localStorage.setItem("level_assessment_completed", "true");
-      localStorage.setItem("onboarding_completed", "true");
-      localStorage.setItem("recommended_start_day", String(recommendedStartDay));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("[LevelAssessment] Error completing assessment:", errorMessage);
+      console.error("[LevelAssessment] Full error object:", error);
 
-      navigate("/ninety-day-challenge");
+      // Show user-friendly error message
+      const userMessage = errorMessage.includes("timeout")
+        ? "保存超时，请检查网络连接后重试"
+        : errorMessage.includes("API Error")
+        ? `保存失败: ${errorMessage}`
+        : "保存过程中出错，请稍后重试";
+
+      alert(userMessage);
+
+      // Do NOT proceed to next page on error - let user retry
+      console.log("[LevelAssessment] Error handling complete, user can retry");
     } finally {
       setIsSubmitting(false);
     }

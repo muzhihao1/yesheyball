@@ -21,7 +21,6 @@ import Ranking from "@/pages/ranking";
 import Diary from "@/pages/diary";
 import Profile from "@/pages/profile";
 import NinetyDayChallenge from "@/pages/NinetyDayChallenge";
-import Onboarding from "@/pages/Onboarding";
 import LevelAssessment from "@/components/LevelAssessment";
 
 import NotFound from "@/pages/not-found";

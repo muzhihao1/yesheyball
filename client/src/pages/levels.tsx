@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Trophy, Target, Zap, Crown, Lock, Play, Pause, RotateCcw, CheckCircle, Star, BookOpen } from "lucide-react";
-import { Onboarding, hasCompletedOnboarding } from "@/components/Onboarding";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "wouter";
 
@@ -88,9 +87,6 @@ export default function Levels() {
   const [skipChallengeQuestions, setSkipChallengeQuestions] = useState<any[]>([]);
   const [currentSkipQuestion, setCurrentSkipQuestion] = useState(0);
   const [skipChallengeAnswers, setSkipChallengeAnswers] = useState<string[]>([]);
-
-  // Onboarding state - P1-2
-  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // 考核相关状态
   const [showExamDialog, setShowExamDialog] = useState(false);
@@ -466,19 +462,7 @@ export default function Levels() {
 
   // Show onboarding for first-time users - P1-2
   useEffect(() => {
-    if (user && !userLoading) {
-      // Check if this is a new user (level 1 with no completed exercises)
-      const isNewUser = user.level === 1 && user.exp === 0;
-      const hasSeenOnboarding = hasCompletedOnboarding();
-
-      if (isNewUser && !hasSeenOnboarding) {
-        // Delay showing onboarding to allow page to render
-        const timer = setTimeout(() => {
-          setShowOnboarding(true);
-        }, 800);
-        return () => clearTimeout(timer);
-      }
-    }
+    // Onboarding is now handled by LevelAssessment component in App.tsx routes
   }, [user, userLoading]);
 
   // Auto-scroll to user's current progress on page load
@@ -1061,11 +1045,6 @@ export default function Levels() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-50">
-      {/* Onboarding - P1-2 */}
-      {showOnboarding && (
-        <Onboarding onComplete={() => setShowOnboarding(false)} />
-      )}
-
       {/* Duolingo-style Navigation Breadcrumb */}
       <div className="sticky top-16 z-40 bg-transparent pt-4 pb-2">
         <div className="max-w-lg mx-auto px-4">
