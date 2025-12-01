@@ -189,6 +189,15 @@ export default function LevelAssessment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
 
+  // Debug logging for page state changes
+  console.log("[LevelAssessment] Component rendered with currentPage:", currentPage);
+  console.log("[LevelAssessment] Component state:", {
+    currentPage,
+    answers: Object.keys(answers).length > 0 ? "answered" : "empty",
+    isSubmitting,
+    showLoading,
+  });
+
   // Calculate recommended start day and total score
   const totalScore = useMemo(() => {
     return QUESTIONS.reduce((sum, q) => {
@@ -447,6 +456,20 @@ export default function LevelAssessment() {
                       <span>只需 1 分钟，了解你的当前水平</span>
                     </div>
                     <div className="flex justify-center">
+                      {/* DEBUG: Using standard HTML button to test if issue is in Button component */}
+                      <button
+                        onClick={() => {
+                          console.log("[LevelAssessment-TEST] Standard HTML button clicked!");
+                          console.log("[LevelAssessment-TEST] About to set currentPage to 'questions'");
+                          setCurrentPage("questions");
+                          console.log("[LevelAssessment-TEST] setCurrentPage called with 'questions'");
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all rounded-md font-medium inline-flex items-center gap-2"
+                      >
+                        开始水平测试
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </button>
+                      {/* Original Button component commented out for comparison
                       <Button
                         onClick={() => setCurrentPage("questions")}
                         size="lg"
@@ -455,6 +478,7 @@ export default function LevelAssessment() {
                         开始水平测试
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </Button>
+                      */}
                     </div>
                   </div>
                 </CardContent>
