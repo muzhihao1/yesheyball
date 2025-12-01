@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertCircle, BookOpen, PlayCircle, Target, Maximize2, Minimize2 } from 'lucide-react';
 import { getAuthHeaders } from '@/lib/auth-headers';
+import { DAILY_TRAINING_CONFIG } from '@/constants/training';
 import { AdventureMap } from '@/components/ninety-day/AdventureMap';
 import { DayDetailModal } from '@/components/ninety-day/DayDetailModal';
 import { TrainingSubmitModal } from '@/components/ninety-day/TrainingSubmitModal';
@@ -403,11 +404,9 @@ export default function NinetyDayChallenge() {
                     <span className="px-4 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full font-medium shadow-sm">
                       {curriculum?.difficulty || '中级'}
                     </span>
-                    {curriculum?.estimatedDuration && (
-                      <span className="text-muted-foreground font-medium">
-                        ⏱ {curriculum.estimatedDuration} 分钟
-                      </span>
-                    )}
+                    <span className="text-muted-foreground font-medium">
+                      ⏱ {DAILY_TRAINING_CONFIG.recommendedDailyMinutes} 分钟
+                    </span>
                   </div>
                 </div>
               </div>

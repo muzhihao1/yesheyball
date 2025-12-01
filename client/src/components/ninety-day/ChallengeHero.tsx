@@ -16,6 +16,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Target, CheckCircle, BookOpen, TrendingUp, Trophy } from 'lucide-react';
+import { DAILY_TRAINING_CONFIG } from '@/constants/training';
 
 interface ChallengeHeroProps {
   currentDay: number;
@@ -111,7 +112,7 @@ export function ChallengeHero({
               </span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              每天 30 分钟 · 已有 <span className="font-bold text-green-600">1000+</span> 新手完成清台
+              {DAILY_TRAINING_CONFIG.homeSubtitle}
             </p>
           </div>
 
@@ -309,7 +310,7 @@ export function ChallengeHero({
               立即开始今日训练
             </Button>
             <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              每天 30 分钟，离清台梦想更近一步
+              {DAILY_TRAINING_CONFIG.heroDescription}
             </p>
           </div>
         </div>

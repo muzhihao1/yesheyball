@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { Flame } from "lucide-react";
 import { useDailyGoals } from "@/hooks/useDailyGoals";
+import { getStreakMessage } from "@/constants/training";
 
 export default function Header() {
   const { user, isLoading } = useAuth();
@@ -85,13 +86,15 @@ export default function Header() {
                 <span className="ml-1">{currentStreak}</span>
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
-                {hasTrainedToday ? '连胜' : '断档'}
+                {hasTrainedToday ? getStreakMessage(currentStreak).text : '开始新旅程'}
               </div>
 
-              {/* Tooltip */}
-              {!hasTrainedToday && currentStreak > 0 && (
+              {/* Tooltip - Show motivational message */}
+              {!hasTrainedToday && (
                 <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white text-xs py-2 px-3 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                  今天还没训练，别断档！
+                  {currentStreak > 0
+                    ? `🔥 连续 ${currentStreak} 天 | 今天别让连胜中断！`
+                    : '🔥 新的开始 | 今天完成第一次训练吧！'}
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45"></div>
                 </div>
               )}
