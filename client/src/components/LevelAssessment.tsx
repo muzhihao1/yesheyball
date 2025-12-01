@@ -368,7 +368,15 @@ export default function LevelAssessment() {
         </div>
 
         {/* Page content with animations */}
-        <AnimatePresence mode="wait">
+        {/*
+          CRITICAL FIX: Changed mode from "wait" to undefined (default "sync")
+          mode="wait" was causing the welcome page exit animation to block
+          the questions page from rendering in production. This is a known
+          issue with Framer Motion when animations take longer than expected.
+          By removing mode="wait", AnimatePresence will mount the new component
+          immediately while animating the old one out, preventing UI freezing.
+        */}
+        <AnimatePresence>
           {/* Welcome Page */}
           {currentPage === "welcome" && (
             <motion.div
