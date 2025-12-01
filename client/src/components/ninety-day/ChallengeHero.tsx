@@ -263,29 +263,20 @@ export function ChallengeHero({
                     </p>
 
                     {/* Action Button */}
-                    {step.action ? (
-                      <Button
-                        onClick={step.action}
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all"
-                      >
-                        {step.linkText}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className={`border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 ${
-                          step.isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                        disabled={step.isDisabled}
-                        onClick={() => {
-                          if (!step.isDisabled && step.link !== '#') {
-                            window.location.href = step.link;
-                          }
-                        }}
-                      >
-                        {step.linkText}
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      className={`border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 ${
+                        step.isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                      disabled={step.isDisabled}
+                      onClick={() => {
+                        if (!step.isDisabled && step.link !== '#') {
+                          window.location.href = step.link;
+                        }
+                      }}
+                    >
+                      {step.linkText}
+                    </Button>
 
                     {/* Connector arrow (not for last step) */}
                     {index < steps.length - 1 && (
