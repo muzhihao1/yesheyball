@@ -189,15 +189,6 @@ export default function LevelAssessment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
 
-  // Debug logging for page state changes
-  console.log("[LevelAssessment] Component rendered with currentPage:", currentPage);
-  console.log("[LevelAssessment] Component state:", {
-    currentPage,
-    answers: Object.keys(answers).length > 0 ? "answered" : "empty",
-    isSubmitting,
-    showLoading,
-  });
-
   // Calculate recommended start day and total score
   const totalScore = useMemo(() => {
     return QUESTIONS.reduce((sum, q) => {
@@ -222,6 +213,10 @@ export default function LevelAssessment() {
     if (currentPage === "questions") return 50;
     return 100;
   }, [currentPage]);
+
+  const handleStartQuestions = () => {
+    setCurrentPage("questions");
+  };
 
   /**
    * Handle answer selection for a question
@@ -252,10 +247,8 @@ export default function LevelAssessment() {
 
     try {
       setIsSubmitting(true);
-      console.log("[LevelAssessment] Starting assessment submission...");
 
       // Get current Supabase session for Authorization header
-      console.log("[LevelAssessment] Fetching Supabase session...");
       const { data: { session } } = await supabase.auth.getSession();
 
       const headers: Record<string, string> = {
@@ -265,7 +258,6 @@ export default function LevelAssessment() {
       // Add Authorization header if session exists
       if (session?.access_token) {
         headers["Authorization"] = `Bearer ${session.access_token}`;
-        console.log("[LevelAssessment] Session found, adding Authorization header");
       } else {
         console.warn("[LevelAssessment] No Supabase session found");
       }
@@ -289,8 +281,6 @@ export default function LevelAssessment() {
         }),
       });
 
-      console.log("[LevelAssessment] Sending POST request to /api/onboarding/complete");
-
       // Race between fetch and timeout
       const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
 
@@ -303,18 +293,14 @@ export default function LevelAssessment() {
         throw new Error(`API Error: ${response.status} - ${errorBody}`);
       }
 
-      console.log("[LevelAssessment] Assessment API call succeeded");
-      const responseData = await response.json();
-      console.log("[LevelAssessment] Response data:", responseData);
+      await response.json();
 
       // Save to localStorage as backup
       localStorage.setItem("level_assessment_completed", "true");
       localStorage.setItem("onboarding_completed", "true");
       localStorage.setItem("recommended_start_day", String(recommendedStartDay));
-      console.log("[LevelAssessment] Saved assessment data to localStorage");
 
       // Navigate to 90-day challenge
-      console.log("[LevelAssessment] Navigation to /ninety-day-challenge");
       navigate("/ninety-day-challenge");
     } catch (error) {
       // Clear timeout on error
@@ -333,8 +319,6 @@ export default function LevelAssessment() {
 
       alert(userMessage);
 
-      // Do NOT proceed to next page on error - let user retry
-      console.log("[LevelAssessment] Error handling complete, user can retry");
     } finally {
       setIsSubmitting(false);
     }
@@ -464,29 +448,16 @@ export default function LevelAssessment() {
                       <span>只需 1 分钟，了解你的当前水平</span>
                     </div>
                     <div className="flex justify-center">
-                      {/* DEBUG: Using standard HTML button to test if issue is in Button component */}
-                      <button
-                        onClick={() => {
-                          console.log("[LevelAssessment-TEST] Standard HTML button clicked!");
-                          console.log("[LevelAssessment-TEST] About to set currentPage to 'questions'");
-                          setCurrentPage("questions");
-                          console.log("[LevelAssessment-TEST] setCurrentPage called with 'questions'");
-                        }}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all rounded-md font-medium inline-flex items-center gap-2"
-                      >
-                        开始水平测试
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </button>
-                      {/* Original Button component commented out for comparison
                       <Button
-                        onClick={() => setCurrentPage("questions")}
+                        type="button"
+                        data-testid="start-level-test"
+                        onClick={handleStartQuestions}
                         size="lg"
                         className="bg-emerald-600 hover:bg-emerald-700 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all"
                       >
                         开始水平测试
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </Button>
-                      */}
                     </div>
                   </div>
                 </CardContent>
@@ -504,6 +475,7 @@ export default function LevelAssessment() {
               exit="exit"
               transition={{ duration: 0.3 }}
               className="space-y-6"
+              data-testid="questions-container"
             >
               {/* Question Cards */}
               <div className="space-y-4">
