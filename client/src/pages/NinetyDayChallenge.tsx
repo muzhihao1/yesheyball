@@ -96,6 +96,32 @@ export default function NinetyDayChallenge() {
 
   const isLoading = scoresLoading || progressLoading || curriculumLoading;
 
+  /**
+   * 计算用户状态：'new' | 'active' | 'completed'
+   *
+   * 判断逻辑：
+   * - 'new': 无能力分数（未完成水平测试）
+   * - 'active': 有能力分数且计划未完成
+   * - 'completed': 计划已完成或达到90天
+   */
+  const userStatus: 'new' | 'active' | 'completed' = (() => {
+    // 新用户：没有能力分数
+    if (!abilityScores?.clearance) {
+      return 'new';
+    }
+
+    // 检查计划是否完成
+    const isPlanCompleted = currentDay >= 90 || challengeProgress?.challenge_completed_days === 90;
+
+    // 活跃用户：有分数且计划未完成
+    if (!isPlanCompleted) {
+      return 'active';
+    }
+
+    // 完成用户：计划已完成
+    return 'completed';
+  })();
+
   // Create dayNumber → training record mapping for map node ratings
   // Convert NinetyDayTrainingRecord to TrainingRecordSummary format
   const trainingRecordsMap = new Map<number, { dayNumber: number; rating: number; duration: number; notes: string | null }>();
@@ -378,6 +404,7 @@ export default function NinetyDayChallenge() {
           completedDays={challengeProgress?.challenge_completed_days || 0}
           clearanceScore={abilityScores?.clearance || 0}
           onStartTraining={handleStartTraining}
+          userStatus={userStatus}
         />
 
         {/* Daily Goals Panel - Embedded below hero */}

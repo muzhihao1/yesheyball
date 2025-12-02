@@ -23,6 +23,13 @@ interface ChallengeHeroProps {
   completedDays: number;
   clearanceScore: number;
   onStartTraining: () => void;
+  /**
+   * 用户状态：'new' | 'active' | 'completed'
+   * - 'new': 新用户，未完成onboarding
+   * - 'active': 活跃用户，有计划且未完成
+   * - 'completed': 完成用户，计划已完成或90天结束
+   */
+  userStatus?: 'new' | 'active' | 'completed';
 }
 
 export function ChallengeHero({
@@ -30,6 +37,7 @@ export function ChallengeHero({
   completedDays,
   clearanceScore,
   onStartTraining,
+  userStatus = 'new',
 }: ChallengeHeroProps) {
   // Calculate which stage user is in (1-30: Basic, 31-60: Advanced, 61-90: Mastery)
   const getCurrentStage = () => {
@@ -73,24 +81,32 @@ export function ChallengeHero({
     },
   ];
 
-  // How to start steps (removed step 3 to avoid duplicate training button)
-  const steps = [
-    {
-      icon: <Target className="w-6 h-6" />,
-      title: '水平测试',
-      description: '3 分钟了解您的水平',
-      link: '/onboarding',
-      linkText: '去测试',
-    },
-    {
-      icon: <BookOpen className="w-6 h-6" />,
-      title: '获取计划',
-      description: '量身定制训练路线',
-      link: '#',
-      linkText: '查看计划',
-      isDisabled: true,
-    },
-  ];
+  /**
+   * 条件化 steps 数组：根据用户状态显示不同的引导步骤
+   *
+   * 'new' 用户：显示完整的新手引导流程（水平测试 → 获取计划）
+   * 'active' 用户：隐藏（用户已完成onboarding，应专注于每日训练）
+   * 'completed' 用户：隐藏（在首页不显示，但可在Settings中提供重新开始选项）
+   */
+  const steps = userStatus === 'new'
+    ? [
+        {
+          icon: <Target className="w-6 h-6" />,
+          title: '水平测试',
+          description: '3 分钟了解您的水平',
+          link: '/onboarding',
+          linkText: '去测试',
+        },
+        {
+          icon: <BookOpen className="w-6 h-6" />,
+          title: '获取计划',
+          description: '量身定制训练路线',
+          link: '#',
+          linkText: '查看计划',
+          isDisabled: true,
+        },
+      ]
+    : []; // 'active' 和 'completed' 用户：不显示步骤
 
   return (
     <section className="relative overflow-hidden">
@@ -229,7 +245,8 @@ export function ChallengeHero({
             </div>
           </Card>
 
-          {/* How to Start - 2 Steps */}
+          {/* How to Start - 2 Steps (仅新用户显示) */}
+          {steps.length > 0 && (
           <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-xl">
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">
@@ -289,6 +306,7 @@ export function ChallengeHero({
               </div>
             </div>
           </Card>
+          )}
 
           {/* CTA Section */}
           <div className="mt-8 text-center">

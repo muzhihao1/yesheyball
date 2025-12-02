@@ -18,6 +18,9 @@ import { SkillsLibraryCard } from "@/components/dashboard/SkillsLibraryCard";
 import { PracticeFieldCard } from "@/components/dashboard/PracticeFieldCard";
 import { InviteCard } from "@/components/InviteCard";
 import { WeaknessRecommendation } from "@/components/WeaknessRecommendation";
+import { RetestConfirmationModal } from "@/components/RetestConfirmationModal";
+import { useLocation } from "wouter";
+import { useState } from "react";
 import {
   Settings,
   Trophy,
@@ -35,6 +38,8 @@ import {
 
 export default function Profile() {
   const { user, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+  const [showRetestModal, setShowRetestModal] = useState(false);
 
   // Fetch unified dashboard summary (for 90-day challenge, skills library, practice field)
   const { data: dashboardData, isLoading: isLoadingDashboard } = useDashboardSummary();
@@ -64,6 +69,23 @@ export default function Profile() {
     queryKey: ["/api/user/stats/trend"],
     enabled: !!user,
   });
+
+  /**
+   * 处理"重新进行水平测试"按钮点击事件
+   * 显示二次确认对话框
+   */
+  const handleRetestClick = () => {
+    setShowRetestModal(true);
+  };
+
+  /**
+   * 处理重新测试确认
+   * 导航到onboarding页面，带上isRetest=true标志
+   */
+  const handleConfirmRetest = () => {
+    navigate('/onboarding?isRetest=true');
+    setShowRetestModal(false);
+  };
 
   // Transform ability scores to radar chart format (using unified hook from line 39)
   const skillsData = abilityScores ? [
@@ -428,6 +450,28 @@ export default function Profile() {
           <InviteCard />
         </div>
 
+        {/* Learning Settings Card - 学习设置 */}
+        <Card className="mb-6 border-2 border-amber-200 dark:border-amber-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Target className="h-5 w-5 text-amber-600" />
+              学习设置
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              已有学习计划？可以随时重新进行水平测试，系统会为你生成新的学习路线。
+            </p>
+            <Button
+              variant="outline"
+              className="w-full border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+              onClick={handleRetestClick}
+            >
+              重新进行水平测试
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Settings */}
         <Card>
           <CardHeader>
@@ -464,6 +508,13 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Retest Confirmation Modal */}
+        <RetestConfirmationModal
+          isOpen={showRetestModal}
+          onClose={() => setShowRetestModal(false)}
+          onConfirm={handleConfirmRetest}
+        />
       </div>
     </div>
   );

@@ -326,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post("/api/onboarding/complete", isAuthenticated, async (req, res) => {
     try {
       const userId = requireSessionUserId(req);
-      const { recommendedStartDay, answers } = req.body;
+      const { recommendedStartDay, answers, isRetest = false } = req.body;
 
       // Validate input
       if (!recommendedStartDay || typeof recommendedStartDay !== 'number' || recommendedStartDay < 1 || recommendedStartDay > 90) {
@@ -340,6 +340,45 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Check database availability
       if (!db) {
         return res.status(503).json({ message: "Database not available" });
+      }
+
+      /**
+       * Handle retest mode:
+       * - If isRetest=true: 重置当前的 90 天挑战进度，重新从 recommendedStartDay 开始
+       * - If isRetest=false: 首次测试，直接创建或更新 onboarding 数据
+       */
+      if (isRetest) {
+        console.log(`[Onboarding] User ${userId} retest mode: resetting 90-day challenge progress`);
+
+        // 获取或创建 userNinetyDayProgress 记录
+        const existingProgress = await db.select()
+          .from(userNinetyDayProgress)
+          .where(eq(userNinetyDayProgress.userId, userId));
+
+        if (existingProgress.length > 0) {
+          // 重置现有的进度记录
+          await db.update(userNinetyDayProgress)
+            .set({
+              currentDay: recommendedStartDay,
+              completedDays: [], // 清空已完成天数
+              startDate: new Date(), // 重置开始日期
+              updatedAt: new Date(),
+            })
+            .where(eq(userNinetyDayProgress.userId, userId));
+
+          console.log(`[Onboarding] Reset existing progress for user ${userId}: new start day ${recommendedStartDay}`);
+        } else {
+          // 如果不存在，创建新的记录
+          await db.insert(userNinetyDayProgress)
+            .values({
+              userId: userId,
+              currentDay: recommendedStartDay,
+              completedDays: [],
+              startDate: new Date(),
+            });
+
+          console.log(`[Onboarding] Created new progress record for user ${userId}: start day ${recommendedStartDay}`);
+        }
       }
 
       // Update user with onboarding completion data
@@ -358,15 +397,20 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      console.log(`Onboarding completed for user ${userId}: start day ${recommendedStartDay}`);
+      const logMessage = isRetest
+        ? `水平重测完成: 用户 ${userId}, 新起始日 ${recommendedStartDay}`
+        : `Onboarding completed for user ${userId}: start day ${recommendedStartDay}`;
+
+      console.log(`[Onboarding] ${logMessage}`);
 
       res.json({
         success: true,
         user: updatedUser[0],
-        message: "Onboarding completed successfully"
+        message: isRetest ? "重新测试完成，已生成新的学习计划" : "Onboarding completed successfully",
+        isRetest: isRetest,
       });
     } catch (error) {
-      console.error("Onboarding completion error:", error);
+      console.error("[Onboarding] Completion error:", error);
       res.status(500).json({ message: "Failed to complete onboarding" });
     }
   });

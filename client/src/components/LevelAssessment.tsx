@@ -189,6 +189,17 @@ export default function LevelAssessment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
 
+  /**
+   * 检查是否为重新测试模式
+   * 从 URL 查询参数中提取 isRetest 标志
+   * 例如: /onboarding?isRetest=true
+   */
+  const isRetest = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get('isRetest') === 'true';
+  }, []);
+
   // Calculate recommended start day and total score
   const totalScore = useMemo(() => {
     return QUESTIONS.reduce((sum, q) => {
@@ -278,6 +289,7 @@ export default function LevelAssessment() {
           recommendedStartDay: recommendedStartDay,
           answers: answers,
           totalScore: totalScore,
+          isRetest: isRetest, // 新增：标记是否为重新测试
         }),
       });
 
